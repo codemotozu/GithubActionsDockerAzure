@@ -1,0 +1,226 @@
+
+# server/app/infrastructure/api/routes.py
+import logging
+import tempfile
+import os
+from datetime import datetime
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import Optional, Dict, Any
+from ...application.services.speech_service import SpeechService
+from ...application.services.translation_service import TranslationService
+from ...domain.entities.translation import Translation
+
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("api.log")
+    ]
+)
+logger = logging.getLogger(__name__)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup logic
+    logger.info("Starting API server")
+    logger.info(f"Temp directory: {tempfile.gettempdir()}")
+    logger.info(f"Current working directory: {os.getcwd()}")
+    
+    yield  # App runs here
+    
+    # Shutdown logic
+    logger.info("Shutting down API server")
+
+app = FastAPI(
+    title="Speak and Translate API",
+    root_path="",  # Important: This should be empty for Azure Container Apps
+    openapi_url="/openapi.json"
+)
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Initialize services
+translation_service = TranslationService()
+speech_service = SpeechService()
+
+class TranslationStylePreferences(BaseModel):
+    german_native: bool = False
+    german_colloquial: bool = False
+    german_informal: bool = False
+    german_formal: bool = False
+    english_native: bool = False
+    english_colloquial: bool = False
+    english_informal: bool = False
+    english_formal: bool = False
+    # Add word-by-word audio preferences
+    german_word_by_word: bool = True
+    english_word_by_word: bool = False
+
+class PromptRequest(BaseModel):
+    text: str
+    source_lang: Optional[str] = "en"
+    target_lang: Optional[str] = "en"
+    style_preferences: Optional[TranslationStylePreferences] = None
+
+# Replace your existing health check endpoint with this comprehensive one
+@app.get("/health")
+async def health_check():
+    """
+    Health check endpoint for Azure Container Apps
+    Azure expects a 200 response from this endpoint
+    """
+    # Create audio directory with proper permissions if it doesn't exist
+    audio_dir = "/tmp/tts_audio" if os.name != "nt" else os.path.join(os.environ.get("TEMP", ""), "tts_audio")
+    try:
+        os.makedirs(audio_dir, exist_ok=True)
+        os.chmod(audio_dir, 0o755)  # Read/write for owner, read for others
+    except Exception as e:
+        logger.warning(f"Could not create or set permissions on audio directory: {str(e)}")
+
+    # Check if required environment variables are set
+    env_vars = {
+        "AZURE_SPEECH_KEY": bool(os.environ.get("AZURE_SPEECH_KEY")),
+        "AZURE_SPEECH_REGION": bool(os.environ.get("AZURE_SPEECH_REGION")),
+        "GEMINI_API_KEY": bool(os.environ.get("GEMINI_API_KEY")),
+        "PORT": os.environ.get("PORT", "8000"),
+        "TTS_DEVICE": os.environ.get("TTS_DEVICE", "cpu"),
+        "CONTAINER_ENV": os.environ.get("CONTAINER_ENV", "false")
+    }
+
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "temp_dir": tempfile.gettempdir(),
+        "audio_dir": audio_dir,
+        "environment_vars": env_vars
+    }
+
+# Health check endpoint
+@app.get("/")
+async def root():
+    return {"status": "ok from server/app/infrastructure/api/routes.py test 9"}
+
+@app.post("/api/conversation", response_model=Translation)
+async def start_conversation(prompt: PromptRequest):
+    try:
+        # Pass style preferences to the translation service
+        response = await translation_service.process_prompt(
+            prompt.text, 
+            prompt.source_lang, 
+            prompt.target_lang,
+            style_preferences=prompt.style_preferences
+        )
+        return response
+    except Exception as e:
+        logger.error(f"Conversation error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/speech-to-text")
+async def speech_to_text(file: UploadFile = File(...)):
+    tmp_path = None
+    try:
+        # MIME type handling
+        content_type = file.content_type or "audio/wav"
+        ext = ".wav"
+        mime_map = {
+            "audio/wav": ".wav",
+            "audio/aac": ".aac",
+            "audio/mpeg": ".mp3",
+            "audio/ogg": ".ogg"
+        }
+        
+        if content_type in mime_map:
+            ext = mime_map[content_type]
+        else:
+            filename_ext = os.path.splitext(file.filename or "")[1].lower()
+            ext = filename_ext if filename_ext in [".wav", ".aac", ".mp3", ".ogg"] else ".wav"
+
+        # Create temp file
+        with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+            content = await file.read()
+            tmp.write(content)
+            tmp_path = tmp.name
+            logger.debug(f"Created temp file: {tmp_path}")
+
+        # Process audio
+        recognized_text = await speech_service.process_audio(tmp_path)
+        return {"text": recognized_text}
+
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"Speech-to-text error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Audio processing failed. See server logs for details."
+        )
+    finally:
+        # Cleanup temp file
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+                logger.debug(f"Cleaned up temp file: {tmp_path}")
+            except Exception as e:
+                logger.error(f"Final cleanup failed: {str(e)}")
+
+@app.post("/api/voice-command")
+async def process_voice_command(file: UploadFile = File(...)):
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp:
+            content = await file.read()
+            tmp.write(content)
+            tmp_path = tmp.name
+            
+        command_text = await speech_service.process_command(tmp_path)
+        return {"command": command_text}
+        
+    except Exception as e:
+        logger.error(f"Voice command error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail="Command processing failed"
+        )
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+
+@app.get("/api/audio/{filename}")
+async def get_audio(filename: str):
+    try:
+        if ".." in filename or "/" in filename:
+            raise HTTPException(status_code=400, detail="Invalid filename")
+
+        audio_dir = os.path.join(
+            os.environ.get("TEMP", ""), 
+            "tts_audio"
+        ) if os.name == "nt" else "/tmp/tts_audio"
+
+        file_path = os.path.join(audio_dir, filename)
+        
+        if not os.path.exists(file_path):
+            logger.warning(f"Audio file not found: {file_path}")
+            raise HTTPException(status_code=404, detail="Audio file not found")
+
+        return FileResponse(
+            path=file_path,
+            media_type="audio/mp3",
+            filename=filename,
+            headers={"Cache-Control": "no-cache"}
+        )
+    except Exception as e:
+        logger.error(f"Audio delivery error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))

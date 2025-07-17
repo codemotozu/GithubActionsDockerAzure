@@ -1,0 +1,166 @@
+name: Deploy to Azure Container Apps
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'server/**'
+      - '.github/workflows/azure-deploy.yml'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'server/**'
+
+env:
+  DOCKER_IMAGE_NAME: codemotozu/speak-and-translate-azure-server
+  AZURE_CONTAINER_APP_NAME: speak-translate-docker-and-azure
+  RESOURCE_GROUP: ResourceSpeakAndTranslate04032025
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./server
+        push: true
+        tags: ${{ env.DOCKER_IMAGE_NAME }}:latest,${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
+        build-args: |
+          AZURE_SPEECH_KEY=${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION=${{ secrets.AZURE_SPEECH_REGION }}
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          TTS_DEVICE=${{ secrets.TTS_DEVICE }}
+        
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy to Azure Container App
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          echo "Deploying to Azure Container App..."
+          
+          # Check if the container app exists
+          if az containerapp show --name ${{ env.AZURE_CONTAINER_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --query "properties.provisioningState" -o tsv 2>/dev/null; then
+            echo "Updating existing container app..."
+            
+            # Update existing container app with explicit environment variables
+            az containerapp update \
+              --name ${{ env.AZURE_CONTAINER_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --image ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }} \
+              --cpu 1.0 \
+              --memory 2.0Gi \
+              --min-replicas 1 \
+              --max-replicas 1 \
+              --set-env-vars \
+                AZURE_SPEECH_KEY=${{ secrets.AZURE_SPEECH_KEY }} \
+                AZURE_SPEECH_REGION=${{ secrets.AZURE_SPEECH_REGION }} \
+                GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
+                TTS_DEVICE="cpu" \
+                CONTAINER_ENV="true" \
+                PORT=8000 \
+                SPEECH_CONTAINER_OPTION=1 \
+                SPEECH_SYNTHESIS_PLATFORM_CONFIG=container \
+                LD_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu" \
+                GST_PLUGIN_PATH="/usr/lib/x86_64-linux-gnu/gstreamer-1.0"
+          else
+            echo "Creating new container app..."
+            
+            # Get existing environment or create new one
+            ENV_EXISTS=$(az containerapp env list --resource-group ${{ env.RESOURCE_GROUP }} --query "[?name=='ca-env-${{ env.RESOURCE_GROUP }}']" -o tsv)
+            if [ -z "$ENV_EXISTS" ]; then
+              echo "Creating new container app environment..."
+              az containerapp env create \
+                --name ca-env-${{ env.RESOURCE_GROUP }} \
+                --resource-group ${{ env.RESOURCE_GROUP }} \
+                --location westus2
+            fi
+            
+            # Create new container app with required environment variables
+            az containerapp create \
+              --name ${{ env.AZURE_CONTAINER_APP_NAME }} \
+              --resource-group ${{ env.RESOURCE_GROUP }} \
+              --environment ca-env-${{ env.RESOURCE_GROUP }} \
+              --image ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }} \
+              --target-port 8000 \
+              --ingress external \
+              --cpu 1.0 \
+              --memory 2.0Gi \
+              --min-replicas 1 \
+              --max-replicas 1 \
+              --env-vars \
+                AZURE_SPEECH_KEY=${{ secrets.AZURE_SPEECH_KEY }} \
+                AZURE_SPEECH_REGION=${{ secrets.AZURE_SPEECH_REGION }} \
+                GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
+                TTS_DEVICE="cpu" \
+                CONTAINER_ENV="true" \
+                PORT=8000 \
+                SPEECH_CONTAINER_OPTION=1 \
+                SPEECH_SYNTHESIS_PLATFORM_CONFIG=container \
+                LD_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu" \
+                GST_PLUGIN_PATH="/usr/lib/x86_64-linux-gnu/gstreamer-1.0"
+          fi
+          
+          # Enhanced deployment monitoring
+          echo "Waiting for deployment to complete..."
+          TIMEOUT=900
+          START_TIME=$(date +%s)
+          
+          while true; do
+            CURRENT_TIME=$(date +%s)
+            ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
+            
+            if [ $ELAPSED_TIME -gt $TIMEOUT ]; then
+              echo "Timeout waiting for deployment."
+              az containerapp logs show --name ${{ env.AZURE_CONTAINER_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --follow false
+              exit 1
+            fi
+            
+            APP_INFO=$(az containerapp show --name ${{ env.AZURE_CONTAINER_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }})
+            PROVISION_STATE=$(echo "$APP_INFO" | jq -r '.properties.provisioningState')
+            RUNNING_STATUS=$(echo "$APP_INFO" | jq -r '.properties.runningStatus')
+            REVISION_NAME=$(echo "$APP_INFO" | jq -r '.properties.latestRevisionName')
+            LATEST_READY_REVISION=$(echo "$APP_INFO" | jq -r '.properties.latestReadyRevisionName')
+            
+            echo "Revision: $REVISION_NAME"
+            echo "Provision State: $PROVISION_STATE"
+            echo "Running Status: $RUNNING_STATUS"
+            echo "Ready Revision: $LATEST_READY_REVISION"
+            
+            if [ "$PROVISION_STATE" == "Succeeded" ] && [ "$RUNNING_STATUS" == "Running" ]; then
+              echo "Deployment successful!"
+              FQDN=$(echo "$APP_INFO" | jq -r '.properties.configuration.ingress.fqdn')
+              echo "Application URL: https://$FQDN"
+              
+              sleep 20  # Allow service warmup
+              
+              echo "Final logs check:"
+              az containerapp logs show --name ${{ env.AZURE_CONTAINER_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --follow false --tail 50
+              break
+            elif [ "$PROVISION_STATE" == "Failed" ]; then
+              echo "Deployment failed. Fetching logs..."
+              az containerapp logs show --name ${{ env.AZURE_CONTAINER_APP_NAME }} --resource-group ${{ env.RESOURCE_GROUP }} --follow false
+              exit 1
+            elif [ "$REVISION_NAME" != "$LATEST_READY_REVISION" ] && [ -n "$LATEST_READY_REVISION" ]; then
+              echo "Waiting for new revision..."
+            fi
+            
+            sleep 15
+          done

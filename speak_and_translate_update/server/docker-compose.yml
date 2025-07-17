@@ -1,0 +1,26 @@
+
+version: '3.8'
+
+services:
+  translation-server:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - AZURE_SPEECH_KEY=${AZURE_SPEECH_KEY}
+      - AZURE_SPEECH_REGION=${AZURE_SPEECH_REGION}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - TTS_DEVICE=${TTS_DEVICE}
+      - PICOVOICE_API_KEY=${PICOVOICE_API_KEY}
+      - PORT=8000
+    volumes:
+      - /tmp/tts_audio:/tmp/tts_audio
+    devices:
+      - "/dev/snd:/dev/snd"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
