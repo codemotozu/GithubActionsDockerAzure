@@ -1,0 +1,49 @@
+name: Trigger auto deployment for speak-translate-docker-and-azure
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ main ]
+    paths:
+    - '**'
+    - '.github/workflows/speak-translate-docker-and-azure-AutoDeployTrigger-a759cd06-34ec-45b6-b99d-4f1aaa1b2867.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+      contents: read #Required when GH token is used to authenticate with private repo
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.SPEAKTRANSLATEDOCKERANDAZURE_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.SPEAKTRANSLATEDOCKERANDAZURE_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.SPEAKTRANSLATEDOCKERANDAZURE_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }}speak_and_translate_update/server
+          _dockerfilePathKey_: _dockerfilePath_
+          _targetLabelKey_: _targetLabel_
+          registryUrl: docker.io
+          registryUsername: ${{ secrets.SPEAKTRANSLATEDOCKERANDAZURE_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.SPEAKTRANSLATEDOCKERANDAZURE_REGISTRY_PASSWORD }}
+          containerAppName: speak-translate-docker-and-azure
+          resourceGroup: ResourceSpeakAndTranslate04032025
+          imageToBuild: codemotozu/speak-translate-docker-and-azure:${{ github.sha }}
+          _buildArgumentsKey_: |
+            _buildArgumentsValues_
+
+
