@@ -110,8 +110,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   MotherTongue _getMotherTongueFromString(String value) {
     switch (value) {
-      case 'spanish':
-        return MotherTongue.spanish;
+      case 'english':
+        return MotherTongue.english;
       case 'german':
         return MotherTongue.german;
       case 'french':
