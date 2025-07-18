@@ -5,7 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 final settingsProvider = StateProvider<Map<String, dynamic>>((ref) => {
   // Existing voice/microphone settings - CAMBIADO A CONTINUOUS LISTENING POR DEFECTO
   'microphoneMode': 'continuousListening', // 'voiceCommand' or 'continuousListening'
-  'motherTongue': 'english',
+  // 'motherTongue': 'english',
+  'motherTongue': 'spanish',
   'appMode': 'languageLearning',
   
   // Existing word-by-word settings (keep for backward compatibility)

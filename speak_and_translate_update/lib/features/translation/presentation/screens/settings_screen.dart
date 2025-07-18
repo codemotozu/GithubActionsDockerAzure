@@ -137,16 +137,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
       case 'bengali':
         return MotherTongue.bengali;
       default:
-        return MotherTongue.english;
+        return MotherTongue.spanish; // CAMBIADO: por defecto español
     }
   }
 
   String _getLanguageName(MotherTongue language) {
     switch (language) {
+      case MotherTongue.spanish:
+        return 'Spanish'; // CAMBIADO: mostrar en español
       case MotherTongue.english:
         return 'English';
-      case MotherTongue.spanish:
-        return 'Spanish';
       case MotherTongue.german:
         return 'German';
       case MotherTongue.french:
