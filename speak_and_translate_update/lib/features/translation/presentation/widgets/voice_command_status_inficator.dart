@@ -1,4 +1,4 @@
-// lib/features/translation/presentation/widgets/voice_command_status_indicator.dart 45
+// lib/features/translation/presentation/widgets/voice_command_status_indicator.dart 454554
 import 'package:flutter/material.dart';
 
 const _statusKey = Key('voiceStatusIndicator');
