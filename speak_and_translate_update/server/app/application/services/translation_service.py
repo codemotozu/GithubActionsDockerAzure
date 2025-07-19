@@ -31,8 +31,9 @@ class TranslationService:
         }
 
         self.model = GenerativeModel(
-            model_name="gemini-2.0-flash-exp", generation_config=self.generation_config
+            # model_name="gemini-2.0-flash-exp", generation_config=self.generation_config
             # model_name="gemini-1.5-flash", generation_config=self.generation_config
+            model_name="gemini-2.0-flash", generation_config=self.generation_config
         )
 
         self.tts_service = EnhancedTTSService()
