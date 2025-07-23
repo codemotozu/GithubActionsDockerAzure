@@ -14,3 +14,5 @@ maybe i can solve the problem implementing a local database like hive
 sometime when i speak spanish dosent think is spanish
 
 improve the mic similar to google traductor mic does, needs to be "(escuchando)" all the time
+
+put question marks commas and points as voice command for instance : voice in spanish "signo de interrogacion" the app detects it as "?"
