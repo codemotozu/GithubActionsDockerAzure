@@ -13,4 +13,4 @@ maybe i can solve the problem implementing a local database like hive
 
 sometime when i speak spanish dosent think is spanish
 
-improve the mic similar to google traductor mic does
+improve the mic similar to google traductor mic does, needs to be "(escuchando)" all the time
