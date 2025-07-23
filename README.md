@@ -12,3 +12,5 @@ sometimes even when i have the option "word by word in german" the app dosent de
 maybe i can solve the problem implementing a local database like hive
 
 sometime when i speak spanish dosent think is spanish
+
+improve the mic similar to google traductor mic does
