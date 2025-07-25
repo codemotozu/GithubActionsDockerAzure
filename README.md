@@ -18,4 +18,6 @@ improve the mic similar to google traductor mic does, needs to be "(escuchando)"
 put question marks commas and points as voice command for instance : voice in spanish "signo de interrogacion" the app detects it as "?"
 
 
-sometime the "word by word pronunciation" is incomplete
+sometimes the "word by word pronunciation" is incomplete
+
+The voices from speak and translate should have an option to slow ,normal and fast pronounciation
