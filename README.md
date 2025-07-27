@@ -24,6 +24,7 @@ The voices from speak and translate should have an option to slow ,normal and fa
 
 
 below "word for word translation" give the option to the user to listen
+
 A1-A2 Vocabulary [x]
 
 B1-B2 Vocabulary [x]
