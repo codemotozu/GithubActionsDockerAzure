@@ -21,3 +21,11 @@ put question marks commas and points as voice command for instance : voice in sp
 sometimes the "word by word pronunciation" is incomplete
 
 The voices from speak and translate should have an option to slow ,normal and fast pronounciation
+
+
+below "word for word translation" give the option to the user to listen
+A1-A2 Vocabulary [x]
+
+B1-B2 Vocabulary [x]
+
+C1-C2 Vocabulary [x]
