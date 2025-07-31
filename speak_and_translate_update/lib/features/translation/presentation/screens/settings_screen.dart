@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:speak_and_translate_update/features/translation/data/repositories/hive_user_settings_repository.dart';
 
 enum MicrophoneMode {
   voiceCommand,
@@ -205,8 +206,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return _englishNative || _englishColloquial || _englishInformal || _englishFormal;
   }
 
-  void _handleSave() {
-    Navigator.pop(context, {
+  void _handleSave() async {
+    final updatedSettings = {
       // Voice and microphone settings (keep existing functionality)
       'microphoneMode': _getMicrophoneModeString(_microphoneMode),
       'motherTongue': _getMotherTongueString(_motherTongue),
@@ -225,7 +226,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
       'englishColloquial': _englishColloquial,
       'englishInformal': _englishInformal,
       'englishFormal': _englishFormal,
-    });
+    };
+
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.cyan),
+            ),
+          );
+        },
+      );
+
+      // Save settings to Hive
+      final repository = UserSettingsRepository();
+      await repository.saveUserSettings(updatedSettings);
+      
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("✅ Settings saved successfully!"),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      
+      // Return to previous screen with updated settings
+      Navigator.pop(context, updatedSettings);
+      
+    } catch (e) {
+      // Close loading dialog if it's open
+      Navigator.of(context).pop();
+      
+      // Handle error: show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("❌ Error saving settings: $e"),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      
+      // Still return the settings even if saving failed (for immediate UI update)
+      Navigator.pop(context, updatedSettings);
+    }
   }
 
   @override

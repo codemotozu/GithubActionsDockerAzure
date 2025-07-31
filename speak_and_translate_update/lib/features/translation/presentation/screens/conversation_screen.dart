@@ -658,12 +658,21 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                   ],
                 ),
                 const SizedBox(height: 4),
-                RichText(
-                  text: TextSpan(
-                    style: const TextStyle(color: Colors.green),
-                    children: _buildRichTextSpans(selectedStyles, audioFeatures),
-                  ),
-                ),
+             // ... existing code ...
+
+RichText(
+  text: TextSpan(
+    style: const TextStyle(color: Colors.green),
+    children: [
+      TextSpan(
+        text: displayText,
+        style: const TextStyle(color: Colors.green),
+      ),
+    ],
+  ),
+),
+
+// ... existing code ...
               ],
             ),
           ),
