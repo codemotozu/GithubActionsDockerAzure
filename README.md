@@ -30,3 +30,11 @@ A1-A2 Vocabulary [x]
 B1-B2 Vocabulary [x]
 
 C1-C2 Vocabulary [x]
+
+
+
+besides native,colloquial, informal and formal add this new feature : the most identical translation
+
+
+
+if the user is mid advance and let say want to start speaking in the language of learning not the mother tongue and the choice was  german make sure YOU correct the user if he or she Make a german grammatical mistake
