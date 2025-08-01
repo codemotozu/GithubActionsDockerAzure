@@ -530,6 +530,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     );
   }
 
+/*
   Widget _buildStylePreferencesInfo(Map<String, dynamic> settings) {
     final selectedStyles = <String>[];
     final audioFeatures = <String>[];
@@ -681,6 +682,9 @@ RichText(
     );
   }
 
+*/
+
+/*
   List<TextSpan> _buildRichTextSpans(List<String> styles, List<String> audioFeatures) {
     final spans = <TextSpan>[];
     
@@ -721,6 +725,168 @@ RichText(
     return spans;
   }
 
+*/
+
+
+Widget _buildStylePreferencesInfo(Map<String, dynamic> settings) {
+  final selectedStyles = <String>[];
+  final audioFeatures = <String>[];
+  
+  // Check German styles
+  if (settings['germanNative'] == true) selectedStyles.add('German Native');
+  if (settings['germanColloquial'] == true) selectedStyles.add('German Colloquial');
+  if (settings['germanInformal'] == true) selectedStyles.add('German Informal');
+  if (settings['germanFormal'] == true) selectedStyles.add('German Formal');
+  
+  // Check English styles
+  if (settings['englishNative'] == true) selectedStyles.add('English Native');
+  if (settings['englishColloquial'] == true) selectedStyles.add('English Colloquial');
+  if (settings['englishInformal'] == true) selectedStyles.add('English Informal');
+  if (settings['englishFormal'] == true) selectedStyles.add('English Formal');
+
+  // Check word-by-word audio settings
+  if (settings['germanWordByWord'] == true) {
+    audioFeatures.add('German Word-by-Word Audio');
+  }
+  if (settings['englishWordByWord'] == true) {
+    audioFeatures.add('English Word-by-Word Audio');
+  }
+
+  if (selectedStyles.isEmpty && audioFeatures.isEmpty) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue[900]!.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline, color: Colors.blue),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Using default translation styles',
+                  style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'German Colloquial, English Colloquial - Customize in Settings',
+                  style: TextStyle(color: Colors.blue),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  return Container(
+    padding: const EdgeInsets.all(12),
+    margin: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.green[900]!.withOpacity(0.3),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Row(
+      children: [
+        const Icon(Icons.check_circle, color: Colors.green),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Text(
+                    'Active translation styles:',
+                    style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                  ),
+                  if (audioFeatures.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.orange, width: 1),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.record_voice_over, size: 12, color: Colors.orange),
+                          const SizedBox(width: 4),
+                          Text(
+                            'AUDIO',
+                            style: TextStyle(
+                              color: Colors.orange,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 4),
+              RichText(
+                text: TextSpan(
+                  children: _buildRichTextSpans(selectedStyles, audioFeatures),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+List<TextSpan> _buildRichTextSpans(List<String> styles, List<String> audioFeatures) {
+  final spans = <TextSpan>[];
+  
+  // Add translation styles
+  for (int i = 0; i < styles.length; i++) {
+    spans.add(TextSpan(
+      text: styles[i],
+      style: const TextStyle(color: Colors.green),
+    ));
+    
+    if (i < styles.length - 1 || audioFeatures.isNotEmpty) {
+      spans.add(const TextSpan(
+        text: ', ',
+        style: TextStyle(color: Colors.green),
+      ));
+    }
+  }
+  
+  // Add audio features with special styling
+  for (int i = 0; i < audioFeatures.length; i++) {
+    spans.add(TextSpan(
+      text: audioFeatures[i],
+      style: const TextStyle(
+        color: Colors.orange,
+        fontWeight: FontWeight.w600,
+        fontStyle: FontStyle.italic,
+      ),
+    ));
+    
+    if (i < audioFeatures.length - 1) {
+      spans.add(const TextSpan(
+        text: ', ',
+        style: TextStyle(color: Colors.orange),
+      ));
+    }
+  }
+  
+  return spans;
+}
   Widget _buildMessageWidget(ChatMessage message, bool speechState) {
     switch (message.type) {
       case MessageType.user:
