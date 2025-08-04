@@ -353,6 +353,137 @@ English Translation:
             print(f"Error in process_prompt: {str(e)}")
             raise Exception(f"Translation processing failed: {str(e)}")
 
+    # def _extract_text_and_pairs(
+    #     self, generated_text: str, style_preferences
+    # ) -> tuple[list[str], list[tuple[str, str, bool]]]:
+    #     """
+    #     Extract texts and word pairs based on user's style preferences.
+    #     Returns: tuple of ([texts], [(source_word, target_word, is_german)])
+    #     """
+    #     translations = []
+    #     word_pairs = []
+
+    #     # Define all possible patterns
+    #     all_patterns = [
+    #         # German patterns
+    #         {
+    #             "text_pattern": r'German Translation:.*?\* Conversational-native:\s*"([^"]+)"',
+    #             "pairs_pattern": r'\* word by word Conversational-native German-Spanish:\s*"([^"]+)"',
+    #             "is_german": True,
+    #             "style": "native",
+    #             "enabled": style_preferences.german_native if style_preferences else False,
+    #         },
+    #         {
+    #             "text_pattern": r'\* Conversational-colloquial:\s*"([^"]+)"',
+    #             "pairs_pattern": r'\* word by word Conversational-colloquial German-Spanish:\s*"([^"]+)"',
+    #             "is_german": True,
+    #             "style": "colloquial",
+    #             "enabled": style_preferences.german_colloquial if style_preferences else False,
+    #         },
+    #         {
+    #             "text_pattern": r'\* Conversational-informal:\s*"([^"]+)"',
+    #             "pairs_pattern": r'\* word by word Conversational-informal German-Spanish:\s*"([^"]+)"',
+    #             "is_german": True,
+    #             "style": "informal",
+    #             "enabled": style_preferences.german_informal if style_preferences else False,
+    #         },
+    #         {
+    #             "text_pattern": r'\* [Cc]onversational-formal:\s*"([^"]+)"',
+    #             "pairs_pattern": r'\* word by word [Cc]onversational-formal German-Spanish:\s*"([^"]+)"',
+    #             "is_german": True,
+    #             "style": "formal",
+    #             "enabled": style_preferences.german_formal if style_preferences else False,
+    #         },
+    #         # English patterns
+    #         {
+    #             "text_pattern": r'English Translation:.*?\* Conversational-native:\s*"([^"]+)"',
+    #             "pairs_pattern": r'\* word by word Conversational-native English-Spanish:\s*"([^"]+)"',
+    #             "is_german": False,
+    #             "style": "native",
+    #             "enabled": style_preferences.english_native if style_preferences else False,
+    #         },
+    #         {
+    #             "text_pattern": r'English Translation:.*?\* Conversational-colloquial:\s*"([^"]+)"',
+    #             "pairs_pattern": r'\* word by word Conversational-colloquial English-Spanish:\s*"([^"]+)"',
+    #             "is_german": False,
+    #             "style": "colloquial",
+    #             "enabled": style_preferences.english_colloquial if style_preferences else False,
+    #         },
+    #         {
+    #             "text_pattern": r'English Translation:.*?\* Conversational-informal:\s*"([^"]+)"',
+    #             "pairs_pattern": r'\* word by word Conversational-informal English-Spanish:\s*"([^"]+)"',
+    #             "is_german": False,
+    #             "style": "informal",
+    #             "enabled": style_preferences.english_informal if style_preferences else False,
+    #         },
+    #         {
+    #             "text_pattern": r'English Translation:.*?\* [Cc]onversational-formal:\s*"([^"]+)"',
+    #             "pairs_pattern": r'\* word by word [Cc]onversational-formal English-Spanish:\s*"([^"]+)"',
+    #             "is_german": False,
+    #             "style": "formal",
+    #             "enabled": style_preferences.english_formal if style_preferences else False,
+    #         },
+    #     ]
+
+    #     # Process patterns in two passes:
+    #     # Pass 1: Extract all translation texts for enabled styles
+    #     # Pass 2: Extract word pairs only if word-by-word is enabled
+        
+    #     for pattern_set in all_patterns:
+    #         if not pattern_set["enabled"]:
+    #             continue
+
+    #         # ALWAYS extract translation text if the style is enabled
+    #         text_match = re.search(
+    #             pattern_set["text_pattern"], generated_text, re.DOTALL | re.IGNORECASE
+    #         )
+    #         if text_match:
+    #             translations.append(text_match.group(1).strip())
+
+    #     # Second pass: Extract word pairs only if word-by-word is enabled for the language
+    #     for pattern_set in all_patterns:
+    #         if not pattern_set["enabled"]:
+    #             continue
+
+    #         # Only extract word pairs if word-by-word is enabled for this language
+    #         should_extract_pairs = False
+    #         if pattern_set["is_german"] and getattr(style_preferences, 'german_word_by_word', True):
+    #             should_extract_pairs = True
+    #         elif not pattern_set["is_german"] and getattr(style_preferences, 'english_word_by_word', False):
+    #             should_extract_pairs = True
+
+    #         if should_extract_pairs:
+    #             pairs_match = re.search(
+    #                 pattern_set["pairs_pattern"], generated_text, re.IGNORECASE
+    #             )
+    #             if pairs_match:
+    #                 pairs_text = pairs_match.group(1)
+    #                 pair_matches = re.findall(r"(\S+)\s*\(([^)]+)\)", pairs_text)
+    #                 for source, target in pair_matches:
+    #                     source = source.strip()
+    #                     target = target.strip()
+    #                     if source and target:
+    #                         word_pairs.append((source, target, pattern_set["is_german"]))
+
+    #     # Remove duplicates while preserving order
+    #     seen_pairs = set()
+    #     unique_pairs = []
+    #     for pair in word_pairs:
+    #         pair_tuple = (pair[0], pair[1], pair[2])
+    #         if pair_tuple not in seen_pairs:
+    #             seen_pairs.add(pair_tuple)
+    #             unique_pairs.append(pair)
+
+    #     print(f"🎵 Audio generation summary:")
+    #     print(f"   Translations found: {len(translations)}")
+    #     print(f"   Word pairs found: {len(unique_pairs)}")
+    #     print(f"   German word-by-word enabled: {getattr(style_preferences, 'german_word_by_word', 'Not set')}")
+    #     print(f"   English word-by-word enabled: {getattr(style_preferences, 'english_word_by_word', 'Not set')}")
+
+    #     return translations, unique_pairs
+
+# ... existing code ...
+
     def _extract_text_and_pairs(
         self, generated_text: str, style_preferences
     ) -> tuple[list[str], list[tuple[str, str, bool]]]:
@@ -363,33 +494,33 @@ English Translation:
         translations = []
         word_pairs = []
 
-        # Define all possible patterns
+        # Define all possible patterns with enhanced regex
         all_patterns = [
             # German patterns
             {
                 "text_pattern": r'German Translation:.*?\* Conversational-native:\s*"([^"]+)"',
-                "pairs_pattern": r'\* word by word Conversational-native German-Spanish:\s*"([^"]+)"',
+                "pairs_pattern": r'\* word by word (?:Conversational-)?native German-Spanish:\s*"([^"]+)"',
                 "is_german": True,
                 "style": "native",
                 "enabled": style_preferences.german_native if style_preferences else False,
             },
             {
                 "text_pattern": r'\* Conversational-colloquial:\s*"([^"]+)"',
-                "pairs_pattern": r'\* word by word Conversational-colloquial German-Spanish:\s*"([^"]+)"',
+                "pairs_pattern": r'\* word by word (?:Conversational-)?colloquial German-Spanish:\s*"([^"]+)"',
                 "is_german": True,
                 "style": "colloquial",
                 "enabled": style_preferences.german_colloquial if style_preferences else False,
             },
             {
                 "text_pattern": r'\* Conversational-informal:\s*"([^"]+)"',
-                "pairs_pattern": r'\* word by word Conversational-informal German-Spanish:\s*"([^"]+)"',
+                "pairs_pattern": r'\* word by word (?:Conversational-)?informal German-Spanish:\s*"([^"]+)"',
                 "is_german": True,
                 "style": "informal",
                 "enabled": style_preferences.german_informal if style_preferences else False,
             },
             {
                 "text_pattern": r'\* [Cc]onversational-formal:\s*"([^"]+)"',
-                "pairs_pattern": r'\* word by word [Cc]onversational-formal German-Spanish:\s*"([^"]+)"',
+                "pairs_pattern": r'\* word by word (?:Conversational-)?formal German-Spanish:\s*"([^"]+)"',
                 "is_german": True,
                 "style": "formal",
                 "enabled": style_preferences.german_formal if style_preferences else False,
@@ -397,28 +528,28 @@ English Translation:
             # English patterns
             {
                 "text_pattern": r'English Translation:.*?\* Conversational-native:\s*"([^"]+)"',
-                "pairs_pattern": r'\* word by word Conversational-native English-Spanish:\s*"([^"]+)"',
+                "pairs_pattern": r'\* word by word (?:Conversational-)?native English-Spanish:\s*"([^"]+)"',
                 "is_german": False,
                 "style": "native",
                 "enabled": style_preferences.english_native if style_preferences else False,
             },
             {
                 "text_pattern": r'English Translation:.*?\* Conversational-colloquial:\s*"([^"]+)"',
-                "pairs_pattern": r'\* word by word Conversational-colloquial English-Spanish:\s*"([^"]+)"',
+                "pairs_pattern": r'\* word by word (?:Conversational-)?colloquial English-Spanish:\s*"([^"]+)"',
                 "is_german": False,
                 "style": "colloquial",
                 "enabled": style_preferences.english_colloquial if style_preferences else False,
             },
             {
                 "text_pattern": r'English Translation:.*?\* Conversational-informal:\s*"([^"]+)"',
-                "pairs_pattern": r'\* word by word Conversational-informal English-Spanish:\s*"([^"]+)"',
+                "pairs_pattern": r'\* word by word (?:Conversational-)?informal English-Spanish:\s*"([^"]+)"',
                 "is_german": False,
                 "style": "informal",
                 "enabled": style_preferences.english_informal if style_preferences else False,
             },
             {
                 "text_pattern": r'English Translation:.*?\* [Cc]onversational-formal:\s*"([^"]+)"',
-                "pairs_pattern": r'\* word by word [Cc]onversational-formal English-Spanish:\s*"([^"]+)"',
+                "pairs_pattern": r'\* word by word (?:Conversational-)?formal English-Spanish:\s*"([^"]+)"',
                 "is_german": False,
                 "style": "formal",
                 "enabled": style_preferences.english_formal if style_preferences else False,
@@ -439,6 +570,9 @@ English Translation:
             )
             if text_match:
                 translations.append(text_match.group(1).strip())
+                print(f"✅ Found {pattern_set['style']} translation: {text_match.group(1).strip()[:50]}...")
+            else:
+                print(f"⚠️ Could not find {pattern_set['style']} translation pattern")
 
         # Second pass: Extract word pairs only if word-by-word is enabled for the language
         for pattern_set in all_patterns:
@@ -458,12 +592,28 @@ English Translation:
                 )
                 if pairs_match:
                     pairs_text = pairs_match.group(1)
-                    pair_matches = re.findall(r"(\S+)\s*\(([^)]+)\)", pairs_text)
+                    print(f"🔍 Found word-by-word pairs for {pattern_set['style']}: {pairs_text[:50]}...")
+                    
+                    # Handle different formatting patterns
+                    pair_matches = []
+                    if '(' in pairs_text and ')' in pairs_text:
+                        # Standard pattern: "word (translation)"
+                        pair_matches = re.findall(r"(\S+)\s*\(([^)]+)\)", pairs_text)
+                    elif '-' in pairs_text:
+                        # Alternative pattern: "word - translation"
+                        pair_matches = re.findall(r"(\S+)\s*-\s*([^-]+)", pairs_text)
+                    
+                    if not pair_matches:
+                        print(f"⚠️ Unrecognized word-pair format: {pairs_text[:50]}...")
+                    
                     for source, target in pair_matches:
                         source = source.strip()
                         target = target.strip()
                         if source and target:
                             word_pairs.append((source, target, pattern_set["is_german"]))
+                            print(f"🔤 Added pair: {source} → {target}")
+                else:
+                    print(f"⚠️ Could not find word-by-word pattern for {pattern_set['style']}")
 
         # Remove duplicates while preserving order
         seen_pairs = set()
@@ -481,6 +631,9 @@ English Translation:
         print(f"   English word-by-word enabled: {getattr(style_preferences, 'english_word_by_word', 'Not set')}")
 
         return translations, unique_pairs
+
+    # ... rest of the code ...
+
 
     def _extract_native_translation(self, text: str) -> Optional[str]:
         """Extract the native translation from the generated text."""
