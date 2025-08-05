@@ -1,4 +1,3 @@
-
 from azure.cognitiveservices.speech import (
     SpeechConfig,
     SpeechSynthesizer,
@@ -15,6 +14,11 @@ import re
 
 from asyncio import Semaphore
 import time
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class EnhancedTTSService:
@@ -48,7 +52,7 @@ class EnhancedTTSService:
         if os.getenv("CONTAINER_ENV", "false").lower() == "true":
             tts_device = "cpu"
             
-        print(f"Using TTS device: {tts_device}")
+        logger.info(f"Using TTS device: {tts_device}")
 
         # Enhanced voice mapping with grammar-aware selection
         self.voice_mapping = {
@@ -168,14 +172,14 @@ class EnhancedTTSService:
                 if separable_verb in pairs_dict:
                     original_src, translation = pairs_dict[separable_verb]
                     phrase_map[original_src] = translation
-                    print(f"🇩🇪 Found German separable verb: {original_src} → {translation}")
+                    logger.info(f"🇩🇪 Found German separable verb: {original_src} → {translation}")
         else:
             # Handle English phrasal verbs
             for phrasal_verb in self.phrasal_verbs:
                 if phrasal_verb in pairs_dict:
                     original_src, translation = pairs_dict[phrasal_verb]
                     phrase_map[original_src] = translation
-                    print(f"🇺🇸 Found English phrasal verb: {original_src} → {translation}")
+                    logger.info(f"🇺🇸 Found English phrasal verb: {original_src} → {translation}")
         
         # Add remaining individual words
         for src, tgt in word_pairs:
@@ -183,6 +187,67 @@ class EnhancedTTSService:
                 phrase_map[src] = tgt
         
         return phrase_map
+
+    def _log_word_by_word_section(self, language: str, sentence: str, word_pairs: list[tuple[str, str]], enabled: bool):
+        """Log detailed word-by-word pronunciation information"""
+        if not enabled:
+            logger.info(f"\n{'='*60}")
+            logger.info(f"📢 {language} Word-by-Word Audio: DISABLED")
+            logger.info(f"   Sentence: {sentence}")
+            logger.info(f"{'='*60}\n")
+            return
+            
+        logger.info(f"\n{'='*60}")
+        logger.info(f"🎯 {language} WORD-BY-WORD PRONUNCIATION")
+        logger.info(f"{'='*60}")
+        logger.info(f"📝 Full Sentence: {sentence}")
+        logger.info(f"🔤 Word Pairs ({len(word_pairs)} total):")
+        
+        # Group by grammar type
+        if language == "German":
+            separable_verbs = []
+            regular_words = []
+            
+            for src, tgt in word_pairs:
+                if src.lower() in [v.lower() for v in self.separable_verbs]:
+                    separable_verbs.append((src, tgt))
+                else:
+                    regular_words.append((src, tgt))
+            
+            if separable_verbs:
+                logger.info("\n   🔹 SEPARABLE VERBS:")
+                for src, tgt in separable_verbs:
+                    logger.info(f"      • {src} → {tgt}")
+            
+            if regular_words:
+                logger.info("\n   🔸 REGULAR WORDS:")
+                for src, tgt in regular_words:
+                    logger.info(f"      • {src} → {tgt}")
+                    
+        elif language == "English":
+            phrasal_verbs = []
+            regular_words = []
+            
+            for src, tgt in word_pairs:
+                if src.lower() in [v.lower() for v in self.phrasal_verbs]:
+                    phrasal_verbs.append((src, tgt))
+                else:
+                    regular_words.append((src, tgt))
+            
+            if phrasal_verbs:
+                logger.info("\n   🔹 PHRASAL VERBS:")
+                for src, tgt in phrasal_verbs:
+                    logger.info(f"      • {src} → {tgt}")
+            
+            if regular_words:
+                logger.info("\n   🔸 REGULAR WORDS:")
+                for src, tgt in regular_words:
+                    logger.info(f"      • {src} → {tgt}")
+        
+        logger.info(f"\n🎵 Pronunciation Order:")
+        logger.info(f"   1. Full sentence in {language}")
+        logger.info(f"   2. Word-by-word: {language} word → Spanish translation")
+        logger.info(f"{'='*60}\n")
 
     def generate_enhanced_ssml(
         self,
@@ -192,10 +257,19 @@ class EnhancedTTSService:
         target_lang: str = "es",
         style_preferences=None,
     ) -> str:
-        """Generate SSML with grammar-aware phrase handling"""
+        """Generate SSML with grammar-aware phrase handling and detailed logging"""
+        logger.info("\n" + "="*80)
+        logger.info("🎤 TTS WORD-BY-WORD PRONUNCIATION GENERATION")
+        logger.info("="*80)
+        
         ssml = """<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">"""
 
         if text and style_preferences:
+            # Log preferences
+            logger.info(f"\n📋 Word-by-Word Audio Preferences:")
+            logger.info(f"   • German word-by-word: {'ENABLED' if style_preferences.german_word_by_word else 'DISABLED'}")
+            logger.info(f"   • English word-by-word: {'ENABLED' if style_preferences.english_word_by_word else 'DISABLED'}")
+            
             # Split text into lines and process based on style preferences
             sentences = text.split("\n")
             sentences = [s.strip() for s in sentences if s.strip()]
@@ -211,9 +285,14 @@ class EnhancedTTSService:
                 return ""
 
             if word_pairs:
-                # Separate pairs with language flag and apply grammar awareness
+                # Separate pairs with language flag
                 german_pairs = [(src, tgt) for src, tgt, is_german in word_pairs if is_german]
                 english_pairs = [(src, tgt) for src, tgt, is_german in word_pairs if not is_german]
+                
+                # Log pair counts
+                logger.info(f"\n📊 Word Pair Statistics:")
+                logger.info(f"   • German pairs: {len(german_pairs)}")
+                logger.info(f"   • English pairs: {len(english_pairs)}")
                 
                 # Apply grammar-aware grouping
                 german_phrase_map = self._group_grammar_phrases(german_pairs, is_german=True)
@@ -223,10 +302,13 @@ class EnhancedTTSService:
                 german_phrase_map = {}
                 english_phrase_map = {}
 
-            # Process German sections with grammar awareness
+            # Process German sections with detailed logging
             if style_preferences.german_native:
                 german_native = get_next_sentence()
                 if german_native:
+                    self._log_word_by_word_section("German Native", german_native, 
+                                                   list(german_phrase_map.items()), 
+                                                   style_preferences.german_word_by_word)
                     ssml += self._generate_grammar_aware_section(
                         german_native,
                         german_phrase_map,
@@ -239,6 +321,9 @@ class EnhancedTTSService:
             if style_preferences.german_colloquial:
                 german_colloquial = get_next_sentence()
                 if german_colloquial:
+                    self._log_word_by_word_section("German Colloquial", german_colloquial, 
+                                                   list(german_phrase_map.items()), 
+                                                   style_preferences.german_word_by_word)
                     ssml += self._generate_grammar_aware_section(
                         german_colloquial,
                         german_phrase_map,
@@ -251,6 +336,9 @@ class EnhancedTTSService:
             if style_preferences.german_informal:
                 german_informal = get_next_sentence()
                 if german_informal:
+                    self._log_word_by_word_section("German Informal", german_informal, 
+                                                   list(german_phrase_map.items()), 
+                                                   style_preferences.german_word_by_word)
                     ssml += self._generate_grammar_aware_section(
                         german_informal,
                         german_phrase_map,
@@ -263,6 +351,9 @@ class EnhancedTTSService:
             if style_preferences.german_formal:
                 german_formal = get_next_sentence()
                 if german_formal:
+                    self._log_word_by_word_section("German Formal", german_formal, 
+                                                   list(german_phrase_map.items()), 
+                                                   style_preferences.german_word_by_word)
                     ssml += self._generate_grammar_aware_section(
                         german_formal,
                         german_phrase_map,
@@ -272,10 +363,13 @@ class EnhancedTTSService:
                         is_german=True,
                     )
 
-            # Process English sections with grammar awareness
+            # Process English sections with detailed logging
             if style_preferences.english_native:
                 english_native = get_next_sentence()
                 if english_native:
+                    self._log_word_by_word_section("English Native", english_native, 
+                                                   list(english_phrase_map.items()), 
+                                                   style_preferences.english_word_by_word)
                     ssml += self._generate_grammar_aware_section(
                         english_native,
                         english_phrase_map,
@@ -288,6 +382,9 @@ class EnhancedTTSService:
             if style_preferences.english_colloquial:
                 english_colloquial = get_next_sentence()
                 if english_colloquial:
+                    self._log_word_by_word_section("English Colloquial", english_colloquial, 
+                                                   list(english_phrase_map.items()), 
+                                                   style_preferences.english_word_by_word)
                     ssml += self._generate_grammar_aware_section(
                         english_colloquial,
                         english_phrase_map,
@@ -300,6 +397,9 @@ class EnhancedTTSService:
             if style_preferences.english_informal:
                 english_informal = get_next_sentence()
                 if english_informal:
+                    self._log_word_by_word_section("English Informal", english_informal, 
+                                                   list(english_phrase_map.items()), 
+                                                   style_preferences.english_word_by_word)
                     ssml += self._generate_grammar_aware_section(
                         english_informal,
                         english_phrase_map,
@@ -312,6 +412,9 @@ class EnhancedTTSService:
             if style_preferences.english_formal:
                 english_formal = get_next_sentence()
                 if english_formal:
+                    self._log_word_by_word_section("English Formal", english_formal, 
+                                                   list(english_phrase_map.items()), 
+                                                   style_preferences.english_word_by_word)
                     ssml += self._generate_grammar_aware_section(
                         english_formal,
                         english_phrase_map,
@@ -324,6 +427,11 @@ class EnhancedTTSService:
         # Final cleanup of SSML
         ssml = re.sub(r'(<break time="500ms"\s*/>\s*)+', '<break time="500ms"/>', ssml)
         ssml += "</speak>"
+        
+        logger.info("\n" + "="*80)
+        logger.info("✅ TTS GENERATION COMPLETE")
+        logger.info("="*80 + "\n")
+        
         return ssml
 
     def _generate_grammar_aware_section(
@@ -435,7 +543,7 @@ class EnhancedTTSService:
                 temp_dir = self._get_temp_directory()
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 output_path = os.path.join(temp_dir, f"speech_{timestamp}.mp3")
-                print(f"🎵 Grammar-enhanced audio output: {output_path}")
+                logger.info(f"🎵 Grammar-enhanced audio output: {output_path}")
 
             audio_config = AudioOutputConfig(filename=output_path)
             speech_config = SpeechConfig(
@@ -458,25 +566,25 @@ class EnhancedTTSService:
                 style_preferences=style_preferences,
             )
             
-            print(f"🎯 Generated grammar-aware SSML with {len(word_pairs) if word_pairs else 0} word pairs")
+            logger.info(f"🎯 Generated grammar-aware SSML with {len(word_pairs) if word_pairs else 0} word pairs")
 
             result = await asyncio.get_event_loop().run_in_executor(
                 None, lambda: synthesizer.speak_ssml_async(ssml).get()
             )
 
             if result.reason == ResultReason.SynthesizingAudioCompleted:
-                print(f"✅ Grammar-enhanced audio synthesis completed successfully")
+                logger.info(f"✅ Grammar-enhanced audio synthesis completed successfully")
                 return os.path.basename(output_path)
 
             if result.reason == ResultReason.Canceled:
                 cancellation_details = result.cancellation_details
-                print(f"❌ Grammar-enhanced synthesis canceled: {cancellation_details.reason}")
+                logger.error(f"❌ Grammar-enhanced synthesis canceled: {cancellation_details.reason}")
                 if cancellation_details.reason == CancellationReason.Error:
-                    print(f"❌ Error details: {cancellation_details.error_details}")
+                    logger.error(f"❌ Error details: {cancellation_details.error_details}")
 
             return None
         except Exception as e:
-            print(f"❌ Error in grammar-enhanced text_to_speech_word_pairs: {str(e)}")
+            logger.error(f"❌ Error in grammar-enhanced text_to_speech_word_pairs: {str(e)}")
             return None
 
     async def text_to_speech(
@@ -489,7 +597,7 @@ class EnhancedTTSService:
                 temp_dir = self._get_temp_directory()
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 output_path = os.path.join(temp_dir, f"speech_{timestamp}.mp3")
-                print(f"🎵 Grammar-enhanced output path: {output_path}")
+                logger.info(f"🎵 Grammar-enhanced output path: {output_path}")
 
             audio_config = AudioOutputConfig(filename=output_path)
             synthesizer = SpeechSynthesizer(
@@ -506,7 +614,7 @@ class EnhancedTTSService:
             return None
 
         except Exception as e:
-            print(f"❌ Exception in grammar-enhanced text_to_speech: {str(e)}")
+            logger.error(f"❌ Exception in grammar-enhanced text_to_speech: {str(e)}")
             return None
         finally:
             if synthesizer:

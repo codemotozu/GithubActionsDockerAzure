@@ -111,11 +111,48 @@ async def health_check():
 # Health check endpoint
 @app.get("/")
 async def root():
-    return {"status": "ok from server/app/infrastructure/api/routes.py test 26"}
+    return {"status": "ok from server/app/infrastructure/api/routes.py test 27"}
+
+# @app.post("/api/conversation", response_model=Translation)
+# async def start_conversation(prompt: PromptRequest):
+#     try:
+#         # Pass style preferences to the translation service
+#         response = await translation_service.process_prompt(
+#             prompt.text, 
+#             prompt.source_lang, 
+#             prompt.target_lang,
+#             style_preferences=prompt.style_preferences
+#         )
+#         return response
+#     except Exception as e:
+#         logger.error(f"Conversation error: {str(e)}", exc_info=True)
+#         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/api/conversation", response_model=Translation)
 async def start_conversation(prompt: PromptRequest):
     try:
+        logger.info("\n" + "="*80)
+        logger.info("📨 NEW CONVERSATION REQUEST")
+        logger.info("="*80)
+        logger.info(f"Text: {prompt.text}")
+        logger.info(f"Source Language: {prompt.source_lang}")
+        logger.info(f"Target Language: {prompt.target_lang}")
+        
+        if prompt.style_preferences:
+            logger.info("Style Preferences:")
+            logger.info(f"  German: Native={prompt.style_preferences.german_native}, "
+                       f"Colloquial={prompt.style_preferences.german_colloquial}, "
+                       f"Informal={prompt.style_preferences.german_informal}, "
+                       f"Formal={prompt.style_preferences.german_formal}")
+            logger.info(f"  German Word-by-Word: {prompt.style_preferences.german_word_by_word}")
+            logger.info(f"  English: Native={prompt.style_preferences.english_native}, "
+                       f"Colloquial={prompt.style_preferences.english_colloquial}, "
+                       f"Informal={prompt.style_preferences.english_informal}, "
+                       f"Formal={prompt.style_preferences.english_formal}")
+            logger.info(f"  English Word-by-Word: {prompt.style_preferences.english_word_by_word}")
+        logger.info("="*80 + "\n")
+        
         # Pass style preferences to the translation service
         response = await translation_service.process_prompt(
             prompt.text, 

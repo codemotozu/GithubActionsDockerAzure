@@ -4,6 +4,34 @@ from app.infrastructure.api.routes import app
 import os
 import logging
 from datetime import datetime
+import sys
+import io
+
+# Configure logging with UTF-8 encoding support
+class UTF8StreamHandler(logging.StreamHandler):
+    """A StreamHandler that properly handles UTF-8 encoding"""
+    def __init__(self):
+        # Force UTF-8 encoding for stdout on Windows
+        if sys.platform == 'win32':
+            # Reconfigure stdout to use UTF-8
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+        super().__init__()
+    
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            stream = self.stream
+            # Ensure we can handle Unicode
+            stream.write(msg + self.terminator)
+            self.flush()
+        except UnicodeEncodeError:
+            # Fallback: replace emojis with text equivalents
+            msg = msg.encode('ascii', 'replace').decode('ascii')
+            stream.write(msg + self.terminator)
+            self.flush()
+        except Exception:
+            self.handleError(record)
 
 # Configure logging first to capture all events
 logging.basicConfig(
@@ -11,16 +39,24 @@ logging.basicConfig(
     format='%(asctime)s.%(msecs)03d - %(name)s - %(levelname)s - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
     handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler("api.log")
+        UTF8StreamHandler(),  # Use our custom UTF-8 handler
+        logging.FileHandler("api.log", encoding='utf-8')  # Ensure file handler uses UTF-8
     ],
     force=True  # Override any existing log configurations
 )
 logger = logging.getLogger(__name__)
 
+# Alternative: Define emoji-free messages for Windows compatibility
+def get_log_message(emoji_version, text_version):
+    """Return emoji version on non-Windows systems, text version on Windows"""
+    if sys.platform == 'win32' and sys.stdout.encoding != 'utf-8':
+        return text_version
+    return emoji_version
+
 if __name__ == "__main__":
     # Log initialization details
-    logger.info("🔧 Initializing SpeakAndTranslate Azure Server")
+    logger.info(get_log_message("🔧 Initializing SpeakAndTranslate Azure Server", 
+                                "[INIT] Initializing SpeakAndTranslate Azure Server"))
     logger.debug(f"Python version: {os.sys.version}")
     logger.debug(f"Current working directory: {os.getcwd()}")
     logger.debug(f"Environment variables: {dict(os.environ)}")
@@ -32,18 +68,23 @@ if __name__ == "__main__":
     
     try:
         os.makedirs(audio_dir, exist_ok=True)
-        os.chmod(audio_dir, 0o755)
-        logger.info(f"✅ Created audio directory at {audio_dir}")
+        # Only set chmod on Unix-like systems
+        if os.name != "nt":
+            os.chmod(audio_dir, 0o755)
+        logger.info(get_log_message(f"✅ Created audio directory at {audio_dir}", 
+                                   f"[OK] Created audio directory at {audio_dir}"))
         
         # Verify write permissions
         test_file = os.path.join(audio_dir, "permission_test.txt")
         with open(test_file, "w") as f:
             f.write("test")
         os.remove(test_file)
-        logger.debug("✅ Verified audio directory write permissions")
+        logger.debug(get_log_message("✅ Verified audio directory write permissions", 
+                                    "[OK] Verified audio directory write permissions"))
         
     except Exception as e:
-        logger.critical(f"❌ Failed to create audio directory: {str(e)}")
+        logger.critical(get_log_message(f"❌ Failed to create audio directory: {str(e)}", 
+                                       f"[ERROR] Failed to create audio directory: {str(e)}"))
         raise
 
     # Configure server parameters
@@ -52,7 +93,7 @@ if __name__ == "__main__":
     # host = "127.0.0.1", # here you can hear the translaion in my local machine dont forget to update impl.dart
    
     # Log final configuration
-    logger.info("⚙️ Final Configuration:")
+    logger.info(get_log_message("⚙️ Final Configuration:", "[CONFIG] Final Configuration:"))
     logger.info(f"Host: {host}")
     logger.info(f"Port: {port}")
     logger.info(f"Azure Speech Key: {'set' if os.getenv('AZURE_SPEECH_KEY') else 'missing'}")
@@ -74,5 +115,3 @@ if __name__ == "__main__":
         timeout_keep_alive=300,
         log_level="debug" if os.getenv("DEBUG_MODE") else "info"
     )
-    
-    
