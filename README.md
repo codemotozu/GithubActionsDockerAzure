@@ -20,7 +20,8 @@ put question marks commas and points as voice command for instance : voice in sp
 
 sometimes the "word by word pronunciation" is incomplete
 
-The voices from speak and translate should have an option to slow ,normal and fast pronounciation
+The voices from speak and translate should have an option to slow ,normal and fast pronounciation obviously the entire phrase not
+the  word by word audio because already have an slow pace
 
 
 below "word for word translation" give the option to the user to listen
