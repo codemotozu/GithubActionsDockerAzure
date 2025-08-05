@@ -16,11 +16,23 @@ class UserSettingsRepository {
     }
     // Return default settings if no data exists.
     return {
-      'microphoneMode': 'continuousListening', // 'voiceCommand' or 'continuousListening'
+      'microphoneMode': 'continuousListening', // Always continuous listening now
       'motherTongue': 'spanish',
       'appMode': 'languageLearning',
+      
+      // NEW: Fluency practice settings with defaults
+      'practiceLanguage': 'english',
+      'correctionLevel': 'intermediate',
+      'pronunciationFeedback': true,
+      'grammarCorrection': true,
+      'vocabularyEnhancement': true,
+      'realTimeCorrection': false,
+      
+      // Word-by-word audio settings
       'germanWordByWord': true,
       'englishWordByWord': false,
+      
+      // Translation style preferences  
       'germanNative': false,
       'germanColloquial': true,
       'germanInformal': false,

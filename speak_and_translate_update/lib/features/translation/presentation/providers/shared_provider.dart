@@ -12,9 +12,17 @@ final hiveUserSettingsProvider = FutureProvider<Map<String, dynamic>>((ref) asyn
 // Settings state provider - shared across the entire app
 final settingsProvider = StateProvider<Map<String, dynamic>>((ref) => {
   // Default settings (will be overridden by Hive data when available)
-  'microphoneMode': 'continuousListening', // 'voiceCommand' or 'continuousListening'
+  'microphoneMode': 'continuousListening', // Always continuous listening now
   'motherTongue': 'spanish',
   'appMode': 'languageLearning',
+  
+  // NEW: Fluency practice settings with defaults
+  'practiceLanguage': 'english',
+  'correctionLevel': 'intermediate',
+  'pronunciationFeedback': true,
+  'grammarCorrection': true,
+  'vocabularyEnhancement': true,
+  'realTimeCorrection': false,
   
   // Existing word-by-word settings (keep for backward compatibility)
   'germanWordByWord': true,
