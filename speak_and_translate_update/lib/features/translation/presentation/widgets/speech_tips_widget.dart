@@ -49,7 +49,8 @@ class _SpeechTipsWidgetState extends State<SpeechTipsWidget>
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Container(
-        margin: const EdgeInsets.all(16),
+        // CHANGED: Removed horizontal margins to make it full width
+        margin: const EdgeInsets.only(top: 16, bottom: 16),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],

@@ -1,11 +1,5 @@
-
 import 'package:flutter/material.dart';
 import 'package:speak_and_translate_update/features/translation/data/repositories/hive_user_settings_repository.dart';
-
-enum MicrophoneMode {
-  voiceCommand,
-  continuousListening,
-}
 
 enum MotherTongue {
   spanish,
@@ -39,7 +33,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  MicrophoneMode _microphoneMode = MicrophoneMode.voiceCommand;
   MotherTongue _motherTongue = MotherTongue.english;
   AppMode _appMode = AppMode.languageLearning;
   
@@ -72,14 +65,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _loadInitialSettings() {
     if (widget.initialSettings != null) {
       final settings = widget.initialSettings!;
-      
-      // Load microphone mode
-      final micModeString = settings['microphoneMode'] as String?;
-      if (micModeString == 'continuousListening') {
-        _microphoneMode = MicrophoneMode.continuousListening;
-      } else {
-        _microphoneMode = MicrophoneMode.voiceCommand;
-      }
       
       // Load mother tongue
       final motherTongueString = settings['motherTongue'] as String?;
@@ -138,14 +123,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       case 'bengali':
         return MotherTongue.bengali;
       default:
-        return MotherTongue.spanish; // CAMBIADO: por defecto español
+        return MotherTongue.spanish;
     }
   }
 
   String _getLanguageName(MotherTongue language) {
     switch (language) {
       case MotherTongue.spanish:
-        return 'Spanish'; // CAMBIADO: mostrar en español
+        return 'Spanish';
       case MotherTongue.english:
         return 'English';
       case MotherTongue.german:
@@ -175,15 +160,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  String _getMicrophoneModeString(MicrophoneMode mode) {
-    switch (mode) {
-      case MicrophoneMode.voiceCommand:
-        return 'voiceCommand';
-      case MicrophoneMode.continuousListening:
-        return 'continuousListening';
-    }
-  }
-
   String _getMotherTongueString(MotherTongue tongue) {
     return tongue.toString().split('.').last;
   }
@@ -208,16 +184,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   void _handleSave() async {
     final updatedSettings = {
-      // Voice and microphone settings (keep existing functionality)
-      'microphoneMode': _getMicrophoneModeString(_microphoneMode),
+      // Always set to continuous listening since it's the only option now
+      'microphoneMode': 'continuousListening',
       'motherTongue': _getMotherTongueString(_motherTongue),
       'appMode': _getAppModeString(_appMode),
       
-      // Word-by-word audio settings (new functionality)
+      // Word-by-word audio settings
       'germanWordByWord': _germanWordByWord,
       'englishWordByWord': _englishWordByWord,
       
-      // Translation style preferences (existing functionality)
+      // Translation style preferences
       'germanNative': _germanNative,
       'germanColloquial': _germanColloquial,
       'germanInformal': _germanInformal,
@@ -302,7 +278,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Microphone Mode Section (KEEP EXISTING FUNCTIONALITY)
+              // Microphone Mode Information (no longer selectable)
               const Text(
                 'Microphone Mode',
                 style: TextStyle(
@@ -312,73 +288,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              Column(
-                children: [
-                  ListTile(
-                    title: const Text(
-                      'Voice Command',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
-                    subtitle: const Text(
-                      'Say "Jarvis" to start, "Alexa" to stop and send',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 14,
-                      ),
-                    ),
-                    trailing: Radio<MicrophoneMode>(
-                      value: MicrophoneMode.voiceCommand,
-                      groupValue: _microphoneMode,
-                      onChanged: (MicrophoneMode? value) {
-                        if (value != null) {
-                          setState(() => _microphoneMode = value);
-                        }
-                      },
-                      fillColor: MaterialStateProperty.resolveWith(
-                        (states) => states.contains(MaterialState.selected)
-                            ? Colors.cyan
-                            : Colors.grey,
-                      ),
-                    ),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1B4D3E),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFF4CAF50),
+                    width: 1,
                   ),
-                  ListTile(
-                    title: const Text(
-                      'Continuous Listening',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.mic,
+                      color: Colors.green,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Continuous Listening',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Microphone is always active and automatically sends when you speak',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    subtitle: const Text(
-                      'Mic is always open, automatically sends when you speak',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 14,
-                      ),
+                    const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 24,
                     ),
-                    trailing: Radio<MicrophoneMode>(
-                      value: MicrophoneMode.continuousListening,
-                      groupValue: _microphoneMode,
-                      onChanged: (MicrophoneMode? value) {
-                        if (value != null) {
-                          setState(() => _microphoneMode = value);
-                        }
-                      },
-                      fillColor: MaterialStateProperty.resolveWith(
-                        (states) => states.contains(MaterialState.selected)
-                            ? Colors.cyan
-                            : Colors.grey,
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 24),
 
-              // Mother Tongue Section (KEEP EXISTING FUNCTIONALITY)
+              // Mother Tongue Section
               const Text(
                 'Mother Tongue',
                 style: TextStyle(
@@ -428,7 +389,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 24),
 
-              // App Mode Section (KEEP EXISTING FUNCTIONALITY)
+              // App Mode Section
               const Text(
                 'App Mode',
                 style: TextStyle(
@@ -569,7 +530,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           padding: const EdgeInsets.all(8.0),
                           child: Column(
                             children: [
-                              // German Word-by-Word Audio Toggle (NEW FUNCTIONALITY)
+                              // German Word-by-Word Audio Toggle
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
@@ -744,7 +705,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           padding: const EdgeInsets.all(8.0),
                           child: Column(
                             children: [
-                              // English Word-by-Word Audio Toggle (NEW FUNCTIONALITY)
+                              // English Word-by-Word Audio Toggle
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
@@ -867,7 +828,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
               
               // Save Button
-              const SizedBox(height: 40), // Extra spacing before button
+              const SizedBox(height: 40),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -885,7 +846,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20), // Bottom padding
+              const SizedBox(height: 20),
             ],
           ),
         ),

@@ -111,35 +111,12 @@ async def health_check():
 # Health check endpoint
 @app.get("/")
 async def root():
-    return {"status": "ok from server/app/infrastructure/api/routes.py test 24"}
-
-# @app.post("/api/conversation", response_model=Translation)
-# async def start_conversation(prompt: PromptRequest):
-#     try:
-#         # Pass style preferences to the translation service
-#         response = await translation_service.process_prompt(
-#             prompt.text, 
-#             prompt.source_lang, 
-#             prompt.target_lang,
-#             style_preferences=prompt.style_preferences
-#         )
-#         return response
-#     except Exception as e:
-#         logger.error(f"Conversation error: {str(e)}", exc_info=True)
-#         raise HTTPException(status_code=500, detail=str(e))
+    return {"status": "ok from server/app/infrastructure/api/routes.py test 25"}
 
 @app.post("/api/conversation", response_model=Translation)
 async def start_conversation(prompt: PromptRequest):
     try:
-        print(f"🎯 Received translation request:")
-        print(f"   Text: {prompt.text[:50]}...")
-        print(f"   Source: {prompt.source_lang}, Target: {prompt.target_lang}")
-        
-        if prompt.style_preferences:
-            print(f"   Styles: German Native={prompt.style_preferences.german_native}")
-            print(f"           German Colloquial={prompt.style_preferences.german_colloquial}")
-            print(f"           German Word-by-Word={prompt.style_preferences.german_word_by_word}")
-        
+        # Pass style preferences to the translation service
         response = await translation_service.process_prompt(
             prompt.text, 
             prompt.source_lang, 
@@ -150,8 +127,6 @@ async def start_conversation(prompt: PromptRequest):
     except Exception as e:
         logger.error(f"Conversation error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-
-
 
 @app.post("/api/speech-to-text")
 async def speech_to_text(file: UploadFile = File(...)):
@@ -249,5 +224,3 @@ async def get_audio(filename: str):
     except Exception as e:
         logger.error(f"Audio delivery error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-
-

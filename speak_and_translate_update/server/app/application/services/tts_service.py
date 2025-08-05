@@ -326,102 +326,6 @@ class EnhancedTTSService:
         ssml += "</speak>"
         return ssml
 
-    # def _generate_grammar_aware_section(
-    #     self, 
-    #     sentence: str, 
-    #     phrase_map: dict[str, str], 
-    #     voice: str, 
-    #     lang: str,
-    #     include_word_by_word: bool = True,
-    #     is_german: bool = True
-    # ) -> str:
-    #     """Generate language section with grammar-aware phrase handling"""
-    #     section = f"""
-    #     <voice name="{voice}">
-    #         <prosody rate="1.0">
-    #             <lang xml:lang="{lang}">{sentence}</lang>
-    #             <break time="1000ms"/>
-    #         </prosody>
-    #     </voice>"""
-
-    #     # Only include word-by-word section if enabled and phrase map exists
-    #     if phrase_map and include_word_by_word:
-    #         section += """
-    #     <voice name="en-US-JennyMultilingualNeural">
-    #         <prosody rate="0.8">"""
-
-    #         # Sort phrases by length (longest first) for better matching
-    #         sorted_phrases = sorted(phrase_map.keys(), key=len, reverse=True)
-            
-    #         words = sentence.split()
-    #         index = 0
-
-    #         while index < len(words):
-    #             matched = False
-
-    #             # Try to match multi-word phrases first (phrasal verbs, separable verbs)
-    #             for phrase in sorted_phrases:
-    #                 phrase_words = phrase.split()
-    #                 if index + len(phrase_words) <= len(words):
-    #                     # Check if current position matches this phrase
-    #                     current_phrase = " ".join(words[index:index + len(phrase_words)])
-    #                     if current_phrase.lower() == phrase.lower():
-    #                         translation = phrase_map[phrase]
-                            
-    #                         # Add special emphasis for grammar structures
-    #                         if is_german and phrase.lower() in [v.lower() for v in self.separable_verbs]:
-    #                             section += f"""
-    #         <emphasis level="moderate">
-    #             <lang xml:lang="{lang}">{phrase}</lang>
-    #         </emphasis>
-    #         <break time="300ms"/>
-    #         <lang xml:lang="es-ES">{translation}</lang>
-    #         <break time="500ms"/>"""
-    #                         elif not is_german and phrase.lower() in [v.lower() for v in self.phrasal_verbs]:
-    #                             section += f"""
-    #         <emphasis level="moderate">
-    #             <lang xml:lang="{lang}">{phrase}</lang>
-    #         </emphasis>
-    #         <break time="300ms"/>
-    #         <lang xml:lang="es-ES">{translation}</lang>
-    #         <break time="500ms"/>"""
-    #                         else:
-    #                             section += f"""
-    #         <lang xml:lang="{lang}">{phrase}</lang>
-    #         <break time="300ms"/>
-    #         <lang xml:lang="es-ES">{translation}</lang>
-    #         <break time="500ms"/>"""
-                            
-    #                         index += len(phrase_words)
-    #                         matched = True
-    #                         break
-
-    #             # Single word fallback
-    #             if not matched:
-    #                 word = words[index].strip(".,!?")
-    #                 translation = phrase_map.get(word, phrase_map.get(word.lower(), None))
-                    
-    #                 section += f"""
-    #         <lang xml:lang="{lang}">{word}</lang>
-    #         <break time="300ms"/>"""
-                    
-    #                 if translation:
-    #                     section += f"""
-    #         <lang xml:lang="es-ES">{translation}</lang>
-    #         <break time="500ms"/>"""
-    #                 else:
-    #                     section += """<break time="500ms"/>"""
-                    
-    #                 index += 1
-
-    #         section += """
-    #         <break time="1000ms"/>
-    #         </prosody>
-    #     </voice>"""
-
-    #     return section
-
-
     def _generate_grammar_aware_section(
         self, 
         sentence: str, 
@@ -440,86 +344,75 @@ class EnhancedTTSService:
             </prosody>
         </voice>"""
 
-        # Only include word-by-word section if enabled
-        if include_word_by_word:
+        # Only include word-by-word section if enabled and phrase map exists
+        if phrase_map and include_word_by_word:
             section += """
         <voice name="en-US-JennyMultilingualNeural">
             <prosody rate="0.8">"""
+
+            # Sort phrases by length (longest first) for better matching
+            sorted_phrases = sorted(phrase_map.keys(), key=len, reverse=True)
             
-            # Fallback if no phrase map available
-            if not phrase_map:
-                print(f"⚠️ No phrase map for {'German' if is_german else 'English'}, using fallback breakdown")
-                words = re.findall(r'\b\w+\b', sentence)
-                for word in words:
-                    clean_word = re.sub(r'[^\w\s]', '', word)
-                    if clean_word:
-                        section += f"""
-            <lang xml:lang="{lang}">{clean_word}</lang>
-            <break time="300ms"/>
-            <break time="500ms"/>"""
-            else:
-                # Sort phrases by length (longest first) for better matching
-                sorted_phrases = sorted(phrase_map.keys(), key=len, reverse=True)
-                
-                words = sentence.split()
-                index = 0
+            words = sentence.split()
+            index = 0
 
-                while index < len(words):
-                    matched = False
+            while index < len(words):
+                matched = False
 
-                    # Try to match multi-word phrases first
-                    for phrase in sorted_phrases:
-                        phrase_words = phrase.split()
-                        if index + len(phrase_words) <= len(words):
-                            current_phrase = " ".join(words[index:index + len(phrase_words)])
-                            if current_phrase.lower() == phrase.lower():
-                                translation = phrase_map[phrase]
-                                
-                                # Add special emphasis for grammar structures
-                                if is_german and phrase.lower() in [v.lower() for v in self.separable_verbs]:
-                                    section += f"""
+                # Try to match multi-word phrases first (phrasal verbs, separable verbs)
+                for phrase in sorted_phrases:
+                    phrase_words = phrase.split()
+                    if index + len(phrase_words) <= len(words):
+                        # Check if current position matches this phrase
+                        current_phrase = " ".join(words[index:index + len(phrase_words)])
+                        if current_phrase.lower() == phrase.lower():
+                            translation = phrase_map[phrase]
+                            
+                            # Add special emphasis for grammar structures
+                            if is_german and phrase.lower() in [v.lower() for v in self.separable_verbs]:
+                                section += f"""
             <emphasis level="moderate">
                 <lang xml:lang="{lang}">{phrase}</lang>
             </emphasis>
             <break time="300ms"/>
             <lang xml:lang="es-ES">{translation}</lang>
             <break time="500ms"/>"""
-                                elif not is_german and phrase.lower() in [v.lower() for v in self.phrasal_verbs]:
-                                    section += f"""
+                            elif not is_german and phrase.lower() in [v.lower() for v in self.phrasal_verbs]:
+                                section += f"""
             <emphasis level="moderate">
                 <lang xml:lang="{lang}">{phrase}</lang>
             </emphasis>
             <break time="300ms"/>
             <lang xml:lang="es-ES">{translation}</lang>
             <break time="500ms"/>"""
-                                else:
-                                    section += f"""
+                            else:
+                                section += f"""
             <lang xml:lang="{lang}">{phrase}</lang>
             <break time="300ms"/>
             <lang xml:lang="es-ES">{translation}</lang>
             <break time="500ms"/>"""
-                                
-                                index += len(phrase_words)
-                                matched = True
-                                break
+                            
+                            index += len(phrase_words)
+                            matched = True
+                            break
 
-                    # Single word fallback
-                    if not matched:
-                        word = words[index].strip(".,!?")
-                        translation = phrase_map.get(word, phrase_map.get(word.lower(), None))
-                        
-                        section += f"""
+                # Single word fallback
+                if not matched:
+                    word = words[index].strip(".,!?")
+                    translation = phrase_map.get(word, phrase_map.get(word.lower(), None))
+                    
+                    section += f"""
             <lang xml:lang="{lang}">{word}</lang>
             <break time="300ms"/>"""
-                        
-                        if translation:
-                            section += f"""
+                    
+                    if translation:
+                        section += f"""
             <lang xml:lang="es-ES">{translation}</lang>
             <break time="500ms"/>"""
-                        else:
-                            section += """<break time="500ms"/>"""
-                        
-                        index += 1
+                    else:
+                        section += """<break time="500ms"/>"""
+                    
+                    index += 1
 
             section += """
             <break time="1000ms"/>
@@ -621,5 +514,3 @@ class EnhancedTTSService:
                     synthesizer.stop_speaking_async()
                 except:
                     pass
-
-

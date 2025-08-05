@@ -1,18 +1,12 @@
-
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:porcupine_flutter/porcupine.dart';
-import 'package:porcupine_flutter/porcupine_error.dart';
-import 'package:porcupine_flutter/porcupine_manager.dart';
 import 'package:speak_and_translate_update/features/translation/presentation/providers/shared_provider.dart' show isContinuousListeningActiveProvider, isListeningProvider, settingsProvider;
 import 'package:speech_to_text/speech_recognition_error.dart' as stt;
 import 'package:speech_to_text/speech_recognition_result.dart' as stt;
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../domain/repositories/translation_repository.dart';
-import '../providers/audio_recorder_provider.dart';
-import '../providers/voice_command_provider.dart';
 import '../widgets/voice_command_status_inficator.dart';
 import 'settings_screen.dart';
 import '../widgets/speech_tips_widget.dart';
@@ -26,10 +20,7 @@ class PromptScreen extends ConsumerStatefulWidget {
 
 class _PromptScreenState extends ConsumerState<PromptScreen> {
   late final TextEditingController _textController;
-  late final AudioRecorder _recorder;
-  late PorcupineManager _porcupineManager;
   late stt.SpeechToText _speech;
-  bool _isWakeWordMode = true;
   bool _isInitialized = false;
   String _accumulatedText = '';
   bool _isProcessingAudio = false;
@@ -38,8 +29,6 @@ class _PromptScreenState extends ConsumerState<PromptScreen> {
   Timer? _voiceStartTimer;
   Timer? _restartTimer;
   double _soundThreshold = 0.05;
-
-  bool _showSpeechTips = true;
   
   bool _isListeningSession = false;
   int _consecutiveErrors = 0;
@@ -50,34 +39,16 @@ class _PromptScreenState extends ConsumerState<PromptScreen> {
   void initState() {
     super.initState();
     _textController = TextEditingController();
-    _recorder = ref.read(audioRecorderProvider);
     _speech = stt.SpeechToText();
-
-    _initializeRecorder();
-    _initPorcupine();
+    _initializeSpeech();
   }
 
-  Future<void> _initializeRecorder() async {
+  Future<void> _initializeSpeech() async {
     try {
-      await _recorder.init();
       _isInitialized = true;
-      debugPrint('🎤 Audio recorder initialized successfully');
+      debugPrint('🎤 Speech service initialized successfully');
     } catch (e) {
-      debugPrint('❌ Recorder init error: $e');
-    }
-  }
-
-  void _initPorcupine() async {
-    try {
-      _porcupineManager = await PorcupineManager.fromBuiltInKeywords(
-        'JpbyAC2iGGx74uGLBhyBcELUU830BM3ZcdOA9CT8EQDeozX3n9INBA==',
-        [BuiltInKeyword.JARVIS, BuiltInKeyword.ALEXA],
-        _wakeWordCallback,
-      );
-      await _porcupineManager.start();
-      debugPrint("🤖 Porcupine wake word detection initialized successfully");
-    } on PorcupineException catch (err) {
-      debugPrint("❌ Failed to initialize Porcupine: ${err.message}");
+      debugPrint('❌ Speech init error: $e');
     }
   }
 
@@ -162,10 +133,7 @@ class _PromptScreenState extends ConsumerState<PromptScreen> {
   }
 
   void _scheduleRestart({required int delay}) {
-    final currentSettings = ref.read(settingsProvider);
-    if (currentSettings['microphoneMode'] != 'continuousListening' || 
-        !ref.read(isContinuousListeningActiveProvider) || 
-        _isProcessingAudio) {
+    if (!ref.read(isContinuousListeningActiveProvider) || _isProcessingAudio) {
       return;
     }
     
@@ -173,7 +141,6 @@ class _PromptScreenState extends ConsumerState<PromptScreen> {
     
     _restartTimer = Timer(Duration(milliseconds: delay), () {
       if (mounted && !_isProcessingAudio && 
-          currentSettings['microphoneMode'] == 'continuousListening' &&
           ref.read(isContinuousListeningActiveProvider)) {
         _startContinuousListening();
       }
@@ -282,7 +249,7 @@ class _PromptScreenState extends ConsumerState<PromptScreen> {
   Future<void> _processRecognizedText(String text) async {
     if (text.isEmpty || _isProcessingAudio) return;
 
-    final cleanText = text.replaceAll(RegExp(r'\b(?:jarvis|alexa)\b', caseSensitive: false), '').trim();
+    final cleanText = text.trim();
     if (cleanText.length < 4) {
       debugPrint('⚠️ Text too short, resetting: $cleanText');
       _resetContinuousListening();
@@ -337,9 +304,7 @@ class _PromptScreenState extends ConsumerState<PromptScreen> {
     
     debugPrint('🔄 Conversation completed, resetting state');
     
-    final currentSettings = ref.read(settingsProvider);
-    if (currentSettings['microphoneMode'] == 'continuousListening' && 
-        ref.read(isContinuousListeningActiveProvider)) {
+    if (ref.read(isContinuousListeningActiveProvider)) {
       Future.delayed(const Duration(milliseconds: 1500), () {
         if (mounted && !_isProcessingAudio) {
           debugPrint('🔄 Restarting continuous listening after conversation');
@@ -360,10 +325,7 @@ class _PromptScreenState extends ConsumerState<PromptScreen> {
     _isListeningSession = false;
     _consecutiveErrors = 0;
     
-    final currentSettings = ref.read(settingsProvider);
-    if (currentSettings['microphoneMode'] == 'continuousListening' && 
-        ref.read(isContinuousListeningActiveProvider) && 
-        !_isProcessingAudio) {
+    if (ref.read(isContinuousListeningActiveProvider) && !_isProcessingAudio) {
       _scheduleRestart(delay: 1000);
     }
   }
@@ -384,97 +346,16 @@ class _PromptScreenState extends ConsumerState<PromptScreen> {
     }
   }
 
-  void _wakeWordCallback(int keywordIndex) async {
-    if (!mounted) return;
-
-    final currentSettings = ref.read(settingsProvider);
-    
-    if (currentSettings['microphoneMode'] == 'voiceCommand') {
-      if (keywordIndex == 0 && _isWakeWordMode) {
-        debugPrint('🤖 JARVIS wake word detected');
-        await _startVoiceRecording();
-        _isWakeWordMode = false;
-      } else if (keywordIndex == 1 && !_isWakeWordMode) {
-        debugPrint('🤖 ALEXA wake word detected');
-        await _stopVoiceRecording();
-        _isWakeWordMode = true;
-        
-        if (_textController.text.isNotEmpty) {
-          await _startConversation();
-        }
-      }
-    }
-  }
-
-  void _handleVoiceCommand(VoiceCommandState state) {
-    if (!mounted) return;
-    setState(() {});
-
-    if (state.error != null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(state.error!)));
-    }
-  }
-
-  Future<void> _startVoiceRecording() async {
-    try {
-      await ref.read(translationRepositoryProvider).playUISound('mic_on');
-      await _recorder.startListening("open");
-      ref.read(isListeningProvider.notifier).state = true;
-      final currentState = ref.read(voiceCommandProvider);
-      ref.read(voiceCommandProvider.notifier).state =
-          currentState.copyWith(isListening: true);
-      debugPrint('🎤 Voice recording started');
-    } catch (e) {
-      debugPrint('❌ Recording start error: $e');
-    }
-  }
-
-  Future<void> _stopVoiceRecording() async {
-    try {
-      await ref.read(translationRepositoryProvider).playUISound('mic_off');
-      final path = await _recorder.stopListening();
-      if (path != null) {
-        var text = await ref
-            .read(translationRepositoryProvider)
-            .processAudioInput(path);
-
-        text = text.replaceAll(RegExp(r'\b(?:jarvis|alexa)\b', caseSensitive: false), '').trim();
-
-        if (text.isNotEmpty) {
-          _textController.text = text;
-          debugPrint('✅ Voice recording processed: $text');
-        }
-      }
-    } catch (e) {
-      debugPrint('❌ Recording stop error: $e');
-    } finally {
-      ref.read(isListeningProvider.notifier).state = false;
-      final currentState = ref.read(voiceCommandProvider);
-      ref.read(voiceCommandProvider.notifier).state =
-          currentState.copyWith(isListening: false);
-    }
-  }
-
   String _getMicrophoneInstructions() {
-    final currentSettings = ref.read(settingsProvider);
-    final micMode = currentSettings['microphoneMode'];
-    
-    if (micMode == 'continuousListening') {
-      final isActive = ref.watch(isContinuousListeningActiveProvider);
-      if (isActive) {
-        if (_isListeningSession) {
-          return 'Micrófono activo - Habla normalmente, el mensaje se enviará automáticamente después de una pausa';
-        } else {
-          return 'Reconectando micrófono...';
-        }
+    final isActive = ref.watch(isContinuousListeningActiveProvider);
+    if (isActive) {
+      if (_isListeningSession) {
+        return 'Micrófono activo - Habla normalmente, el mensaje se enviará automáticamente después de una pausa';
       } else {
-        return 'Modo escucha continua - Toca el micrófono para activar';
+        return 'Reconectando micrófono...';
       }
     } else {
-      return _isWakeWordMode 
-        ? 'Di "Jarvis" para comenzar a escuchar'
-        : 'Di "Alexa" para parar de escuchar e iniciar conversación';
+      return 'Modo escucha continua - Toca el micrófono para activar';
     }
   }
 
@@ -516,8 +397,6 @@ class _PromptScreenState extends ConsumerState<PromptScreen> {
     _isProcessingAudio = false;
     _accumulatedText = '';
     
-    _porcupineManager.delete();
-    _recorder.dispose();
     _textController.dispose();
     
     debugPrint('🧹 PromptScreen disposed cleanly');
@@ -527,15 +406,9 @@ class _PromptScreenState extends ConsumerState<PromptScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final voiceState = ref.watch(voiceCommandProvider);
     final currentSettings = ref.watch(settingsProvider);
     final isListening = ref.watch(isListeningProvider);
     final isContinuousActive = ref.watch(isContinuousListeningActiveProvider);
-
-    ref.listen<VoiceCommandState>(voiceCommandProvider, (_, state) {
-      if (!mounted) return;
-      _handleVoiceCommand(state);
-    });
 
     return Scaffold(
       backgroundColor: const Color(0xFF000000),
@@ -569,15 +442,10 @@ class _PromptScreenState extends ConsumerState<PromptScreen> {
               ref.read(settingsProvider.notifier).state = result;
               debugPrint('✅ Settings updated: $result');
               
-              if (result['microphoneMode'] == 'continuousListening') {
-                await Future.delayed(const Duration(milliseconds: 1000));
-                await _initializeContinuousListening();
-                debugPrint('🔄 Continuous listening activated from settings');
-              } else {
-                ref.read(isContinuousListeningActiveProvider.notifier).state = false;
-                ref.read(isListeningProvider.notifier).state = false;
-                debugPrint('🔄 Switched to voice command mode');
-              }
+              // Always restart continuous listening since it's the only mode
+              await Future.delayed(const Duration(milliseconds: 1000));
+              await _initializeContinuousListening();
+              debugPrint('🔄 Continuous listening restarted after settings update');
             }
           },
         ),
@@ -661,47 +529,29 @@ class _PromptScreenState extends ConsumerState<PromptScreen> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                Consumer(
-                  builder: (context, ref, child) {
-                    final currentSettings = ref.watch(settingsProvider);
-                    final micMode = currentSettings['microphoneMode'];
-                    
-                    if (micMode == 'continuousListening') {
-                      return ElevatedButton(
-                        onPressed: () async {
-                          if (isContinuousActive) {
-                            await _stopContinuousListening();
-                            debugPrint('🛑 Continuous listening stopped by user');
-                          } else {
-                            if (!_isProcessingAudio) {
-                              debugPrint('▶️ Starting continuous listening by user');
-                              await _initializeContinuousListening();
-                            }
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isContinuousActive ? Colors.red : Colors.white,
-                          shape: const CircleBorder(),
-                          padding: const EdgeInsets.all(16),
-                        ),
-                        child: Icon(
-                          isContinuousActive ? Icons.mic_off : Icons.mic,
-                          size: 28,
-                          color: isContinuousActive ? Colors.white : Colors.black,
-                        ),
-                      );
+                // Continuous listening microphone button
+                ElevatedButton(
+                  onPressed: () async {
+                    if (isContinuousActive) {
+                      await _stopContinuousListening();
+                      debugPrint('🛑 Continuous listening stopped by user');
                     } else {
-                      return ElevatedButton(
-                        onPressed: () => _toggleRecording(isListening),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isListening ? Colors.red : Colors.white,
-                          shape: const CircleBorder(),
-                          padding: const EdgeInsets.all(16),
-                        ),
-                        child: const Icon(Icons.mic, size: 28, color: Colors.black),
-                      );
+                      if (!_isProcessingAudio) {
+                        debugPrint('▶️ Starting continuous listening by user');
+                        await _initializeContinuousListening();
+                      }
                     }
                   },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isContinuousActive ? Colors.red : Colors.white,
+                    shape: const CircleBorder(),
+                    padding: const EdgeInsets.all(16),
+                  ),
+                  child: Icon(
+                    isContinuousActive ? Icons.mic_off : Icons.mic,
+                    size: 28,
+                    color: isContinuousActive ? Colors.white : Colors.black,
+                  ),
                 ),
               ],
             ),
@@ -709,19 +559,5 @@ class _PromptScreenState extends ConsumerState<PromptScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _toggleRecording(bool isCurrentlyListening) async {
-    final currentSettings = ref.read(settingsProvider);
-    
-    if (currentSettings['microphoneMode'] == 'voiceCommand') {
-      if (isCurrentlyListening) {
-        await _stopVoiceRecording();
-        _isWakeWordMode = true;
-      } else {
-        await _startVoiceRecording();
-        _isWakeWordMode = false;
-      }
-    }
   }
 }
