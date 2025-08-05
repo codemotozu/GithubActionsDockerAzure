@@ -22,7 +22,6 @@ class AudioMetadata {
   });
 }
 
-// Add a class to represent style preferences
 class TranslationStylePreferences {
   final bool germanNative;
   final bool germanColloquial;
@@ -32,7 +31,7 @@ class TranslationStylePreferences {
   final bool englishColloquial;
   final bool englishInformal;
   final bool englishFormal;
-  final bool germanWordByWord;  // Add word-by-word audio preferences
+  final bool germanWordByWord;
   final bool englishWordByWord;
 
   TranslationStylePreferences({
@@ -44,8 +43,8 @@ class TranslationStylePreferences {
     this.englishColloquial = false,
     this.englishInformal = false,
     this.englishFormal = false,
-    this.germanWordByWord = true,   // Default to true for German
-    this.englishWordByWord = false, // Default to false for English
+    this.germanWordByWord = true,
+    this.englishWordByWord = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -58,7 +57,7 @@ class TranslationStylePreferences {
       'english_colloquial': englishColloquial,
       'english_informal': englishInformal,
       'english_formal': englishFormal,
-      'german_word_by_word': germanWordByWord,  // Add to JSON
+      'german_word_by_word': germanWordByWord,
       'english_word_by_word': englishWordByWord,
     };
   }
@@ -73,11 +72,12 @@ class TranslationStylePreferences {
       englishColloquial: settings['englishColloquial'] as bool? ?? false,
       englishInformal: settings['englishInformal'] as bool? ?? false,
       englishFormal: settings['englishFormal'] as bool? ?? false,
-      germanWordByWord: settings['germanWordByWord'] as bool? ?? true,   // Add from settings
+      germanWordByWord: settings['germanWordByWord'] as bool? ?? true,
       englishWordByWord: settings['englishWordByWord'] as bool? ?? false,
     );
   }
 }
+
 
 class TranslationRepositoryImpl implements TranslationRepository {
   // final String baseUrl = 'http://10.0.2.2:8000'; // here you can hear the translaion in my local machine dont forget to update main.py
@@ -176,59 +176,60 @@ class TranslationRepositoryImpl implements TranslationRepository {
     }
   }
 
-  // Updated getTranslation method to accept style preferences
-  @override
-  Future<Translation> getTranslation(String text, {Map<String, dynamic>? stylePreferences}) async {
-    try {
-      // Create style preferences object
-      TranslationStylePreferences? preferences;
-      if (stylePreferences != null) {
-        preferences = TranslationStylePreferences.fromSettings(stylePreferences);
-      }
 
-      // Prepare request body
-      final Map<String, dynamic> requestBody = {
-        'text': text,
-        'source_lang': 'en',
-        'target_lang': 'de',
-      };
-
-      // Add style preferences if provided
-      if (preferences != null) {
-        requestBody['style_preferences'] = preferences.toJson();
-      }
-
-      final response = await _client.post(
-        Uri.parse('$baseUrl/api/conversation'),
-        headers: {
-          'Content-Type': 'application/json; charset=UTF-8',
-          'Accept': 'application/json; charset=UTF-8',
-        },
-        body: utf8.encode(json.encode(requestBody)),
-      ).timeout(timeoutDuration);
-
-      if (response.statusCode == 200) {
-        final String decodedBody = utf8.decode(response.bodyBytes);
-        final Map<String, dynamic> data = json.decode(decodedBody);
-        final translation = Translation.fromJson(data);
-        
-        if (translation.audioPath != null) {
-          final audioUrl = _getAudioUrl(translation.audioPath!);
-          print('Audio URL: $audioUrl');
-        }
-        
-        return translation;
-      } else {
-        throw Exception('Server error: ${response.statusCode}\n${utf8.decode(response.bodyBytes)}');
-      }
-    } catch (e) {
-      print('Error in getTranslation: $e');
-      if (e.toString().contains('Connection refused')) {
-        throw Exception('Cannot connect to server. Please make sure the server is running at $baseUrl');
-      }
-      rethrow;
+// Update getTranslation method to accept style preferences
+@override
+Future<Translation> getTranslation(String text, {Map<String, dynamic>? stylePreferences}) async {
+  try {
+    // Create style preferences object
+    TranslationStylePreferences? preferences;
+    if (stylePreferences != null) {
+      preferences = TranslationStylePreferences.fromSettings(stylePreferences);
     }
+
+    // Prepare request body
+    final Map<String, dynamic> requestBody = {
+      'text': text,
+      'source_lang': 'en',
+      'target_lang': 'de',
+    };
+
+    // Add style preferences if provided
+    if (preferences != null) {
+      requestBody['style_preferences'] = preferences.toJson();
+    }
+
+    final response = await _client.post(
+      Uri.parse('$baseUrl/api/conversation'),
+      headers: {
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Accept': 'application/json; charset=UTF-8',
+      },
+      body: utf8.encode(json.encode(requestBody)),
+    ).timeout(timeoutDuration);
+
+    if (response.statusCode == 200) {
+      final String decodedBody = utf8.decode(response.bodyBytes);
+      final Map<String, dynamic> data = json.decode(decodedBody);
+      final translation = Translation.fromJson(data);
+      
+      if (translation.audioPath != null) {
+        final audioUrl = _getAudioUrl(translation.audioPath!);
+        print('Audio URL: $audioUrl');
+      }
+      
+      return translation;
+    } else {
+      throw Exception('Server error: ${response.statusCode}\n${utf8.decode(response.bodyBytes)}');
+    }
+  } catch (e) {
+    print('Error in getTranslation: $e');
+    if (e.toString().contains('Connection refused')) {
+      throw Exception('Cannot connect to server. Please make sure the server is running at $baseUrl');
+    }
+    rethrow;
   }
+}
 
   @override
   Future<void> stopAudio() async {

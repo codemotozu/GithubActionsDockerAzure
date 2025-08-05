@@ -11,9 +11,6 @@ from typing import Optional
 from datetime import datetime
 import asyncio
 import re
-
-from asyncio import Semaphore
-import time
 import logging
 
 # Configure logging
@@ -567,6 +564,7 @@ class EnhancedTTSService:
             )
             
             logger.info(f"🎯 Generated grammar-aware SSML with {len(word_pairs) if word_pairs else 0} word pairs")
+            logger.info(f"Generated SSML:\n{ssml}")
 
             result = await asyncio.get_event_loop().run_in_executor(
                 None, lambda: synthesizer.speak_ssml_async(ssml).get()

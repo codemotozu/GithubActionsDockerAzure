@@ -104,8 +104,27 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
     if (!_mounted || text.isEmpty) return;
 
     try {
-      // Get current style preferences - provide defaults if none selected
-      final stylePreferences = _getStylePreferences();
+
+
+         // Get style preferences - default to colloquial if none selected
+    final stylePreferences = {
+      'germanNative': false,
+      'germanColloquial': true,  // Default
+      'germanInformal': false,
+      'germanFormal': false,
+      'englishNative': false,
+      'englishColloquial': true,  // Default
+      'englishInformal': false,
+      'englishFormal': false,
+      'germanWordByWord': true,   // Enable word-by-word for German
+      'englishWordByWord': false,
+    };
+
+       // Debug logging
+    print('🎯 Translation Provider - Style Preferences:');
+    print('   German word-by-word: ${stylePreferences['germanWordByWord']}');
+    print('   English word-by-word: ${stylePreferences['englishWordByWord']}');
+
       
       // If no styles are selected, use default colloquial styles
       if (!_hasAnyStyleSelected()) {

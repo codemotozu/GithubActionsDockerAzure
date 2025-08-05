@@ -1,4 +1,3 @@
-
 from google.generativeai import GenerativeModel
 import google.generativeai as genai
 import os
@@ -31,9 +30,7 @@ class TranslationService:
         }
 
         self.model = GenerativeModel(
-            # model_name="gemini-2.0-flash-exp", generation_config=self.generation_config
-            # model_name="gemini-1.5-flash", generation_config=self.generation_config
-            model_name="gemini-2.0-flash", generation_config=self.generation_config
+            model_name="gemini-2.0-flash-exp", generation_config=self.generation_config
         )
 
         self.tts_service = EnhancedTTSService()
@@ -238,47 +235,6 @@ English Translation:
         prompt_parts.append("\n</example to follow>")
         return "\n".join(prompt_parts)
 
-    def _normalize_text(self, text: str) -> str:
-        normalized = unicodedata.normalize("NFKD", text)
-        ascii_text = normalized.encode("ascii", "ignore").decode("ascii")
-        return ascii_text
-
-    def _restore_accents(self, text: str) -> str:
-        accent_map = {
-            "a": "á",
-            "e": "é",
-            "i": "í",
-            "o": "ó",
-            "u": "ú",
-            "n": "ñ",
-            "A": "Á",
-            "E": "É",
-            "I": "Í",
-            "O": "Ó",
-            "U": "Ú",
-            "N": "Ñ",
-        }
-
-        patterns = {
-            r"([aeiou])´": lambda m: accent_map[m.group(1)],
-            r"([AEIOU])´": lambda m: accent_map[m.group(1)],
-            r"n~": "ñ",
-            r"N~": "Ñ",
-        }
-
-        for pattern, replacement in patterns.items():
-            if callable(replacement):
-                text = re.sub(pattern, replacement, text)
-            else:
-                text = re.sub(pattern, replacement, text)
-
-        return text
-
-    def _ensure_unicode(self, text: str) -> str:
-        if isinstance(text, bytes):
-            text = text.decode("utf-8")
-        return unicodedata.normalize("NFKC", text)
-
     async def process_prompt(
         self, text: str, source_lang: str, target_lang: str, style_preferences=None
     ) -> Translation:
@@ -482,50 +438,6 @@ English Translation:
 
         return translations, unique_pairs
 
-
-
-    def _extract_native_translation(self, text: str) -> Optional[str]:
-        """Extract the native translation from the generated text."""
-        native_pattern = r'\* Conversational-native:\s*"([^"]+)"'
-        match = re.search(native_pattern, text)
-        if match:
-            return match.group(1)
-        return None
-
-    def _extract_colloquial_translation(self, text: str) -> Optional[str]:
-        """Extract the colloquial translation from the generated text."""
-        colloquial_pattern = r'\* Conversational-colloquial:\s*"([^"]+)"'
-        match = re.search(colloquial_pattern, text)
-        if match:
-            return match.group(1)
-        return None
-
-    def _extract_informal_translation(self, text: str) -> Optional[str]:
-        """Extract the informal translation from the generated text."""
-        informal_pattern = r'\* Conversational-informal:\s*"([^"]+)"'
-        match = re.search(informal_pattern, text)
-        if match:
-            return match.group(1)
-        return None
-
-    def _extract_formal_translation(self, text: str) -> Optional[str]:
-        """Extract the formal translation from the generated text."""
-        formal_pattern = r'\* [Cc]onversational-formal:\s*"([^"]+)"'
-        match = re.search(formal_pattern, text)
-        if match:
-            return match.group(1)
-        return None
-
-    def _get_temp_directory(self) -> str:
-        """Get the appropriate temporary directory based on the operating system."""
-        if os.name == "nt":
-            temp_dir = os.environ.get("TEMP") or os.environ.get("TMP")
-        else:
-            temp_dir = "/tmp"
-
-        os.makedirs(temp_dir, exist_ok=True)
-        return temp_dir
-
     def _generate_word_by_word(
         self, original: str, translated: str
     ) -> dict[str, dict[str, str]]:
@@ -549,6 +461,46 @@ English Translation:
             "tense": "Tense usage explanation",
         }
 
+    def _normalize_text(self, text: str) -> str:
+        normalized = unicodedata.normalize("NFKD", text)
+        ascii_text = normalized.encode("ascii", "ignore").decode("ascii")
+        return ascii_text
+
+    def _restore_accents(self, text: str) -> str:
+        accent_map = {
+            "a": "á", "e": "é", "i": "í", "o": "ó", "u": "ú", "n": "ñ",
+            "A": "Á", "E": "É", "I": "Í", "O": "Ó", "U": "Ú", "N": "Ñ",
+        }
+
+        patterns = {
+            r"([aeiou])´": lambda m: accent_map[m.group(1)],
+            r"([AEIOU])´": lambda m: accent_map[m.group(1)],
+            r"n~": "ñ", r"N~": "Ñ",
+        }
+
+        for pattern, replacement in patterns.items():
+            if callable(replacement):
+                text = re.sub(pattern, replacement, text)
+            else:
+                text = re.sub(pattern, replacement, text)
+
+        return text
+
+    def _ensure_unicode(self, text: str) -> str:
+        if isinstance(text, bytes):
+            text = text.decode("utf-8")
+        return unicodedata.normalize("NFKC", text)
+
+    def _get_temp_directory(self) -> str:
+        """Get the appropriate temporary directory based on the operating system."""
+        if os.name == "nt":
+            temp_dir = os.environ.get("TEMP") or os.environ.get("TMP")
+        else:
+            temp_dir = "/tmp"
+
+        os.makedirs(temp_dir, exist_ok=True)
+        return temp_dir
+
     def _auto_fix_spelling(self, text: str) -> str:
         """Fix spelling in the given text."""
         words = re.findall(r"\b\w+\b|[^\w\s]", text)
@@ -571,8 +523,3 @@ English Translation:
             corrected_words.append(word)
 
         return " ".join(corrected_words)
-
-
-
-
-
