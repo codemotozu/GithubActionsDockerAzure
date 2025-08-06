@@ -48,7 +48,7 @@ class MyApp extends ConsumerWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const PromptScreen(),
-      },
+      },//
       onGenerateRoute: (settings) {
         if (settings.name == '/conversation') {
           final prompt = settings.arguments as String;
