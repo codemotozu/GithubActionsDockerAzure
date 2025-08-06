@@ -185,66 +185,75 @@ class EnhancedTTSService:
         
         return phrase_map
 
-    def _log_word_by_word_section(self, language: str, sentence: str, word_pairs: list[tuple[str, str]], enabled: bool):
-        """Log detailed word-by-word pronunciation information"""
-        if not enabled:
-            logger.info(f"\n{'='*60}")
-            logger.info(f"📢 {language} Word-by-Word Audio: DISABLED")
-            logger.info(f"   Sentence: {sentence}")
-            logger.info(f"{'='*60}\n")
-            return
-            
-        logger.info(f"\n{'='*60}")
-        logger.info(f"🎯 {language} WORD-BY-WORD PRONUNCIATION")
-        logger.info(f"{'='*60}")
-        logger.info(f"📝 Full Sentence: {sentence}")
-        logger.info(f"🔤 Word Pairs ({len(word_pairs)} total):")
+    def _log_configuration_header(self, style_preferences):
+        """Log the complete configuration header"""
+        logger.info("\n" + "="*80)
+        logger.info("🎤 TTS WORD-BY-WORD PRONUNCIATION GENERATION")
+        logger.info("="*80)
+        logger.info(f"📅 Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}")
+        logger.info("📡 Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)\n")
         
-        # Group by grammar type
-        if language == "German":
-            separable_verbs = []
-            regular_words = []
-            
-            for src, tgt in word_pairs:
-                if src.lower() in [v.lower() for v in self.separable_verbs]:
-                    separable_verbs.append((src, tgt))
-                else:
-                    regular_words.append((src, tgt))
-            
-            if separable_verbs:
-                logger.info("\n   🔹 SEPARABLE VERBS:")
-                for src, tgt in separable_verbs:
-                    logger.info(f"      • {src} → {tgt}")
-            
-            if regular_words:
-                logger.info("\n   🔸 REGULAR WORDS:")
-                for src, tgt in regular_words:
-                    logger.info(f"      • {src} → {tgt}")
-                    
-        elif language == "English":
-            phrasal_verbs = []
-            regular_words = []
-            
-            for src, tgt in word_pairs:
-                if src.lower() in [v.lower() for v in self.phrasal_verbs]:
-                    phrasal_verbs.append((src, tgt))
-                else:
-                    regular_words.append((src, tgt))
-            
-            if phrasal_verbs:
-                logger.info("\n   🔹 PHRASAL VERBS:")
-                for src, tgt in phrasal_verbs:
-                    logger.info(f"      • {src} → {tgt}")
-            
-            if regular_words:
-                logger.info("\n   🔸 REGULAR WORDS:")
-                for src, tgt in regular_words:
-                    logger.info(f"      • {src} → {tgt}")
+        # Log user settings
+        logger.info("📋 USER SETTINGS CONFIGURATION:")
+        logger.info("-"*40)
         
-        logger.info(f"\n🎵 Pronunciation Order:")
-        logger.info(f"   1. Full sentence in {language}")
-        logger.info(f"   2. Word-by-word: {language} word → Spanish translation")
-        logger.info(f"{'='*60}\n")
+        # German settings
+        logger.info("🇩🇪 *german")
+        if style_preferences.german_word_by_word:
+            logger.info("   word by word audio [selected]")
+        else:
+            logger.info("   word by word audio [not selected]")
+            
+        if style_preferences.german_native:
+            logger.info("   german native [selected]")
+        else:
+            logger.info("   german native [not selected]")
+            
+        if style_preferences.german_colloquial:
+            logger.info("   german colloquial [selected]")
+        else:
+            logger.info("   german colloquial [not selected]")
+            
+        if style_preferences.german_informal:
+            logger.info("   german informal [selected]")
+        else:
+            logger.info("   german informal [not selected]")
+            
+        if style_preferences.german_formal:
+            logger.info("   german formal [selected]")
+        else:
+            logger.info("   german formal [not selected]")
+        
+        logger.info("")
+        
+        # English settings
+        logger.info("🇺🇸 *english")
+        if style_preferences.english_word_by_word:
+            logger.info("   word by word audio [selected]")
+        else:
+            logger.info("   word by word audio [not selected]")
+            
+        if style_preferences.english_native:
+            logger.info("   english native [selected]")
+        else:
+            logger.info("   english native [not selected]")
+            
+        if style_preferences.english_colloquial:
+            logger.info("   english colloquial [selected]")
+        else:
+            logger.info("   english colloquial [not selected]")
+            
+        if style_preferences.english_informal:
+            logger.info("   english informal [selected]")
+        else:
+            logger.info("   english informal [not selected]")
+            
+        if style_preferences.english_formal:
+            logger.info("   english formal [selected]")
+        else:
+            logger.info("   english formal [not selected]")
+        
+        logger.info("-"*40 + "\n")
 
     def generate_enhanced_ssml(
         self,
@@ -255,21 +264,20 @@ class EnhancedTTSService:
         style_preferences=None,
     ) -> str:
         """Generate SSML with grammar-aware phrase handling and detailed logging"""
-        logger.info("\n" + "="*80)
-        logger.info("🎤 TTS WORD-BY-WORD PRONUNCIATION GENERATION")
-        logger.info("="*80)
+        
+        # DEBUGGER POINT 1: Log incoming preferences
+        if style_preferences:
+            self._log_configuration_header(style_preferences)
         
         ssml = """<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">"""
 
         if text and style_preferences:
-            # Log preferences
-            logger.info(f"\n📋 Word-by-Word Audio Preferences:")
-            logger.info(f"   • German word-by-word: {'ENABLED' if style_preferences.german_word_by_word else 'DISABLED'}")
-            logger.info(f"   • English word-by-word: {'ENABLED' if style_preferences.english_word_by_word else 'DISABLED'}")
-            
-            # Split text into lines and process based on style preferences
-            sentences = text.split("\n")
+            # Parse the complete text into individual translations
+            sentences = text.split("\n") if text else []
             sentences = [s.strip() for s in sentences if s.strip()]
+            
+            # DEBUGGER POINT 2: Log sentence extraction
+            logger.info(f"📝 Extracted {len(sentences)} sentences from generated text")
             
             sentence_index = 0
             
@@ -286,10 +294,10 @@ class EnhancedTTSService:
                 german_pairs = [(src, tgt) for src, tgt, is_german in word_pairs if is_german]
                 english_pairs = [(src, tgt) for src, tgt, is_german in word_pairs if not is_german]
                 
-                # Log pair counts
-                logger.info(f"\n📊 Word Pair Statistics:")
-                logger.info(f"   • German pairs: {len(german_pairs)}")
-                logger.info(f"   • English pairs: {len(english_pairs)}")
+                # DEBUGGER POINT 3: Log pair separation
+                logger.info(f"\n📊 Word Pair Distribution:")
+                logger.info(f"   German pairs: {len(german_pairs)}")
+                logger.info(f"   English pairs: {len(english_pairs)}")
                 
                 # Apply grammar-aware grouping
                 german_phrase_map = self._group_grammar_phrases(german_pairs, is_german=True)
@@ -299,13 +307,16 @@ class EnhancedTTSService:
                 german_phrase_map = {}
                 english_phrase_map = {}
 
-            # Process German sections with detailed logging
+            # Track what we're generating
+            logger.info("\n🎵 Generating Audio Sections:")
+            logger.info("-"*40)
+            
+            # Process German sections
             if style_preferences.german_native:
                 german_native = get_next_sentence()
                 if german_native:
-                    self._log_word_by_word_section("German Native", german_native, 
-                                                   list(german_phrase_map.items()), 
-                                                   style_preferences.german_word_by_word)
+                    logger.info(f"🇩🇪 German Native: \"{german_native}\"")
+                    logger.info(f"   Word-by-word: {'✅ ENABLED' if style_preferences.german_word_by_word else '❌ DISABLED'}")
                     ssml += self._generate_grammar_aware_section(
                         german_native,
                         german_phrase_map,
@@ -318,9 +329,8 @@ class EnhancedTTSService:
             if style_preferences.german_colloquial:
                 german_colloquial = get_next_sentence()
                 if german_colloquial:
-                    self._log_word_by_word_section("German Colloquial", german_colloquial, 
-                                                   list(german_phrase_map.items()), 
-                                                   style_preferences.german_word_by_word)
+                    logger.info(f"🇩🇪 German Colloquial: \"{german_colloquial}\"")
+                    logger.info(f"   Word-by-word: {'✅ ENABLED' if style_preferences.german_word_by_word else '❌ DISABLED'}")
                     ssml += self._generate_grammar_aware_section(
                         german_colloquial,
                         german_phrase_map,
@@ -333,9 +343,8 @@ class EnhancedTTSService:
             if style_preferences.german_informal:
                 german_informal = get_next_sentence()
                 if german_informal:
-                    self._log_word_by_word_section("German Informal", german_informal, 
-                                                   list(german_phrase_map.items()), 
-                                                   style_preferences.german_word_by_word)
+                    logger.info(f"🇩🇪 German Informal: \"{german_informal}\"")
+                    logger.info(f"   Word-by-word: {'✅ ENABLED' if style_preferences.german_word_by_word else '❌ DISABLED'}")
                     ssml += self._generate_grammar_aware_section(
                         german_informal,
                         german_phrase_map,
@@ -348,9 +357,8 @@ class EnhancedTTSService:
             if style_preferences.german_formal:
                 german_formal = get_next_sentence()
                 if german_formal:
-                    self._log_word_by_word_section("German Formal", german_formal, 
-                                                   list(german_phrase_map.items()), 
-                                                   style_preferences.german_word_by_word)
+                    logger.info(f"🇩🇪 German Formal: \"{german_formal}\"")
+                    logger.info(f"   Word-by-word: {'✅ ENABLED' if style_preferences.german_word_by_word else '❌ DISABLED'}")
                     ssml += self._generate_grammar_aware_section(
                         german_formal,
                         german_phrase_map,
@@ -360,13 +368,12 @@ class EnhancedTTSService:
                         is_german=True,
                     )
 
-            # Process English sections with detailed logging
+            # Process English sections
             if style_preferences.english_native:
                 english_native = get_next_sentence()
                 if english_native:
-                    self._log_word_by_word_section("English Native", english_native, 
-                                                   list(english_phrase_map.items()), 
-                                                   style_preferences.english_word_by_word)
+                    logger.info(f"🇺🇸 English Native: \"{english_native}\"")
+                    logger.info(f"   Word-by-word: {'✅ ENABLED' if style_preferences.english_word_by_word else '❌ DISABLED'}")
                     ssml += self._generate_grammar_aware_section(
                         english_native,
                         english_phrase_map,
@@ -379,9 +386,8 @@ class EnhancedTTSService:
             if style_preferences.english_colloquial:
                 english_colloquial = get_next_sentence()
                 if english_colloquial:
-                    self._log_word_by_word_section("English Colloquial", english_colloquial, 
-                                                   list(english_phrase_map.items()), 
-                                                   style_preferences.english_word_by_word)
+                    logger.info(f"🇺🇸 English Colloquial: \"{english_colloquial}\"")
+                    logger.info(f"   Word-by-word: {'✅ ENABLED' if style_preferences.english_word_by_word else '❌ DISABLED'}")
                     ssml += self._generate_grammar_aware_section(
                         english_colloquial,
                         english_phrase_map,
@@ -394,9 +400,8 @@ class EnhancedTTSService:
             if style_preferences.english_informal:
                 english_informal = get_next_sentence()
                 if english_informal:
-                    self._log_word_by_word_section("English Informal", english_informal, 
-                                                   list(english_phrase_map.items()), 
-                                                   style_preferences.english_word_by_word)
+                    logger.info(f"🇺🇸 English Informal: \"{english_informal}\"")
+                    logger.info(f"   Word-by-word: {'✅ ENABLED' if style_preferences.english_word_by_word else '❌ DISABLED'}")
                     ssml += self._generate_grammar_aware_section(
                         english_informal,
                         english_phrase_map,
@@ -409,9 +414,8 @@ class EnhancedTTSService:
             if style_preferences.english_formal:
                 english_formal = get_next_sentence()
                 if english_formal:
-                    self._log_word_by_word_section("English Formal", english_formal, 
-                                                   list(english_phrase_map.items()), 
-                                                   style_preferences.english_word_by_word)
+                    logger.info(f"🇺🇸 English Formal: \"{english_formal}\"")
+                    logger.info(f"   Word-by-word: {'✅ ENABLED' if style_preferences.english_word_by_word else '❌ DISABLED'}")
                     ssml += self._generate_grammar_aware_section(
                         english_formal,
                         english_phrase_map,
@@ -425,9 +429,14 @@ class EnhancedTTSService:
         ssml = re.sub(r'(<break time="500ms"\s*/>\s*)+', '<break time="500ms"/>', ssml)
         ssml += "</speak>"
         
-        logger.info("\n" + "="*80)
-        logger.info("✅ TTS GENERATION COMPLETE")
-        logger.info("="*80 + "\n")
+        # DEBUGGER POINT 4: Log SSML generation completion
+        logger.info("-"*40)
+        logger.info("\n✅ SSML Generation Complete")
+        logger.info(f"📏 Total SSML length: {len(ssml)} characters")
+        
+        # Log a preview of the SSML
+        logger.info("\n📄 Generated SSML Preview:")
+        logger.info(ssml[:500] + "..." if len(ssml) > 500 else ssml)
         
         return ssml
 
@@ -540,7 +549,9 @@ class EnhancedTTSService:
                 temp_dir = self._get_temp_directory()
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 output_path = os.path.join(temp_dir, f"speech_{timestamp}.mp3")
-                logger.info(f"🎵 Grammar-enhanced audio output: {output_path}")
+                
+                # DEBUGGER POINT 5: Log output path
+                logger.info(f"\n📂 Output path: {output_path}")
 
             audio_config = AudioOutputConfig(filename=output_path)
             speech_config = SpeechConfig(
@@ -563,15 +574,17 @@ class EnhancedTTSService:
                 style_preferences=style_preferences,
             )
             
-            logger.info(f"🎯 Generated grammar-aware SSML with {len(word_pairs) if word_pairs else 0} word pairs")
-            logger.info(f"Generated SSML:\n{ssml}")
-
+            # DEBUGGER POINT 6: Log synthesis start
+            logger.info(f"\n🎯 Starting speech synthesis...")
+            logger.info(f"   Word pairs count: {len(word_pairs) if word_pairs else 0}")
+            
             result = await asyncio.get_event_loop().run_in_executor(
                 None, lambda: synthesizer.speak_ssml_async(ssml).get()
             )
 
             if result.reason == ResultReason.SynthesizingAudioCompleted:
-                logger.info(f"✅ Grammar-enhanced audio synthesis completed successfully")
+                logger.info(f"\n✅ Successfully generated audio: {os.path.basename(output_path)}")
+                logger.info("="*80 + "\n")
                 return os.path.basename(output_path)
 
             if result.reason == ResultReason.Canceled:

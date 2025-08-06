@@ -21,7 +21,7 @@ enum MotherTongue {
 enum AppMode {
   languageLearning,
   travelMode,
-  fluencyPractice,  // NEW: Fluency practice mode
+  fluencyPractice,
 }
 
 enum PracticeLanguage {
@@ -36,9 +36,9 @@ enum PracticeLanguage {
 }
 
 enum CorrectionLevel {
-  beginner,     // Focus on major errors only
-  intermediate, // Grammar + pronunciation
-  advanced,     // Detailed corrections including style
+  beginner,
+  intermediate,
+  advanced,
 }
 
 class SettingsScreen extends StatefulWidget {
@@ -54,44 +54,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
   MotherTongue _motherTongue = MotherTongue.english;
   AppMode _appMode = AppMode.languageLearning;
   
-  // NEW: Fluency practice settings
+  // Fluency practice settings
   PracticeLanguage _practiceLanguage = PracticeLanguage.english;
   CorrectionLevel _correctionLevel = CorrectionLevel.intermediate;
   bool _pronunciationFeedback = true;
   bool _grammarCorrection = true;
   bool _vocabularyEnhancement = true;
-  bool _realTimeCorrection = false; // Correct while speaking vs after
+  bool _realTimeCorrection = false;
   
-  // Word-by-word audio settings
-  bool _germanWordByWord = true;
+  // Word-by-word audio settings - User has complete freedom
+  bool _germanWordByWord = false;
   bool _englishWordByWord = false;
   
-  // German styles
+  // German styles - User has complete freedom
   bool _germanNative = false;
-  bool _germanColloquial = true;
+  bool _germanColloquial = false;
   bool _germanInformal = false;
   bool _germanFormal = false;
   
-  // English styles  
+  // English styles - User has complete freedom
   bool _englishNative = false;
-  bool _englishColloquial = true;
+  bool _englishColloquial = false;
   bool _englishInformal = false;
   bool _englishFormal = false;
 
   // Expansion states
   bool _germanExpanded = false;
   bool _englishExpanded = false;
-  bool _fluencyExpanded = false; // NEW: Fluency section expansion
+  bool _fluencyExpanded = false;
 
   @override
   void initState() {
     super.initState();
     _loadInitialSettings();
+    
+    // DEBUGGER POINT 1: Log initial settings load
+    _debugLog('initState', 'Loading initial settings');
   }
 
   void _loadInitialSettings() {
     if (widget.initialSettings != null) {
       final settings = widget.initialSettings!;
+      
+      // DEBUGGER POINT 2: Log settings being loaded
+      _debugLog('_loadInitialSettings', 'Settings from parent: $settings');
       
       // Load mother tongue
       final motherTongueString = settings['motherTongue'] as String?;
@@ -107,7 +113,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _appMode = AppMode.languageLearning;
       }
       
-      // NEW: Load fluency practice settings
+      // Load fluency practice settings
       final practiceLanguageString = settings['practiceLanguage'] as String?;
       _practiceLanguage = _getPracticeLanguageFromString(practiceLanguageString ?? 'english');
       
@@ -119,20 +125,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _vocabularyEnhancement = settings['vocabularyEnhancement'] as bool? ?? true;
       _realTimeCorrection = settings['realTimeCorrection'] as bool? ?? false;
       
-      // Load word-by-word audio settings
-      _germanWordByWord = settings['germanWordByWord'] as bool? ?? true;
+      // Load word-by-word audio settings - NO DEFAULTS FORCED
+      _germanWordByWord = settings['germanWordByWord'] as bool? ?? false;
       _englishWordByWord = settings['englishWordByWord'] as bool? ?? false;
       
-      // Load translation style preferences
+      // Load translation style preferences - NO DEFAULTS FORCED
       _germanNative = settings['germanNative'] as bool? ?? false;
-      _germanColloquial = settings['germanColloquial'] as bool? ?? true;
+      _germanColloquial = settings['germanColloquial'] as bool? ?? false;
       _germanInformal = settings['germanInformal'] as bool? ?? false;
       _germanFormal = settings['germanFormal'] as bool? ?? false;
       _englishNative = settings['englishNative'] as bool? ?? false;
-      _englishColloquial = settings['englishColloquial'] as bool? ?? true;
+      _englishColloquial = settings['englishColloquial'] as bool? ?? false;
       _englishInformal = settings['englishInformal'] as bool? ?? false;
       _englishFormal = settings['englishFormal'] as bool? ?? false;
+      
+      // DEBUGGER POINT 3: Log loaded state
+      _debugLogCurrentState('After loading settings');
     }
+  }
+
+  // Debug helper methods
+  void _debugLog(String method, String message) {
+    debugPrint('\n🔍 [$method] $message');
+  }
+
+  void _debugLogCurrentState(String context) {
+    debugPrint('\n' + '='*60);
+    debugPrint('📋 SETTINGS STATE: $context');
+    debugPrint('='*60);
+    debugPrint('🇩🇪 German Settings:');
+    debugPrint('  Native: $_germanNative');
+    debugPrint('  Colloquial: $_germanColloquial');
+    debugPrint('  Informal: $_germanInformal');
+    debugPrint('  Formal: $_germanFormal');
+    debugPrint('  Word-by-Word: $_germanWordByWord');
+    debugPrint('🇺🇸 English Settings:');
+    debugPrint('  Native: $_englishNative');
+    debugPrint('  Colloquial: $_englishColloquial');
+    debugPrint('  Informal: $_englishInformal');
+    debugPrint('  Formal: $_englishFormal');
+    debugPrint('  Word-by-Word: $_englishWordByWord');
+    debugPrint('='*60 + '\n');
   }
 
   MotherTongue _getMotherTongueFromString(String value) {
@@ -154,7 +187,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // NEW: Helper methods for fluency practice settings
   PracticeLanguage _getPracticeLanguageFromString(String value) {
     switch (value) {
       case 'english': return PracticeLanguage.english;
@@ -247,14 +279,172 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return _englishNative || _englishColloquial || _englishInformal || _englishFormal;
   }
 
+  bool get _isAnyStyleSelected {
+    return _isGermanSelected || _isEnglishSelected;
+  }
+
+  // Build current selection summary widget
+  Widget _buildSelectionSummary() {
+    final selectedStyles = <String>[];
+    final audioFeatures = <String>[];
+    
+    // Collect German styles
+    if (_germanNative) selectedStyles.add('German Native');
+    if (_germanColloquial) selectedStyles.add('German Colloquial');
+    if (_germanInformal) selectedStyles.add('German Informal');
+    if (_germanFormal) selectedStyles.add('German Formal');
+    
+    // Collect English styles
+    if (_englishNative) selectedStyles.add('English Native');
+    if (_englishColloquial) selectedStyles.add('English Colloquial');
+    if (_englishInformal) selectedStyles.add('English Informal');
+    if (_englishFormal) selectedStyles.add('English Formal');
+    
+    // Collect audio features
+    if (_germanWordByWord) audioFeatures.add('German Word-by-Word');
+    if (_englishWordByWord) audioFeatures.add('English Word-by-Word');
+    
+    return Container(
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _isAnyStyleSelected 
+            ? Colors.green[900]!.withOpacity(0.3)
+            : Colors.orange[900]!.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: _isAnyStyleSelected ? Colors.green : Colors.orange,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                _isAnyStyleSelected ? Icons.check_circle : Icons.warning,
+                color: _isAnyStyleSelected ? Colors.green : Colors.orange,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  _isAnyStyleSelected 
+                      ? 'Your Selected Styles:'
+                      : 'No styles selected - Please select at least one',
+                  style: TextStyle(
+                    color: _isAnyStyleSelected ? Colors.green : Colors.orange,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_isAnyStyleSelected) ...[
+            const SizedBox(height: 8),
+            if (selectedStyles.isNotEmpty)
+              Text(
+                selectedStyles.join(', '),
+                style: const TextStyle(color: Colors.white70),
+              ),
+            if (audioFeatures.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              // Row(
+              //   children: [
+              //     const Icon(Icons.volume_up, size: 16, color: Colors.cyan),
+              //     const SizedBox(width: 4),
+              //     Text(
+              //       audioFeatures.join(', '),
+              //       style: const TextStyle(
+              //         color: Colors.cyan,
+              //         fontStyle: FontStyle.italic,
+              //       ),
+              //     ),
+              //   ],
+              // ),
+               Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: audioFeatures.map((feature) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.volume_up, size: 16, color: Colors.cyan),
+                      const SizedBox(width: 4),
+                      Text(
+                        feature,
+                        style: const TextStyle(
+                          color: Colors.cyan,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
   void _handleSave() async {
+    // DEBUGGER POINT 4: Log save attempt
+    _debugLog('_handleSave', 'User clicked save');
+    _debugLogCurrentState('Before validation');
+    
+    // Check if at least one style is selected
+    if (!_isAnyStyleSelected) {
+      // DEBUGGER POINT 5: Log validation failure
+      _debugLog('_handleSave', 'No styles selected - showing warning');
+      
+      // Show warning dialog
+      final shouldUseDefaults = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('⚠️ No Translation Styles Selected'),
+          content: const Text(
+            'You haven\'t selected any translation styles.\n\n'
+            'Would you like to:\n'
+            '• Go back and select styles, or\n'
+            '• Use default settings (Colloquial for both languages)?'
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Go Back'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Use Defaults'),
+            ),
+          ],
+        ),
+      );
+      
+      if (shouldUseDefaults == true) {
+        // Apply minimal defaults
+        setState(() {
+          _germanColloquial = true;
+          _englishColloquial = true;
+        });
+        
+        // DEBUGGER POINT 6: Log default application
+        _debugLog('_handleSave', 'User chose to use defaults');
+        _debugLogCurrentState('After applying defaults');
+      } else {
+        return; // User chose to go back
+      }
+    }
+    
     final updatedSettings = {
-      // Always set to continuous listening since it's the only option now
       'microphoneMode': 'continuousListening',
       'motherTongue': _getMotherTongueString(_motherTongue),
       'appMode': _getAppModeString(_appMode),
       
-      // NEW: Fluency practice settings
+      // Fluency practice settings
       'practiceLanguage': _getPracticeLanguageString(_practiceLanguage),
       'correctionLevel': _getCorrectionLevelString(_correctionLevel),
       'pronunciationFeedback': _pronunciationFeedback,
@@ -262,11 +452,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       'vocabularyEnhancement': _vocabularyEnhancement,
       'realTimeCorrection': _realTimeCorrection,
       
-      // Word-by-word audio settings
+      // Word-by-word audio settings - EXACT user selection
       'germanWordByWord': _germanWordByWord,
       'englishWordByWord': _englishWordByWord,
       
-      // Translation style preferences
+      // Translation style preferences - EXACT user selection
       'germanNative': _germanNative,
       'germanColloquial': _germanColloquial,
       'germanInformal': _germanInformal,
@@ -276,6 +466,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       'englishInformal': _englishInformal,
       'englishFormal': _englishFormal,
     };
+
+    // DEBUGGER POINT 7: Log final settings being saved
+    _debugLog('_handleSave', 'Final settings to save:');
+    debugPrint(updatedSettings.toString());
 
     try {
       // Show loading indicator
@@ -295,6 +489,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final repository = UserSettingsRepository();
       await repository.saveUserSettings(updatedSettings);
       
+      // DEBUGGER POINT 8: Log successful save
+      _debugLog('_handleSave', '✅ Settings saved to Hive successfully');
+      
       // Close loading dialog
       Navigator.of(context).pop();
       
@@ -311,10 +508,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       Navigator.pop(context, updatedSettings);
       
     } catch (e) {
+      // DEBUGGER POINT 9: Log save error
+      _debugLog('_handleSave', '❌ Error saving settings: $e');
+      
       // Close loading dialog if it's open
       Navigator.of(context).pop();
       
-      // Handle error: show error message
+      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("❌ Error saving settings: $e"),
@@ -337,6 +537,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
         backgroundColor: Colors.black,
         title: const Text('Settings', style: TextStyle(color: Colors.cyan)),
         centerTitle: true,
+        actions: [
+          // Clear all button
+          IconButton(
+            icon: const Icon(Icons.clear_all, color: Colors.orange),
+            onPressed: () {
+              // DEBUGGER POINT 10: Log clear all action
+              _debugLog('AppBar', 'User clicked clear all');
+              
+              setState(() {
+                // Clear all selections
+                _germanNative = false;
+                _germanColloquial = false;
+                _germanInformal = false;
+                _germanFormal = false;
+                _englishNative = false;
+                _englishColloquial = false;
+                _englishInformal = false;
+                _englishFormal = false;
+                _germanWordByWord = false;
+                _englishWordByWord = false;
+              });
+              
+              _debugLogCurrentState('After clearing all');
+            },
+            tooltip: 'Clear All Selections',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -441,7 +668,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       fillColor: MaterialStateProperty.resolveWith((states) => states.contains(MaterialState.selected) ? Colors.cyan : Colors.grey),
                     ),
                   ),
-                  // NEW: Fluency Practice Mode
                   ListTile(
                     title: const Text('Fluency Practice', style: TextStyle(color: Colors.white, fontSize: 16)),
                     subtitle: const Text('Practice speaking and get grammar/pronunciation corrections', style: TextStyle(color: Colors.grey, fontSize: 14)),
@@ -460,221 +686,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 24),
 
-              // NEW: Fluency Practice Settings
-              if (_appMode == AppMode.fluencyPractice) ...[
-                const Text('Fluency Practice Settings', style: TextStyle(color: Colors.cyan, fontSize: 16, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-                
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1B3A4D),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange, width: 1),
-                  ),
-                  child: Column(
-                    children: [
-                      InkWell(
-                        onTap: () {
-                          setState(() {
-                            _fluencyExpanded = !_fluencyExpanded;
-                          });
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Practice Configuration', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
-                              Icon(_fluencyExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, color: Colors.white),
-                            ],
-                          ),
-                        ),
-                      ),
-                      if (_fluencyExpanded) ...[
-                        const Divider(color: Color(0xFF3A3A3C), height: 1, thickness: 0.5),
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Practice Language Selection
-                              const Text('Target Language', style: TextStyle(color: Colors.orange, fontSize: 15, fontWeight: FontWeight.w600)),
-                              const SizedBox(height: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF2C2C2E),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<PracticeLanguage>(
-                                    value: _practiceLanguage,
-                                    isExpanded: true,
-                                    dropdownColor: const Color(0xFF2C2C2E),
-                                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                                    onChanged: (PracticeLanguage? newValue) {
-                                      if (newValue != null) {
-                                        setState(() {
-                                          _practiceLanguage = newValue;
-                                        });
-                                      }
-                                    },
-                                    items: PracticeLanguage.values.map<DropdownMenuItem<PracticeLanguage>>((PracticeLanguage value) {
-                                      return DropdownMenuItem<PracticeLanguage>(
-                                        value: value,
-                                        child: Text(_getPracticeLanguageName(value), style: const TextStyle(color: Colors.white)),
-                                      );
-                                    }).toList(),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              
-                              // Correction Level
-                              const Text('Correction Level', style: TextStyle(color: Colors.orange, fontSize: 15, fontWeight: FontWeight.w600)),
-                              const SizedBox(height: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF2C2C2E),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<CorrectionLevel>(
-                                    value: _correctionLevel,
-                                    isExpanded: true,
-                                    dropdownColor: const Color(0xFF2C2C2E),
-                                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                                    onChanged: (CorrectionLevel? newValue) {
-                                      if (newValue != null) {
-                                        setState(() {
-                                          _correctionLevel = newValue;
-                                        });
-                                      }
-                                    },
-                                    items: CorrectionLevel.values.map<DropdownMenuItem<CorrectionLevel>>((CorrectionLevel value) {
-                                      return DropdownMenuItem<CorrectionLevel>(
-                                        value: value,
-                                        child: Text(_getCorrectionLevelName(value), style: const TextStyle(color: Colors.white)),
-                                      );
-                                    }).toList(),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              
-                              // Correction Features
-                              const Text('Correction Features', style: TextStyle(color: Colors.orange, fontSize: 15, fontWeight: FontWeight.w600)),
-                              const SizedBox(height: 8),
-                              
-                              // Pronunciation Feedback
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text('Pronunciation Feedback', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
-                                        SizedBox(height: 2),
-                                        Text('Analyze and correct pronunciation', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                      ],
-                                    ),
-                                  ),
-                                  Switch(
-                                    value: _pronunciationFeedback,
-                                    onChanged: (value) {
-                                      setState(() => _pronunciationFeedback = value);
-                                    },
-                                    activeColor: Colors.orange,
-                                  ),
-                                ],
-                              ),
-                              
-                              // Grammar Correction
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text('Grammar Correction', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
-                                        SizedBox(height: 2),
-                                        Text('Fix grammar mistakes and structure', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                      ],
-                                    ),
-                                  ),
-                                  Switch(
-                                    value: _grammarCorrection,
-                                    onChanged: (value) {
-                                      setState(() => _grammarCorrection = value);
-                                    },
-                                    activeColor: Colors.orange,
-                                  ),
-                                ],
-                              ),
-                              
-                              // Vocabulary Enhancement
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text('Vocabulary Enhancement', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
-                                        SizedBox(height: 2),
-                                        Text('Suggest better word choices', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                      ],
-                                    ),
-                                  ),
-                                  Switch(
-                                    value: _vocabularyEnhancement,
-                                    onChanged: (value) {
-                                      setState(() => _vocabularyEnhancement = value);
-                                    },
-                                    activeColor: Colors.orange,
-                                  ),
-                                ],
-                              ),
-                              
-                              // Real-time Correction
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text('Real-time Correction', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
-                                        SizedBox(height: 2),
-                                        Text('Interrupt for immediate corrections', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                                      ],
-                                    ),
-                                  ),
-                                  Switch(
-                                    value: _realTimeCorrection,
-                                    onChanged: (value) {
-                                      setState(() => _realTimeCorrection = value);
-                                    },
-                                    activeColor: Colors.orange,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
-
               // Translation Styles Section (only show in Language Learning mode)
               if (_appMode == AppMode.languageLearning) ...[
                 const Text('Translation Styles', style: TextStyle(color: Colors.cyan, fontSize: 16, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                
+                // Selection summary
+                _buildSelectionSummary(),
+                
                 const SizedBox(height: 16),
                 
                 // German Expandable Section
@@ -698,7 +717,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text('German', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
-                              Icon(_germanExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, color: Colors.white),
+                              Row(
+                                children: [
+                                  if (_isGermanSelected)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      margin: const EdgeInsets.only(right: 8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        '${[_germanNative, _germanColloquial, _germanInformal, _germanFormal].where((e) => e).length} selected',
+                                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                                      ),
+                                    ),
+                                  Icon(_germanExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, color: Colors.white),
+                                ],
+                              ),
                             ],
                           ),
                         ),
@@ -727,6 +763,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     value: _germanWordByWord,
                                     onChanged: (value) {
                                       setState(() => _germanWordByWord = value);
+                                      // DEBUGGER POINT 11: Log toggle change
+                                      _debugLog('German Word-by-Word', 'Changed to: $value');
                                     },
                                     activeColor: Colors.cyan,
                                   ),
@@ -830,7 +868,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text('English', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
-                              Icon(_englishExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, color: Colors.white),
+                              Row(
+                                children: [
+                                  if (_isEnglishSelected)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      margin: const EdgeInsets.only(right: 8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        '${[_englishNative, _englishColloquial, _englishInformal, _englishFormal].where((e) => e).length} selected',
+                                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                                      ),
+                                    ),
+                                  Icon(_englishExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, color: Colors.white),
+                                ],
+                              ),
                             ],
                           ),
                         ),
@@ -859,6 +914,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     value: _englishWordByWord,
                                     onChanged: (value) {
                                       setState(() => _englishWordByWord = value);
+                                      // DEBUGGER POINT 12: Log toggle change
+                                      _debugLog('English Word-by-Word', 'Changed to: $value');
                                     },
                                     activeColor: Colors.cyan,
                                   ),
