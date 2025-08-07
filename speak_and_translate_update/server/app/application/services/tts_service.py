@@ -178,7 +178,7 @@ class EnhancedTTSService:
         """
         Generate SSML with style-specific word pairs.
         Each translation style uses only its corresponding word pairs.
-        FIXED: Properly matches compound phrases like "blackberry juice" with their correct translations.
+        FIXED: Properly matches compound phrases with their correct translations.
         """
         ssml = """<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">"""
         
@@ -199,6 +199,9 @@ class EnhancedTTSService:
             logger.info(f"\n📝 Processing {style_name}:")
             logger.info(f"   Translation: \"{translation}\"")
             logger.info(f"   Word pairs count: {len(word_pairs)}")
+            # Debug: Log word pairs to verify they're correct
+            for src, tgt in word_pairs[:5]:  # Show first 5 pairs
+                logger.debug(f"   Word pair: '{src}' -> '{tgt}'")
             
             # Determine voice and language based on style
             if is_german:
@@ -225,91 +228,72 @@ class EnhancedTTSService:
             
             # Add word-by-word section if word pairs exist for this style
             if word_pairs:
-                # Create comprehensive word pair mapping
-                word_pair_dict = self._create_word_pair_mapping(word_pairs, is_german)
-                
                 ssml += """
         <voice name="en-US-JennyMultilingualNeural">
             <prosody rate="0.8">"""
                 
-                # FIXED: Process translation text with proper phrase matching
-                translation_clean = translation.strip(".")
+                # Clean translation for processing
+                translation_clean = translation.strip(".,!?").strip()
                 words = translation_clean.split()
-                processed_indices = set()
                 
-                # First pass: identify all multi-word phrases
-                phrase_matches = []
-                for length in range(4, 0, -1):  # Check up to 4-word phrases
-                    for i in range(len(words) - length + 1):
-                        if i in processed_indices:
+                # Sort word pairs by length (longer phrases first) to prioritize compound phrases
+                sorted_pairs = sorted(word_pairs, key=lambda x: len(x[0].split()), reverse=True)
+                
+                # Create a mapping of positions to translations
+                position_translations = {}
+                
+                # Match phrases in the translation
+                for source, target in sorted_pairs:
+                    source_words = source.split()
+                    source_len = len(source_words)
+                    
+                    # Search for this phrase in the translation
+                    for i in range(len(words) - source_len + 1):
+                        # Check if any position is already occupied
+                        if any(j in position_translations for j in range(i, i + source_len)):
                             continue
                         
-                        phrase = " ".join(words[i:i+length])
-                        phrase_lower = phrase.lower()
+                        # Try to match the phrase at this position
+                        phrase_at_position = " ".join(words[i:i+source_len])
                         
-                        # Check if this phrase exists in our word pairs
-                        if phrase in word_pair_dict or phrase_lower in word_pair_dict:
-                            spanish_translation = word_pair_dict.get(phrase) or word_pair_dict.get(phrase_lower)
-                            phrase_matches.append((i, i+length, phrase, spanish_translation))
-                            # Mark these indices as processed
-                            for idx in range(i, i+length):
-                                processed_indices.add(idx)
-                            logger.debug(f"Matched phrase: '{phrase}' -> '{spanish_translation}'")
+                        # Case-insensitive matching
+                        if phrase_at_position.lower() == source.lower():
+                            # Found a match! Store it for all positions it covers
+                            for j in range(i, i + source_len):
+                                position_translations[j] = {
+                                    'source': phrase_at_position,  # Use the original case from translation
+                                    'target': target,
+                                    'start': i,
+                                    'end': i + source_len,
+                                    'is_start': j == i
+                                }
+                            logger.debug(f"Matched '{phrase_at_position}' -> '{target}' at position {i}")
+                            break  # Move to next word pair after successful match
                 
-                # Sort matches by starting index
-                phrase_matches.sort(key=lambda x: x[0])
-                
-                # Generate SSML for matched phrases and individual words
-                current_index = 0
-                for start_idx, end_idx, phrase, spanish_trans in phrase_matches:
-                    # Process any unmatched words before this phrase
-                    while current_index < start_idx:
-                        word = words[current_index]
-                        word_lower = word.lower()
-                        
-                        # Try to find translation for individual word
-                        if word in word_pair_dict or word_lower in word_pair_dict:
-                            spanish_word = word_pair_dict.get(word) or word_pair_dict.get(word_lower)
+                # Generate SSML based on position mapping
+                i = 0
+                while i < len(words):
+                    if i in position_translations:
+                        trans_info = position_translations[i]
+                        if trans_info['is_start']:
+                            # This is the start of a matched phrase
                             ssml += f"""
-            <lang xml:lang="{lang}">{word}</lang>
+            <lang xml:lang="{lang}">{trans_info['source']}</lang>
             <break time="300ms"/>
-            <lang xml:lang="es-ES">{spanish_word}</lang>
+            <lang xml:lang="es-ES">{trans_info['target']}</lang>
             <break time="500ms"/>"""
+                            # Skip to the end of this phrase
+                            i = trans_info['end']
                         else:
-                            # No translation found for this word
-                            ssml += f"""
-            <lang xml:lang="{lang}">{word}</lang>
-            <break time="300ms"/><break time="500ms"/>"""
-                        
-                        current_index += 1
-                    
-                    # Add the matched phrase
-                    ssml += f"""
-            <lang xml:lang="{lang}">{phrase}</lang>
-            <break time="300ms"/>
-            <lang xml:lang="es-ES">{spanish_trans}</lang>
-            <break time="500ms"/>"""
-                    
-                    current_index = end_idx
-                
-                # Process any remaining words
-                while current_index < len(words):
-                    word = words[current_index]
-                    word_lower = word.lower()
-                    
-                    if word in word_pair_dict or word_lower in word_pair_dict:
-                        spanish_word = word_pair_dict.get(word) or word_pair_dict.get(word_lower)
-                        ssml += f"""
-            <lang xml:lang="{lang}">{word}</lang>
-            <break time="300ms"/>
-            <lang xml:lang="es-ES">{spanish_word}</lang>
-            <break time="500ms"/>"""
+                            # This word is part of a phrase we already processed
+                            i += 1
                     else:
+                        # No translation found for this word/position
+                        word = words[i]
                         ssml += f"""
             <lang xml:lang="{lang}">{word}</lang>
             <break time="300ms"/><break time="500ms"/>"""
-                    
-                    current_index += 1
+                        i += 1
                 
                 ssml += """
             <break time="1000ms"/>
@@ -332,6 +316,7 @@ class EnhancedTTSService:
         """
         Legacy method for backward compatibility.
         Converts old format to new format and calls the v2 method.
+        FIXED: Properly associates word pairs with their respective styles.
         """
         # Convert legacy format to new structured format
         translations_data = {
@@ -339,106 +324,88 @@ class EnhancedTTSService:
             'style_data': []
         }
         
-        # Parse complete text to get individual translations
+        # Parse complete text to get individual translations and their word pairs
         if complete_text:
-            # Extract individual translations from the complete text
-            # Look for patterns like "Pineapple juice for the girl and blackberry juice for the lady."
-            translation_patterns = [
-                r'"([^"]+)"',  # Quoted text
-            ]
+            # Parse the complete text to extract translations and word-by-word pairs per style
+            lines = complete_text.split('\n')
+            current_language = None
+            current_style = None
             
-            extracted_translations = []
-            for pattern in translation_patterns:
-                matches = re.findall(pattern, complete_text)
-                extracted_translations.extend(matches)
+            # Track which translation and word pairs belong to which style
+            style_translations = {}
+            style_word_pairs = {}
             
-            # Filter to get actual translations (not word-by-word sections)
-            actual_translations = []
-            for trans in extracted_translations:
-                # Skip if it looks like a word-by-word section (contains parentheses)
-                if '(' not in trans and ')' not in trans and len(trans) > 10:
-                    actual_translations.append(trans)
+            for line in lines:
+                line = line.strip()
+                
+                # Detect language section
+                if 'German Translation:' in line:
+                    current_language = 'german'
+                elif 'English Translation:' in line:
+                    current_language = 'english'
+                
+                # Detect style and extract translation
+                if '* Conversational-native:' in line:
+                    current_style = f'{current_language}_native' if current_language else None
+                    match = re.search(r'"([^"]+)"', line)
+                    if match and current_style:
+                        style_translations[current_style] = match.group(1)
+                elif '* Conversational-colloquial:' in line:
+                    current_style = f'{current_language}_colloquial' if current_language else None
+                    match = re.search(r'"([^"]+)"', line)
+                    if match and current_style:
+                        style_translations[current_style] = match.group(1)
+                elif '* Conversational-informal:' in line:
+                    current_style = f'{current_language}_informal' if current_language else None
+                    match = re.search(r'"([^"]+)"', line)
+                    if match and current_style:
+                        style_translations[current_style] = match.group(1)
+                elif '* Conversational-formal:' in line:
+                    current_style = f'{current_language}_formal' if current_language else None
+                    match = re.search(r'"([^"]+)"', line)
+                    if match and current_style:
+                        style_translations[current_style] = match.group(1)
+                
+                # Extract word-by-word pairs for current style
+                if 'word by word' in line and current_style:
+                    # Extract the word pairs from the line
+                    match = re.search(r'"([^"]+)"', line)
+                    if match:
+                        pairs_text = match.group(1)
+                        pairs = []
+                        # Parse pairs like "Pineapple juice (jugo de piña)"
+                        pair_matches = re.findall(r'([^()]+?)\s*\(([^)]+)\)', pairs_text)
+                        for source, target in pair_matches:
+                            source = source.strip()
+                            target = target.strip()
+                            if source and target:
+                                pairs.append((source, target))
+                        style_word_pairs[current_style] = pairs
             
-            # Separate word pairs by language
-            german_pairs = [(src, tgt) for src, tgt, is_german in word_pairs if is_german]
-            english_pairs = [(src, tgt) for src, tgt, is_german in word_pairs if not is_german]
-            
-            # Create style data entries based on preferences and actual translations
-            translation_index = 0
-            
-            # German styles
-            if style_preferences.german_native and translation_index < len(actual_translations):
-                translations_data['style_data'].append({
-                    'translation': actual_translations[translation_index],
-                    'word_pairs': german_pairs if style_preferences.german_word_by_word else [],
-                    'is_german': True,
-                    'style_name': 'german_native'
-                })
-                translation_index += 1
+            # Now create style data entries with correct associations
+            for style_name in ['german_native', 'german_colloquial', 'german_informal', 'german_formal',
+                              'english_native', 'english_colloquial', 'english_informal', 'english_formal']:
                 
-            if style_preferences.german_colloquial and translation_index < len(actual_translations):
-                translations_data['style_data'].append({
-                    'translation': actual_translations[translation_index],
-                    'word_pairs': german_pairs if style_preferences.german_word_by_word else [],
-                    'is_german': True,
-                    'style_name': 'german_colloquial'
-                })
-                translation_index += 1
+                # Check if this style is enabled and has data
+                is_german = style_name.startswith('german')
+                style_suffix = style_name.split('_')[1]
                 
-            if style_preferences.german_informal and translation_index < len(actual_translations):
-                translations_data['style_data'].append({
-                    'translation': actual_translations[translation_index],
-                    'word_pairs': german_pairs if style_preferences.german_word_by_word else [],
-                    'is_german': True,
-                    'style_name': 'german_informal'
-                })
-                translation_index += 1
+                # Check if style is enabled
+                style_enabled = False
+                if is_german:
+                    style_enabled = getattr(style_preferences, f'german_{style_suffix}', False)
+                    word_by_word_enabled = style_preferences.german_word_by_word
+                else:
+                    style_enabled = getattr(style_preferences, f'english_{style_suffix}', False)
+                    word_by_word_enabled = style_preferences.english_word_by_word
                 
-            if style_preferences.german_formal and translation_index < len(actual_translations):
-                translations_data['style_data'].append({
-                    'translation': actual_translations[translation_index],
-                    'word_pairs': german_pairs if style_preferences.german_word_by_word else [],
-                    'is_german': True,
-                    'style_name': 'german_formal'
-                })
-                translation_index += 1
-            
-            # English styles
-            if style_preferences.english_native and translation_index < len(actual_translations):
-                translations_data['style_data'].append({
-                    'translation': actual_translations[translation_index],
-                    'word_pairs': english_pairs if style_preferences.english_word_by_word else [],
-                    'is_german': False,
-                    'style_name': 'english_native'
-                })
-                translation_index += 1
-                
-            if style_preferences.english_colloquial and translation_index < len(actual_translations):
-                translations_data['style_data'].append({
-                    'translation': actual_translations[translation_index],
-                    'word_pairs': english_pairs if style_preferences.english_word_by_word else [],
-                    'is_german': False,
-                    'style_name': 'english_colloquial'
-                })
-                translation_index += 1
-                
-            if style_preferences.english_informal and translation_index < len(actual_translations):
-                translations_data['style_data'].append({
-                    'translation': actual_translations[translation_index],
-                    'word_pairs': english_pairs if style_preferences.english_word_by_word else [],
-                    'is_german': False,
-                    'style_name': 'english_informal'
-                })
-                translation_index += 1
-                
-            if style_preferences.english_formal and translation_index < len(actual_translations):
-                translations_data['style_data'].append({
-                    'translation': actual_translations[translation_index],
-                    'word_pairs': english_pairs if style_preferences.english_word_by_word else [],
-                    'is_german': False,
-                    'style_name': 'english_formal'
-                })
-                translation_index += 1
+                if style_enabled and style_name in style_translations:
+                    translations_data['style_data'].append({
+                        'translation': style_translations[style_name],
+                        'word_pairs': style_word_pairs.get(style_name, []) if word_by_word_enabled else [],
+                        'is_german': is_german,
+                        'style_name': style_name
+                    })
         
         # Call the v2 method with structured data
         return await self.text_to_speech_word_pairs_v2(
