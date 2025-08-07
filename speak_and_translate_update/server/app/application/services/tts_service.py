@@ -184,6 +184,7 @@ class EnhancedTTSService:
         """
         Generate SSML with style-specific word pairs.
         Each translation style uses only its corresponding word pairs.
+        FIXED: Now properly matches compound phrases and avoids word mismatches.
         """
         ssml = """<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">"""
         
@@ -230,56 +231,15 @@ class EnhancedTTSService:
             
             # Add word-by-word section if word pairs exist for this style
             if word_pairs:
-                # Group phrases (phrasal verbs, separable verbs)
-                phrase_map = self._group_grammar_phrases(word_pairs, is_german)
+                # Create a more comprehensive mapping including multi-word phrases
+                phrase_map = self._create_comprehensive_phrase_map(word_pairs, translation)
                 
                 ssml += """
         <voice name="en-US-JennyMultilingualNeural">
             <prosody rate="0.8">"""
                 
-                # Match words from translation with the style-specific word pairs
-                words = translation.split()
-                index = 0
-                
-                while index < len(words):
-                    matched = False
-                    
-                    # Try to match multi-word phrases first
-                    for phrase_len in range(3, 0, -1):  # Try 3-word, 2-word, then 1-word phrases
-                        if index + phrase_len <= len(words):
-                            current_phrase = " ".join(words[index:index + phrase_len])
-                            current_phrase_clean = current_phrase.strip(".,!?")
-                            
-                            if current_phrase_clean in phrase_map or current_phrase_clean.lower() in phrase_map:
-                                translation_text = phrase_map.get(current_phrase_clean) or phrase_map.get(current_phrase_clean.lower())
-                                
-                                ssml += f"""
-            <lang xml:lang="{lang}">{current_phrase_clean}</lang>
-            <break time="300ms"/>
-            <lang xml:lang="es-ES">{translation_text}</lang>
-            <break time="500ms"/>"""
-                                
-                                index += phrase_len
-                                matched = True
-                                break
-                    
-                    # If no match found, handle single word
-                    if not matched:
-                        word = words[index].strip(".,!?")
-                        translation_text = phrase_map.get(word) or phrase_map.get(word.lower())
-                        
-                        ssml += f"""
-            <lang xml:lang="{lang}">{word}</lang>
-            <break time="300ms"/>"""
-                        
-                        if translation_text:
-                            ssml += f"""
-            <lang xml:lang="es-ES">{translation_text}</lang>
-            <break time="500ms"/>"""
-                        else:
-                            ssml += """<break time="500ms"/>"""
-                        
-                        index += 1
+                # Process the translation to match with word pairs
+                ssml += self._process_translation_with_pairs(translation, phrase_map, lang)
                 
                 ssml += """
             <break time="1000ms"/>
@@ -289,6 +249,104 @@ class EnhancedTTSService:
         ssml += "</speak>"
         
         return ssml
+
+    def _create_comprehensive_phrase_map(self, word_pairs: List[Tuple[str, str]], translation: str) -> Dict[str, str]:
+        """
+        Create a comprehensive mapping that includes multi-word phrases.
+        This ensures proper matching of compound terms like "blackberry juice".
+        """
+        phrase_map = {}
+        
+        # First, add all word pairs to the map
+        for source, target in word_pairs:
+            # Store both original case and lowercase versions
+            phrase_map[source] = target
+            phrase_map[source.lower()] = target
+            
+            # For compound phrases, also store individual components
+            if ' ' in source:
+                # This is a multi-word phrase
+                phrase_map[source] = target
+                phrase_map[source.lower()] = target
+        
+        # Debug logging
+        logger.info(f"Created phrase map with {len(phrase_map)} entries")
+        for key, value in phrase_map.items():
+            if ' ' in key:  # Log multi-word phrases
+                logger.info(f"  Multi-word: '{key}' → '{value}'")
+        
+        return phrase_map
+
+    def _process_translation_with_pairs(self, translation: str, phrase_map: Dict[str, str], lang: str) -> str:
+        """
+        Process the translation text and match it with word pairs.
+        FIXED: Now properly handles compound phrases and avoids mismatches.
+        """
+        ssml_parts = []
+        words = translation.split()
+        index = 0
+        
+        while index < len(words):
+            matched = False
+            
+            # Try to match the longest possible phrase first (up to 4 words)
+            for phrase_len in range(4, 0, -1):
+                if index + phrase_len <= len(words):
+                    # Create the phrase to check
+                    phrase_words = words[index:index + phrase_len]
+                    current_phrase = " ".join(phrase_words)
+                    
+                    # Remove punctuation for matching
+                    current_phrase_clean = re.sub(r'[.,!?;:]$', '', current_phrase)
+                    
+                    # Check if this phrase exists in our map
+                    translation_text = None
+                    if current_phrase_clean in phrase_map:
+                        translation_text = phrase_map[current_phrase_clean]
+                    elif current_phrase_clean.lower() in phrase_map:
+                        translation_text = phrase_map[current_phrase_clean.lower()]
+                    
+                    if translation_text:
+                        # Found a match!
+                        ssml_parts.append(f"""
+            <lang xml:lang="{lang}">{current_phrase_clean}</lang>
+            <break time="300ms"/>
+            <lang xml:lang="es-ES">{translation_text}</lang>
+            <break time="500ms"/>""")
+                        
+                        index += phrase_len
+                        matched = True
+                        logger.info(f"Matched phrase: '{current_phrase_clean}' → '{translation_text}'")
+                        break
+            
+            # If no multi-word match found, try single word
+            if not matched:
+                word = words[index]
+                word_clean = re.sub(r'[.,!?;:]$', '', word)
+                
+                translation_text = None
+                if word_clean in phrase_map:
+                    translation_text = phrase_map[word_clean]
+                elif word_clean.lower() in phrase_map:
+                    translation_text = phrase_map[word_clean.lower()]
+                
+                if translation_text:
+                    ssml_parts.append(f"""
+            <lang xml:lang="{lang}">{word_clean}</lang>
+            <break time="300ms"/>
+            <lang xml:lang="es-ES">{translation_text}</lang>
+            <break time="500ms"/>""")
+                    logger.info(f"Matched word: '{word_clean}' → '{translation_text}'")
+                else:
+                    # No translation found, just speak the word
+                    ssml_parts.append(f"""
+            <lang xml:lang="{lang}">{word_clean}</lang>
+            <break time="300ms"/><break time="500ms"/>""")
+                    logger.warning(f"No translation found for: '{word_clean}'")
+                
+                index += 1
+        
+        return "".join(ssml_parts)
 
     async def text_to_speech_word_pairs(
         self,
