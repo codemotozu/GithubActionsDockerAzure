@@ -111,7 +111,7 @@ async def health_check():
 # Health check endpoint
 @app.get("/")
 async def root():
-    return {"status": "ok from server/app/infrastructure/api/routes.py test 37"}
+    return {"status": "ok from server/app/infrastructure/api/routes.py test 38"}
 
 # @app.post("/api/conversation", response_model=Translation)
 # async def start_conversation(prompt: PromptRequest):
