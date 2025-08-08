@@ -1,3 +1,5 @@
+# tts_service.py - Enhanced with real translation fallback
+
 from azure.cognitiveservices.speech import (
     SpeechConfig,
     SpeechSynthesizer,
@@ -12,6 +14,8 @@ from datetime import datetime
 import asyncio
 import re
 import logging
+import google.generativeai as genai
+from functools import lru_cache
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -28,6 +32,22 @@ class EnhancedTTSService:
             raise ValueError(
                 "Azure Speech credentials not found in environment variables"
             )
+
+        # Initialize Gemini for fallback translations
+        self.gemini_api_key = os.getenv("GEMINI_API_KEY")
+        if self.gemini_api_key:
+            genai.configure(api_key=self.gemini_api_key)
+            self.translation_model = genai.GenerativeModel(
+                model_name="gemini-2.0-flash",
+                generation_config={
+                    "temperature": 0.3,  # Lower temperature for more consistent translations
+                    "top_p": 0.8,
+                    "max_output_tokens": 100,
+                }
+            )
+        else:
+            logger.warning("GEMINI_API_KEY not found - fallback translations will be limited")
+            self.translation_model = None
 
         # Add this before creating SpeechConfig
         os.environ["SPEECH_CONTAINER_OPTION"] = "1"
@@ -71,6 +91,117 @@ class EnhancedTTSService:
             "mitbringen", "vorlesen", "zurückkommen", "weggehen"
         ]
 
+        # Extended common word translations (significantly expanded)
+        self.common_translations = {
+            # English articles, pronouns, prepositions
+            "i": "yo", "you": "tú/usted", "he": "él", "she": "ella", "it": "eso/lo", 
+            "we": "nosotros", "they": "ellos/ellas", "me": "me/mí", "him": "él/lo", 
+            "her": "ella/la", "us": "nosotros", "them": "ellos/los",
+            
+            # Articles
+            "the": "el/la", "a": "un/una", "an": "un/una", "this": "este/esta", 
+            "that": "ese/esa", "these": "estos/estas", "those": "esos/esas",
+            
+            # Common verbs
+            "is": "es/está", "are": "son/están", "was": "era/estaba", "were": "eran/estaban",
+            "be": "ser/estar", "been": "sido/estado", "being": "siendo/estando",
+            "have": "tener/haber", "has": "tiene/ha", "had": "tenía/había",
+            "do": "hacer", "does": "hace", "did": "hizo", "done": "hecho",
+            "will": "será/va", "would": "sería/iría", "shall": "deberá", "should": "debería",
+            "may": "puede", "might": "podría", "must": "debe", "can": "puede", "could": "podría",
+            "go": "ir", "goes": "va", "went": "fue", "gone": "ido", "going": "yendo",
+            "come": "venir", "comes": "viene", "came": "vino", "coming": "viniendo",
+            "make": "hacer", "makes": "hace", "made": "hizo", "making": "haciendo",
+            "take": "tomar", "takes": "toma", "took": "tomó", "taken": "tomado",
+            "give": "dar", "gives": "da", "gave": "dio", "given": "dado",
+            "get": "obtener", "gets": "obtiene", "got": "obtuvo", "gotten": "obtenido",
+            "say": "decir", "says": "dice", "said": "dijo", "saying": "diciendo",
+            "see": "ver", "sees": "ve", "saw": "vio", "seen": "visto",
+            "know": "saber", "knows": "sabe", "knew": "sabía", "known": "sabido",
+            "think": "pensar", "thinks": "piensa", "thought": "pensó", "thinking": "pensando",
+            "want": "querer", "wants": "quiere", "wanted": "quería", "wanting": "queriendo",
+            "look": "mirar", "looks": "mira", "looked": "miró", "looking": "mirando",
+            "use": "usar", "uses": "usa", "used": "usó", "using": "usando",
+            "find": "encontrar", "finds": "encuentra", "found": "encontró", "finding": "encontrando",
+            "tell": "decir", "tells": "dice", "told": "dijo", "telling": "diciendo",
+            "ask": "preguntar", "asks": "pregunta", "asked": "preguntó", "asking": "preguntando",
+            "work": "trabajar", "works": "trabaja", "worked": "trabajó", "working": "trabajando",
+            "seem": "parecer", "seems": "parece", "seemed": "pareció", "seeming": "pareciendo",
+            "feel": "sentir", "feels": "siente", "felt": "sintió", "feeling": "sintiendo",
+            "try": "intentar", "tries": "intenta", "tried": "intentó", "trying": "intentando",
+            "leave": "dejar", "leaves": "deja", "left": "dejó", "leaving": "dejando",
+            "call": "llamar", "calls": "llama", "called": "llamó", "calling": "llamando",
+            
+            # Prepositions and conjunctions
+            "in": "en", "on": "sobre/en", "at": "en", "to": "a/para", "for": "para/por",
+            "of": "de", "with": "con", "by": "por", "from": "de/desde", "up": "arriba",
+            "about": "sobre/acerca", "into": "dentro", "through": "a través", "after": "después",
+            "over": "sobre", "between": "entre", "out": "fuera", "against": "contra",
+            "during": "durante", "without": "sin", "before": "antes", "under": "bajo",
+            "around": "alrededor", "among": "entre", 
+            
+            "and": "y", "or": "o", "but": "pero", "if": "si", "because": "porque",
+            "as": "como", "until": "hasta", "while": "mientras", "since": "desde",
+            "although": "aunque", "though": "aunque", "when": "cuando", "where": "donde",
+            "so": "así/entonces", "than": "que", "too": "también", "very": "muy",
+            "just": "solo/justo", "there": "allí/ahí", "here": "aquí", "then": "entonces",
+            "now": "ahora", "only": "solo", "also": "también", "well": "bien",
+            "even": "incluso", "back": "atrás", "still": "todavía", "why": "por qué",
+            "how": "cómo", "what": "qué", "which": "cuál", "who": "quién",
+            "all": "todo", "some": "algo/algunos", "no": "no", "not": "no",
+            "more": "más", "other": "otro", "another": "otro", "much": "mucho",
+            "many": "muchos", "such": "tal", "own": "propio", "same": "mismo",
+            "each": "cada", "every": "cada/todo", "both": "ambos", "few": "pocos",
+            "most": "mayoría", "any": "cualquier", "several": "varios",
+            "therein": "allí/en eso", "thereof": "de eso", "whereby": "por lo cual",
+            
+            # German common words
+            "ich": "yo", "du": "tú", "er": "él", "sie": "ella/ellos", "es": "eso",
+            "wir": "nosotros", "ihr": "vosotros", "mich": "me", "dich": "te",
+            "sich": "se", "mir": "me", "dir": "te", "uns": "nos",
+            
+            "der": "el", "die": "la/las", "das": "el/lo", "ein": "un", "eine": "una",
+            "den": "el", "dem": "el", "des": "del", "einen": "un", "einem": "un",
+            "einer": "una", "eines": "un",
+            
+            "und": "y", "oder": "o", "aber": "pero", "denn": "pues", "weil": "porque",
+            "wenn": "si/cuando", "dass": "que", "ob": "si", "als": "cuando/como",
+            "wie": "como", "wo": "donde", "wann": "cuándo", "warum": "por qué",
+            "was": "qué", "wer": "quién", "welcher": "cuál",
+            
+            "nicht": "no", "kein": "ningún", "keine": "ninguna", "nie": "nunca",
+            "nichts": "nada", "niemand": "nadie",
+            
+            "zu": "a/para", "von": "de", "mit": "con", "bei": "en/con", "nach": "después/hacia",
+            "aus": "de/desde", "auf": "sobre", "an": "en", "in": "en", "über": "sobre",
+            "unter": "bajo", "vor": "antes", "hinter": "detrás", "neben": "al lado",
+            "zwischen": "entre", "für": "para", "gegen": "contra", "ohne": "sin",
+            "um": "alrededor/para", "durch": "a través",
+            
+            "haben": "tener", "hat": "tiene", "hatte": "tenía", "gehabt": "tenido",
+            "sein": "ser/estar", "ist": "es", "sind": "son", "war": "era", "waren": "eran",
+            "werden": "llegar a ser", "wird": "será", "wurde": "fue", "geworden": "llegado a ser",
+            "können": "poder", "kann": "puede", "konnte": "podía", "gekonnt": "podido",
+            "müssen": "deber", "muss": "debe", "musste": "debía", "gemusst": "debido",
+            "wollen": "querer", "will": "quiere", "wollte": "quería", "gewollt": "querido",
+            "sollen": "deber", "soll": "debe", "sollte": "debería", "gesollt": "debido",
+            "dürfen": "poder/permitir", "darf": "puede", "durfte": "podía", "gedurft": "podido",
+            "mögen": "gustar", "mag": "gusta", "mochte": "gustaba", "gemocht": "gustado",
+            "gehen": "ir", "geht": "va", "ging": "fue", "gegangen": "ido",
+            "kommen": "venir", "kommt": "viene", "kam": "vino", "gekommen": "venido",
+            "machen": "hacer", "macht": "hace", "machte": "hizo", "gemacht": "hecho",
+            "sehen": "ver", "sieht": "ve", "sah": "vio", "gesehen": "visto",
+            "geben": "dar", "gibt": "da", "gab": "dio", "gegeben": "dado",
+            "nehmen": "tomar", "nimmt": "toma", "nahm": "tomó", "genommen": "tomado",
+            "finden": "encontrar", "findet": "encuentra", "fand": "encontró", "gefunden": "encontrado",
+            "sagen": "decir", "sagt": "dice", "sagte": "dijo", "gesagt": "dicho",
+            "wissen": "saber", "weiß": "sabe", "wusste": "sabía", "gewusst": "sabido",
+            "denken": "pensar", "denkt": "piensa", "dachte": "pensó", "gedacht": "pensado",
+        }
+
+        # Cache for dynamic translations
+        self._translation_cache = {}
+
     def _get_temp_directory(self) -> str:
         """Create and return the temporary directory path"""
         if os.name == "nt":  # Windows
@@ -80,85 +211,125 @@ class EnhancedTTSService:
         os.makedirs(temp_dir, exist_ok=True)
         return temp_dir
 
-    def _create_comprehensive_word_mapping(self, word_pairs: List[Tuple[str, str]]) -> Dict[str, str]:
+    @lru_cache(maxsize=1000)
+    def _translate_word_with_ai(self, word: str, source_lang: str) -> str:
         """
-        Create a comprehensive mapping that handles all word variations and ensures complete coverage.
+        Use Gemini AI to translate a single word or short phrase to Spanish.
+        Cached to avoid repeated API calls for the same words.
+        """
+        if not self.translation_model:
+            return f"[{word}]"  # Fallback if no AI model available
+        
+        try:
+            # Determine source language name
+            lang_name = "English" if source_lang == "en" else "German"
+            
+            # Create a focused prompt for single word/phrase translation
+            prompt = f"""Translate this {lang_name} word or phrase to Spanish. 
+Only respond with the Spanish translation, nothing else.
+If there are multiple possible translations, give the most common one.
+
+Word/phrase: "{word}"
+
+Spanish translation:"""
+
+            response = self.translation_model.generate_content(prompt)
+            translation = response.text.strip()
+            
+            # Clean up the response
+            translation = translation.replace('"', '').replace("'", "").strip()
+            
+            # Validate the response (should be relatively short for a word/phrase)
+            if len(translation.split()) > 10:  # Likely got an explanation instead of translation
+                logger.warning(f"AI translation too long for '{word}': {translation}")
+                return f"[{word}]"
+            
+            logger.debug(f"AI translated: '{word}' -> '{translation}'")
+            return translation
+            
+        except Exception as e:
+            logger.error(f"AI translation failed for '{word}': {str(e)}")
+            return f"[{word}]"
+
+    def _find_translation_for_word(self, word: str, mapping: Dict[str, str], is_german: bool) -> str:
+        """
+        Find translation for a word with multiple fallback strategies.
+        Now includes real translation as the final fallback.
+        """
+        # Clean the word (remove punctuation for lookup)
+        clean_word = word.strip().lower().rstrip('.,!?;:()[]{}"\'-')
+        
+        # Strategy 1: Direct lookup in provided mapping
+        if word in mapping:
+            return mapping[word]
+        if clean_word in mapping:
+            return mapping[clean_word]
+        if word.lower() in mapping:
+            return mapping[word.lower()]
+            
+        # Strategy 2: Try without punctuation
+        if clean_word in mapping:
+            return mapping[clean_word]
+            
+        # Strategy 3: Check if it's just punctuation
+        if word in ".,!?;:()[]{}\"'-":
+            return word  # Keep punctuation as is
+            
+        # Strategy 4: Numbers stay the same
+        if clean_word.isdigit():
+            return clean_word
+            
+        # Strategy 5: Check translation cache
+        cache_key = f"{clean_word}_{is_german}"
+        if cache_key in self._translation_cache:
+            return self._translation_cache[cache_key]
+            
+        # Strategy 6: Use AI translation for missing words
+        source_lang = "de" if is_german else "en"
+        translation = self._translate_word_with_ai(clean_word, source_lang)
+        
+        # Cache the translation
+        self._translation_cache[cache_key] = translation
+        
+        # Log the translation
+        if translation.startswith('[') and translation.endswith(']'):
+            logger.debug(f"🔄 Fallback (no translation found): '{word}' -> '{translation}'")
+        else:
+            logger.debug(f"✅ AI translated: '{word}' -> '{translation}'")
+            
+        return translation
+
+    def _create_comprehensive_word_mapping(self, word_pairs: List[Tuple[str, str]], is_german: bool) -> Dict[str, str]:
+        """
+        Create a comprehensive mapping that ensures ALL words have translations.
         """
         mapping = {}
         
-        # Add all word pairs with various forms
+        # First, add all explicit word pairs
         for source, target in word_pairs:
-            # Store original forms
-            mapping[source] = target
-            mapping[source.lower()] = target
+            # Store both original case and lowercase versions
+            mapping[source.strip()] = target.strip()
+            mapping[source.lower().strip()] = target.strip()
             
-            # Handle punctuation variations
-            clean_source = source.strip('.,!?;:"')
-            if clean_source != source:
-                mapping[clean_source] = target
-                mapping[clean_source.lower()] = target
-            
-            # For multi-word phrases, also store individual words with fallback
-            source_words = source.split()
+            # Handle compound phrases
+            source_words = source.strip().split()
             if len(source_words) > 1:
                 # Store the full phrase
-                mapping[' '.join(source_words)] = target
-                mapping[' '.join(source_words).lower()] = target
+                mapping[' '.join(source_words)] = target.strip()
+                mapping[' '.join(source_words).lower()] = target.strip()
+                
+        # Add common word translations as fallback
+        mapping.update(self.common_translations)
         
-        logger.debug(f"Created comprehensive mapping with {len(mapping)} entries")
+        # Add punctuation handling
+        # punctuation_map = {
+        #     ".": ".", ",": ",", "!": "!", "?": "?", ";": ";", ":": ":", 
+        #     "(": "(", ")": ")", "'": "'", '"': '"'
+        # }
+        mapping.update(punctuation_map)
+        
+        logger.info(f"Created comprehensive word mapping with {len(mapping)} entries")
         return mapping
-
-    def _find_best_translation(self, word: str, word_mapping: Dict[str, str], used_phrases: set) -> Optional[str]:
-        """
-        Find the best translation for a word, considering already used phrases to avoid duplicates.
-        """
-        word_clean = word.strip('.,!?;:"')
-        
-        # Try exact matches first
-        candidates = [
-            word,
-            word.lower(),
-            word_clean,
-            word_clean.lower()
-        ]
-        
-        for candidate in candidates:
-            if candidate in word_mapping and candidate not in used_phrases:
-                used_phrases.add(candidate)
-                return word_mapping[candidate]
-        
-        return None
-
-    def _create_fallback_translation(self, word: str) -> str:
-        """
-        Create a reasonable fallback translation for words not in the mapping.
-        This prevents "No translation found" messages.
-        """
-        # Simple fallback mapping for common words
-        fallback_map = {
-            # Articles
-            "the": "el/la", "a": "un/una", "an": "un/una",
-            "der": "el", "die": "la", "das": "el/la", "ein": "un", "eine": "una",
-            
-            # Pronouns
-            "I": "yo", "you": "tú", "he": "él", "she": "ella", "we": "nosotros", "they": "ellos",
-            "ich": "yo", "du": "tú", "er": "él", "sie": "ella", "wir": "nosotros",
-            
-            # Common verbs
-            "is": "es", "are": "son", "was": "era", "were": "eran", "have": "tener", "has": "tiene",
-            "ist": "es", "sind": "son", "war": "era", "waren": "eran", "haben": "tener", "hat": "tiene",
-            
-            # Prepositions
-            "in": "en", "on": "en", "at": "en", "to": "a", "for": "para", "with": "con",
-            "in": "en", "auf": "en", "an": "en", "zu": "a", "für": "para", "mit": "con",
-            
-            # Common adjectives
-            "good": "bueno", "bad": "malo", "big": "grande", "small": "pequeño",
-            "gut": "bueno", "schlecht": "malo", "groß": "grande", "klein": "pequeño",
-        }
-        
-        word_clean = word.strip('.,!?;:"').lower()
-        return fallback_map.get(word_clean, f"[{word}]")
 
     async def text_to_speech_word_pairs_v2(
         self,
@@ -169,7 +340,7 @@ class EnhancedTTSService:
         output_path: Optional[str] = None,
     ) -> Optional[str]:
         """
-        Enhanced version that ensures ALL words get translated - no more "No translation found".
+        Enhanced version that ensures ALL words are translated using AI when needed.
         """
         try:
             if not output_path:
@@ -185,8 +356,8 @@ class EnhancedTTSService:
             )
             
             # Log the generated SSML for debugging
-            logger.info(f"\n📄 Generated SSML (first 500 chars):")
-            print("Generated SSML:")
+            logger.info(f"\n📄 Generated SSML preview:")
+            print("Generated SSML preview (first 500 chars):")
             print(ssml[:500] + "..." if len(ssml) > 500 else ssml)
 
             # Create audio config and synthesizer
@@ -229,8 +400,7 @@ class EnhancedTTSService:
         style_preferences=None,
     ) -> str:
         """
-        Generate SSML that ensures EVERY word gets a translation - NO missing words.
-        FIXED: Complete coverage with fallback translations for all words.
+        Generate SSML with complete word coverage - every word gets properly translated.
         """
         ssml = """<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">"""
         
@@ -252,18 +422,15 @@ class EnhancedTTSService:
             logger.info(f"   Translation: \"{translation}\"")
             logger.info(f"   Word pairs count: {len(word_pairs)}")
             
-            # Determine voice and language based on style
+            # Create comprehensive mapping
+            mapping = self._create_comprehensive_word_mapping(word_pairs, is_german)
+            
+            # Determine voice and language
             if is_german:
-                if 'informal' in style_name:
-                    voice = "de-DE-KatjaNeural"
-                else:
-                    voice = "de-DE-SeraphinaMultilingualNeural"
+                voice = "de-DE-SeraphinaMultilingualNeural"
                 lang = "de-DE"
             else:
-                if 'informal' in style_name:
-                    voice = "en-US-JennyNeural"
-                else:
-                    voice = "en-US-JennyMultilingualNeural"
+                voice = "en-US-JennyMultilingualNeural"
                 lang = "en-US"
             
             # Add main translation
@@ -275,79 +442,64 @@ class EnhancedTTSService:
             </prosody>
         </voice>"""
             
-            # Add word-by-word section with COMPLETE coverage
-            if word_pairs:
-                ssml += """
+            # Add comprehensive word-by-word section
+            ssml += """
         <voice name="en-US-JennyMultilingualNeural">
             <prosody rate="0.8">"""
+            
+            # Tokenize the translation properly
+            words = self._smart_tokenize(translation)
+            
+            logger.info(f"   Tokenized into {len(words)} words/tokens")
+            
+            # Process each word/token
+            for i, word in enumerate(words):
+                # Find translation for this word (now with real translation fallback)
+                spanish_translation = self._find_translation_for_word(word, mapping, is_german)
                 
-                # Create comprehensive word mapping
-                word_mapping = self._create_comprehensive_word_mapping(word_pairs)
+                # Clean word for speech (remove brackets if added by fallback)
+                clean_word = word.strip()
+                clean_spanish = spanish_translation.replace("[", "").replace("]", "")
                 
-                # Clean translation for processing
-                translation_clean = translation.strip(".,!?").strip()
-                words = translation_clean.split()
-                
-                # Track used phrases to avoid duplicates
-                used_phrases = set()
-                
-                # Process each word with guaranteed translation
-                i = 0
-                while i < len(words):
-                    current_word = words[i]
-                    found_translation = False
-                    
-                    # Try to find the longest matching phrase starting from current position
-                    for phrase_length in range(min(5, len(words) - i), 0, -1):  # Try phrases up to 5 words
-                        if phrase_length == 1:
-                            # Single word
-                            phrase = current_word
-                        else:
-                            # Multi-word phrase
-                            phrase = " ".join(words[i:i+phrase_length])
-                        
-                        # Look for translation
-                        translation_found = self._find_best_translation(phrase, word_mapping, used_phrases)
-                        
-                        if translation_found:
-                            # Clean the phrase for display
-                            clean_phrase = phrase.rstrip('.,!?;:"')
-                            
-                            ssml += f"""
-            <lang xml:lang="{lang}">{clean_phrase}</lang>
-            <break time="300ms"/>
-            <lang xml:lang="es-ES">{translation_found}</lang>
-            <break time="500ms"/>"""
-                            
-                            logger.debug(f"✅ Translated phrase: '{clean_phrase}' -> '{translation_found}'")
-                            i += phrase_length  # Skip the words we just processed
-                            found_translation = True
-                            break
-                    
-                    # If no translation found, use fallback
-                    if not found_translation:
-                        clean_word = current_word.rstrip('.,!?;:"')
-                        fallback_translation = self._create_fallback_translation(clean_word)
-                        
-                        ssml += f"""
+                # Add to SSML
+                ssml += f"""
             <lang xml:lang="{lang}">{clean_word}</lang>
             <break time="300ms"/>
-            <lang xml:lang="es-ES">{fallback_translation}</lang>
+            <lang xml:lang="es-ES">{clean_spanish}</lang>
             <break time="500ms"/>"""
-                        
-                        logger.debug(f"🔄 Fallback translation: '{clean_word}' -> '{fallback_translation}'")
-                        i += 1
-                
-                ssml += """
+            
+                logger.debug(f"   {i+1:2d}. '{clean_word}' -> '{clean_spanish}'")
+            
+            ssml += """
             <break time="1000ms"/>
             </prosody>
         </voice>"""
         
         ssml += "</speak>"
         
-        logger.info("✅ Complete coverage SSML generated - ALL words have translations!")
-        
+        logger.info(f"\n✅ Generated complete SSML with full word coverage")
         return ssml
+
+    def _smart_tokenize(self, text: str) -> List[str]:
+        """
+        Smart tokenization that preserves meaningful phrases and handles punctuation.
+        """
+        # First, handle common contractions and phrases
+        text = text.replace("don't", "do not").replace("won't", "will not").replace("can't", "cannot")
+        text = text.replace("I'm", "I am").replace("you're", "you are").replace("it's", "it is")
+        text = text.replace("we're", "we are").replace("they're", "they are")
+        text = text.replace("I've", "I have").replace("you've", "you have").replace("we've", "we have")
+        text = text.replace("hasn't", "has not").replace("haven't", "have not").replace("hadn't", "had not")
+        text = text.replace("isn't", "is not").replace("aren't", "are not").replace("wasn't", "was not")
+        text = text.replace("weren't", "were not").replace("doesn't", "does not").replace("didn't", "did not")
+        
+        # Use regex to split while preserving punctuation
+        tokens = re.findall(r"\b\w+\b|[.,!?;:()\[\]{}\"'-]", text)
+        
+        # Filter out empty tokens
+        tokens = [token.strip() for token in tokens if token.strip()]
+        
+        return tokens
 
     async def text_to_speech_word_pairs(
         self,
@@ -361,7 +513,6 @@ class EnhancedTTSService:
         """
         Legacy method for backward compatibility.
         Converts old format to new format and calls the v2 method.
-        ENHANCED: Better parsing with complete coverage guarantee.
         """
         # Convert legacy format to new structured format
         translations_data = {
@@ -369,7 +520,7 @@ class EnhancedTTSService:
             'style_data': []
         }
         
-        # Parse complete text to get individual translations and their word pairs per style
+        # Parse complete text to get individual translations and their word pairs
         if complete_text:
             # Parse the complete text to extract translations and word-by-word pairs per style
             lines = complete_text.split('\n')
@@ -411,28 +562,20 @@ class EnhancedTTSService:
                     if match and current_style:
                         style_translations[current_style] = match.group(1)
                 
-                # Extract word-by-word pairs for current style with enhanced patterns
+                # Extract word-by-word pairs for current style
                 if 'word by word' in line and current_style:
                     # Extract the word pairs from the line
                     match = re.search(r'"([^"]+)"', line)
                     if match:
                         pairs_text = match.group(1)
                         pairs = []
-                        # Enhanced parsing with multiple patterns
-                        patterns = [
-                            r'([^()]+?)\s*\(([^)]+)\)',
-                            r'([^()]+?)\s+\(\s*([^)]+?)\s*\)',
-                            r'([^()]+?)\(([^)]+)\)',
-                        ]
-                        
-                        for pattern in patterns:
-                            pair_matches = re.findall(pattern, pairs_text)
-                            for source, target in pair_matches:
-                                source = source.strip().rstrip('.,')
-                                target = target.strip()
-                                if source and target and (source, target) not in pairs:
-                                    pairs.append((source, target))
-                        
+                        # Parse pairs like "Pineapple juice (jugo de piña)"
+                        pair_matches = re.findall(r'([^()]+?)\s*\(([^)]+)\)', pairs_text)
+                        for source, target in pair_matches:
+                            source = source.strip()
+                            target = target.strip()
+                            if source and target:
+                                pairs.append((source, target))
                         style_word_pairs[current_style] = pairs
             
             # Now create style data entries with correct associations

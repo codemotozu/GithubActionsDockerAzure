@@ -1,3 +1,4 @@
+# translation_service.py
 from google.generativeai import GenerativeModel
 import google.generativeai as genai
 import os
@@ -70,30 +71,38 @@ You are an expert German-English translator with deep knowledge of grammar rules
 1. **Translation sentence**: Grammatically correct and natural-sounding
 2. **Word-by-word breakdown**: Show how phrases/grammar structures map between languages
 
+### CRITICAL REQUIREMENT: COMPLETE WORD-BY-WORD COVERAGE
+In word-by-word sections, you MUST provide Spanish translations for EVERY SINGLE WORD OR PHRASE in the translation. 
+NO word should be left without a Spanish translation. If a word doesn't have a direct translation, provide the closest Spanish equivalent or explanation.
+
 ### IMPORTANT: In word-by-word sections:
 - Group phrasal verbs together: "turn off" (apagar)
 - Group separable verbs: "aufstehen" (levantarse), but show separation: "ich stehe auf" (me levanto)
 - Group compound words: "Krankenhaus" (hospital)
-- Group idiomatic expressions: "es regnet Katzen und Hunde" (it's raining cats and dogs)
-- Show grammatical particles: "zu" (to), "um...zu" (in order to)
-- **ENSURE EVERY WORD/PHRASE IN THE TRANSLATION HAS A SPANISH EQUIVALENT**
+- Group idiomatic expressions: "es regnet Katzen und Hunde" (llueve a cántaros)
+- Show grammatical particles: "zu" (para), "um...zu" (para)
+- Provide translation for EVERY article: "der" (el), "die" (la), "das" (el/lo)
+- Provide translation for EVERY pronoun: "ich" (yo), "du" (tú), "er" (él)
+- Provide translation for EVERY preposition: "in" (en), "auf" (sobre), "mit" (con)
+- Provide translation for EVERY conjunction: "und" (y), "aber" (pero), "oder" (o)
+- Provide translation for EVERY auxiliary verb: "haben" (haber), "sein" (ser/estar), "werden" (llegar a ser)
 
-## EXAMPLES WITH GRAMMAR FOCUS:
+## EXAMPLES WITH COMPLETE COVERAGE:
 
 **English Phrasal Verbs Example:**
 Input: "I need to look up this information"
 - Native: "I need to look up this information"
-- Word-by-word: "I (Yo) need (necesito) to (para) look up (buscar) this (esta) information (información)"
+- Word-by-word: "I (yo) need (necesito) to (que) look up (buscar) this (esta) information (información)"
 
-**German Separable Verbs Example:**
+**German Complete Coverage Example:**
 Input: "I wake up early"
 - Native: "Ich stehe früh auf"
-- Word-by-word: "Ich (Yo) stehe auf (me despierto) früh (temprano)" 
+- Word-by-word: "Ich (yo) stehe auf (me levanto) früh (temprano)" 
 
 **German Case System Example:**
 Input: "I give the book to my friend"
 - Native: "Ich gebe meinem Freund das Buch"
-- Word-by-word: "Ich (Yo) gebe (doy) meinem Freund (a mi amigo-DATIVO) das Buch (el libro-ACUSATIVO)"
+- Word-by-word: "Ich (yo) gebe (doy) meinem (a mi) Freund (amigo) das (el) Buch (libro)"
 
 ## STYLE DEFINITIONS:
 
@@ -113,43 +122,43 @@ German Translation:
 * Conversational-native:
 "[Natural German with proper grammar rules applied]"
 * word by word Conversational-native German-Spanish:
-"[German words/phrases] ([Spanish equivalents]) [showing grammar structures]"
+"[German word/phrase] ([Spanish translation]) [German word/phrase] ([Spanish translation]) [continuing for EVERY word]"
 
 * Conversational-colloquial:
 "[Colloquial German with proper grammar]"
 * word by word Conversational-colloquial German-Spanish:
-"[German words/phrases] ([Spanish equivalents]) [showing grammar structures]"
+"[German word/phrase] ([Spanish translation]) [German word/phrase] ([Spanish translation]) [continuing for EVERY word]"
 
 * Conversational-informal:
 "[Informal German with proper grammar]"
 * word by word Conversational-informal German-Spanish:
-"[German words/phrases] ([Spanish equivalents]) [showing grammar structures]"
+"[German word/phrase] ([Spanish translation]) [German word/phrase] ([Spanish translation]) [continuing for EVERY word]"
 
 * Conversational-formal:
 "[Formal German with proper grammar]"
 * word by word Conversational-formal German-Spanish:
-"[German words/phrases] ([Spanish equivalents]) [showing grammar structures]"
+"[German word/phrase] ([Spanish translation]) [German word/phrase] ([Spanish translation]) [continuing for EVERY word]"
 
 English Translation:
 * Conversational-native:
 "[Natural English with proper phrasal verbs and grammar]"
 * word by word Conversational-native English-Spanish:
-"[English words/phrases] ([Spanish equivalents]) [showing grammar structures]"
+"[English word/phrase] ([Spanish translation]) [English word/phrase] ([Spanish translation]) [continuing for EVERY word]"
 
 * Conversational-colloquial:
 "[Colloquial English with proper grammar]"
 * word by word Conversational-colloquial English-Spanish:
-"[English words/phrases] ([Spanish equivalents]) [showing grammar structures]"
+"[English word/phrase] ([Spanish translation]) [English word/phrase] ([Spanish translation]) [continuing for EVERY word]"
 
 * Conversational-informal:
 "[Informal English with proper grammar]"
 * word by word Conversational-informal English-Spanish:
-"[English words/phrases] ([Spanish equivalents]) [showing grammar structures]"
+"[English word/phrase] ([Spanish translation]) [English word/phrase] ([Spanish translation]) [continuing for EVERY word]"
 
 * Conversational-formal:
 "[Formal English with proper grammar]"
 * word by word Conversational-formal English-Spanish:
-"[English words/phrases] ([Spanish equivalents]) [showing grammar structures]"
+"[English word/phrase] ([Spanish translation]) [English word/phrase] ([Spanish translation]) [continuing for EVERY word]"
 
 
 
@@ -161,8 +170,14 @@ English Translation:
         )
 
     def _create_dynamic_prompt(self, style_preferences) -> str:
-        """Create a dynamic prompt based on user's style preferences"""
+        """Create a dynamic prompt based on user's style preferences with complete coverage emphasis"""
         prompt_parts = ["Text\n(Could be any phrase or word)\n<example to follow>\n"]
+        
+        # Add emphasis on complete coverage
+        prompt_parts.append("""
+CRITICAL: You must provide Spanish translations for EVERY SINGLE WORD in the word-by-word breakdown. 
+NO word should be left untranslated. Every article, preposition, pronoun, verb, noun, adjective, and adverb must have a Spanish equivalent.
+""")
         
         # Check if any German styles are selected
         german_styles = []
@@ -193,22 +208,22 @@ English Translation:
                 prompt_parts.append("""* Conversational-native:
 "Ich muss diese Informationen nachschlagen" (with proper separable verb)
 * word by word Conversational-native German-Spanish:
-"Ich (Yo) muss (debo) diese (esta) Informationen (información) nachschlagen (buscar/consultar)." """)
+"Ich (yo) muss (debo) diese (esta) Informationen (información) nachschlagen (buscar/consultar)" """)
             if "colloquial" in german_styles:
                 prompt_parts.append("""* Conversational-colloquial:
 "Ich muss das mal nachschauen" (colloquial with modal particle)
 * word by word Conversational-colloquial German-Spanish:
-"Ich (Yo) muss (debo) das (eso) mal (una vez) nachschauen (revisar)." """)
+"Ich (yo) muss (debo) das (eso) mal (una vez) nachschauen (revisar)" """)
             if "informal" in german_styles:
                 prompt_parts.append("""* Conversational-informal:
 "Ich schau das mal nach" (informal, relaxed)
 * word by word Conversational-informal German-Spanish:
-"Ich (Yo) schau nach (busco/reviso) das (eso) mal (una vez)." """)
+"Ich (yo) schau (busco) das (eso) mal (una vez) nach (después)" """)
             if "formal" in german_styles:
                 prompt_parts.append("""* Conversational-formal:
 "Ich möchte diese Angaben überprüfen" (formal, polite)
 * word by word Conversational-formal German-Spanish:
-"Ich (Yo) möchte (me gustaría) diese (estos) Angaben (datos) überprüfen (verificar)." """)
+"Ich (yo) möchte (me gustaría) diese (estos) Angaben (datos) überprüfen (verificar)" """)
 
         # Generate English section with enhanced examples
         if english_styles:
@@ -217,22 +232,22 @@ English Translation:
                 prompt_parts.append("""* Conversational-native:
 "I need to look up this information" (proper phrasal verb usage)
 * word by word Conversational-native English-Spanish:
-"I (Yo) need to (necesito) look up (buscar/consultar) this (esta) information (información)." """)
+"I (yo) need (necesito) to (que) look up (buscar/consultar) this (esta) information (información)" """)
             if "colloquial" in english_styles:
                 prompt_parts.append("""* Conversational-colloquial:
 "I gotta check this out" (colloquial with reduced forms)
 * word by word Conversational-colloquial English-Spanish:
-"I (Yo) gotta (tengo que) check out (revisar) this (esto)." """)
+"I (yo) gotta (tengo que) check (revisar) this (esto) out (fuera)" """)
             if "informal" in english_styles:
                 prompt_parts.append("""* Conversational-informal:
 "I need to check this info" (informal, abbreviated)
 * word by word Conversational-informal English-Spanish:
-"I (Yo) need to (necesito) check (revisar) this (esta) info (información)." """)
+"I (yo) need (necesito) to (que) check (revisar) this (esta) info (información)" """)
             if "formal" in english_styles:
                 prompt_parts.append("""* Conversational-formal:
 "I would like to verify this information" (formal, complete)
 * word by word Conversational-formal English-Spanish:
-"I (Yo) would like to (me gustaría) verify (verificar) this (esta) information (información)." """)
+"I (yo) would (me) like (gustaría) to (que) verify (verificar) this (esta) information (información)" """)
 
         prompt_parts.append("\n</example to follow>")
         return "\n".join(prompt_parts)
@@ -460,9 +475,8 @@ English Translation:
         word_by_word_enabled: bool
     ) -> Optional[Dict]:
         """
-        Extract translation and word pairs for a single style.
-        Returns a dictionary with translation, word_pairs, is_german, and style_name.
-        ENHANCED: Better handling of word pair extraction including all variations.
+        Extract translation and word pairs for a single style with improved parsing.
+        FIXED: Better handling of word pair extraction to capture ALL words with their translations.
         """
         import logging
         logger = logging.getLogger(__name__)
@@ -482,32 +496,42 @@ English Translation:
             if pairs_match:
                 pairs_text = pairs_match.group(1)
                 
-                # Enhanced regex patterns to capture more variations
-                patterns = [
-                    # Standard pattern: word/phrase (translation)
-                    r'([^()]+?)\s*\(([^)]+)\)',
-                    # Pattern for spaced versions: word ( translation )
-                    r'([^()]+?)\s+\(\s*([^)]+?)\s*\)',
-                    # Pattern for no spaces: word(translation)
-                    r'([^()]+?)\(([^)]+)\)',
-                ]
+                # Enhanced regex pattern to capture ALL word-translation pairs
+                # This pattern is more flexible and captures various formats
+                pair_matches = re.findall(
+                    r'([^()]+?)\s*\(([^)]+?)\)',
+                    pairs_text
+                )
                 
-                for pattern in patterns:
-                    pair_matches = re.findall(pattern, pairs_text)
+                for source, target in pair_matches:
+                    # Clean up the extracted pairs
+                    source = source.strip().rstrip('.,!?;:')  # Remove trailing punctuation
+                    target = target.strip()
                     
-                    for source, target in pair_matches:
-                        # Clean up the extracted pairs
-                        source = source.strip().rstrip(',.')
-                        target = target.strip()
+                    # Skip empty pairs
+                    if not source or not target:
+                        continue
+                    
+                    # Skip pairs that are too long (likely parsing errors)
+                    if len(source.split()) > 8:  # Reasonable limit for phrases
+                        continue
                         
-                        # Skip empty pairs or very short/long pairs
-                        if not source or not target or len(source) > 50 or len(target) > 100:
-                            continue
-                            
-                        # Avoid duplicates
-                        if (source, target) not in word_pairs:
+                    word_pairs.append((source, target))
+                    logger.debug(f"   Extracted pair: '{source}' -> '{target}'")
+                
+                # Fallback: If no pairs found with the main pattern, try alternative patterns
+                if not word_pairs:
+                    # Try pattern without quotes
+                    alt_pairs_text = pairs_text.replace('"', '')
+                    alt_matches = re.findall(
+                        r'(\w+(?:\s+\w+)*)\s*\(([^)]+?)\)',
+                        alt_pairs_text
+                    )
+                    for source, target in alt_matches:
+                        source = source.strip()
+                        target = target.strip()
+                        if source and target:
                             word_pairs.append((source, target))
-                            logger.debug(f"   Extracted pair: '{source}' -> '{target}'")
         
         logger.info(f"   {style_name}: Found {len(word_pairs)} word pairs")
         
