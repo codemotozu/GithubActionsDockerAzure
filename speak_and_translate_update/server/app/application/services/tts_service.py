@@ -322,10 +322,10 @@ Spanish translation:"""
         mapping.update(self.common_translations)
         
         # Add punctuation handling
-        # punctuation_map = {
-        #     ".": ".", ",": ",", "!": "!", "?": "?", ";": ";", ":": ":", 
-        #     "(": "(", ")": ")", "'": "'", '"': '"'
-        # }
+        punctuation_map = {
+            ".": ".", ",": ",", "!": "!", "?": "?", ";": ";", ":": ":", 
+            "(": "(", ")": ")", "'": "'", '"': '"'
+        }
         mapping.update(punctuation_map)
         
         logger.info(f"Created comprehensive word mapping with {len(mapping)} entries")

@@ -169,15 +169,106 @@ English Translation:
             ]
         )
 
+#     def _create_dynamic_prompt(self, style_preferences) -> str:
+#         """Create a dynamic prompt based on user's style preferences with complete coverage emphasis"""
+#         prompt_parts = ["Text\n(Could be any phrase or word)\n<example to follow>\n"]
+        
+#         # Add emphasis on complete coverage
+#         prompt_parts.append("""
+# CRITICAL: You must provide Spanish translations for EVERY SINGLE WORD in the word-by-word breakdown. 
+# NO word should be left untranslated. Every article, preposition, pronoun, verb, noun, adjective, and adverb must have a Spanish equivalent.
+# """)
+        
+#         # Check if any German styles are selected
+#         german_styles = []
+#         if style_preferences.german_native:
+#             german_styles.append("native")
+#         if style_preferences.german_colloquial:
+#             german_styles.append("colloquial")
+#         if style_preferences.german_informal:
+#             german_styles.append("informal")
+#         if style_preferences.german_formal:
+#             german_styles.append("formal")
+            
+#         # Check if any English styles are selected
+#         english_styles = []
+#         if style_preferences.english_native:
+#             english_styles.append("native")
+#         if style_preferences.english_colloquial:
+#             english_styles.append("colloquial")
+#         if style_preferences.english_informal:
+#             english_styles.append("informal")
+#         if style_preferences.english_formal:
+#             english_styles.append("formal")
+
+#         # Generate German section with enhanced examples
+#         if german_styles:
+#             prompt_parts.append("German Translation:")
+#             if "native" in german_styles:
+#                 prompt_parts.append("""* Conversational-native:
+# "Ich muss diese Informationen nachschlagen" (with proper separable verb)
+# * word by word Conversational-native German-Spanish:
+# "Ich (yo) muss (debo) diese (esta) Informationen (información) nachschlagen (buscar/consultar)" """)
+#             if "colloquial" in german_styles:
+#                 prompt_parts.append("""* Conversational-colloquial:
+# "Ich muss das mal nachschauen" (colloquial with modal particle)
+# * word by word Conversational-colloquial German-Spanish:
+# "Ich (yo) muss (debo) das (eso) mal (una vez) nachschauen (revisar)" """)
+#             if "informal" in german_styles:
+#                 prompt_parts.append("""* Conversational-informal:
+# "Ich schau das mal nach" (informal, relaxed)
+# * word by word Conversational-informal German-Spanish:
+# "Ich (yo) schau (busco) das (eso) mal (una vez) nach (después)" """)
+#             if "formal" in german_styles:
+#                 prompt_parts.append("""* Conversational-formal:
+# "Ich möchte diese Angaben überprüfen" (formal, polite)
+# * word by word Conversational-formal German-Spanish:
+# "Ich (yo) möchte (me gustaría) diese (estos) Angaben (datos) überprüfen (verificar)" """)
+
+#         # Generate English section with enhanced examples
+#         if english_styles:
+#             prompt_parts.append("\nEnglish Translation:")
+#             if "native" in english_styles:
+#                 prompt_parts.append("""* Conversational-native:
+# "I need to look up this information" (proper phrasal verb usage)
+# * word by word Conversational-native English-Spanish:
+# "I (yo) need (necesito) to (que) look up (buscar/consultar) this (esta) information (información)" """)
+#             if "colloquial" in english_styles:
+#                 prompt_parts.append("""* Conversational-colloquial:
+# "I gotta check this out" (colloquial with reduced forms)
+# * word by word Conversational-colloquial English-Spanish:
+# "I (yo) gotta (tengo que) check (revisar) this (esto) out (fuera)" """)
+#             if "informal" in english_styles:
+#                 prompt_parts.append("""* Conversational-informal:
+# "I need to check this info" (informal, abbreviated)
+# * word by word Conversational-informal English-Spanish:
+# "I (yo) need (necesito) to (que) check (revisar) this (esta) info (información)" """)
+#             if "formal" in english_styles:
+#                 prompt_parts.append("""* Conversational-formal:
+# "I would like to verify this information" (formal, complete)
+# * word by word Conversational-formal English-Spanish:
+# "I (yo) would (me) like (gustaría) to (que) verify (verificar) this (esta) information (información)" """)
+
+#         prompt_parts.append("\n</example to follow>")
+#         return "\n".join(prompt_parts)
+
+
+
     def _create_dynamic_prompt(self, style_preferences) -> str:
         """Create a dynamic prompt based on user's style preferences with complete coverage emphasis"""
-        prompt_parts = ["Text\n(Could be any phrase or word)\n<example to follow>\n"]
-        
-        # Add emphasis on complete coverage
-        prompt_parts.append("""
-CRITICAL: You must provide Spanish translations for EVERY SINGLE WORD in the word-by-word breakdown. 
-NO word should be left untranslated. Every article, preposition, pronoun, verb, noun, adjective, and adverb must have a Spanish equivalent.
-""")
+        prompt_parts = ["""You are an expert multilingual translator. Analyze the input text and determine its language, then translate accordingly.
+
+    If the input is in Spanish, translate to German and English.
+    If the input is in English, translate to German and Spanish.
+    If the input is in German, translate to English and Spanish.
+
+    CRITICAL: You must provide Spanish translations for EVERY SINGLE WORD in the word-by-word breakdown. 
+    NO word should be left untranslated. Every article, preposition, pronoun, verb, noun, adjective, and adverb must have a Spanish equivalent.
+
+    Text
+    (Could be any phrase or word)
+    <example to follow>
+    """]
         
         # Check if any German styles are selected
         german_styles = []
@@ -201,56 +292,52 @@ NO word should be left untranslated. Every article, preposition, pronoun, verb, 
         if style_preferences.english_formal:
             english_styles.append("formal")
 
-        # Generate German section with enhanced examples
+        # Generate German section
         if german_styles:
-            prompt_parts.append("German Translation:")
-            if "native" in german_styles:
-                prompt_parts.append("""* Conversational-native:
-"Ich muss diese Informationen nachschlagen" (with proper separable verb)
-* word by word Conversational-native German-Spanish:
-"Ich (yo) muss (debo) diese (esta) Informationen (información) nachschlagen (buscar/consultar)" """)
-            if "colloquial" in german_styles:
-                prompt_parts.append("""* Conversational-colloquial:
-"Ich muss das mal nachschauen" (colloquial with modal particle)
-* word by word Conversational-colloquial German-Spanish:
-"Ich (yo) muss (debo) das (eso) mal (una vez) nachschauen (revisar)" """)
-            if "informal" in german_styles:
-                prompt_parts.append("""* Conversational-informal:
-"Ich schau das mal nach" (informal, relaxed)
-* word by word Conversational-informal German-Spanish:
-"Ich (yo) schau (busco) das (eso) mal (una vez) nach (después)" """)
-            if "formal" in german_styles:
-                prompt_parts.append("""* Conversational-formal:
-"Ich möchte diese Angaben überprüfen" (formal, polite)
-* word by word Conversational-formal German-Spanish:
-"Ich (yo) möchte (me gustaría) diese (estos) Angaben (datos) überprüfen (verificar)" """)
+            prompt_parts.append("\nGerman Translation:")
+            for style in german_styles:
+                if style == "native":
+                    prompt_parts.append('* Conversational-native:\n"[Natural German translation]"')
+                    if style_preferences.german_word_by_word:
+                        prompt_parts.append('* word by word Conversational-native German-Spanish:\n"[word] ([translation]) [word] ([translation]) ..."')
+                elif style == "colloquial":
+                    prompt_parts.append('* Conversational-colloquial:\n"[Colloquial German translation]"')
+                    if style_preferences.german_word_by_word:
+                        prompt_parts.append('* word by word Conversational-colloquial German-Spanish:\n"[word] ([translation]) [word] ([translation]) ..."')
+                elif style == "informal":
+                    prompt_parts.append('* Conversational-informal:\n"[Informal German translation]"')
+                    if style_preferences.german_word_by_word:
+                        prompt_parts.append('* word by word Conversational-informal German-Spanish:\n"[word] ([translation]) [word] ([translation]) ..."')
+                elif style == "formal":
+                    prompt_parts.append('* Conversational-formal:\n"[Formal German translation]"')
+                    if style_preferences.german_word_by_word:
+                        prompt_parts.append('* word by word Conversational-formal German-Spanish:\n"[word] ([translation]) [word] ([translation]) ..."')
 
-        # Generate English section with enhanced examples
+        # Generate English section
         if english_styles:
             prompt_parts.append("\nEnglish Translation:")
-            if "native" in english_styles:
-                prompt_parts.append("""* Conversational-native:
-"I need to look up this information" (proper phrasal verb usage)
-* word by word Conversational-native English-Spanish:
-"I (yo) need (necesito) to (que) look up (buscar/consultar) this (esta) information (información)" """)
-            if "colloquial" in english_styles:
-                prompt_parts.append("""* Conversational-colloquial:
-"I gotta check this out" (colloquial with reduced forms)
-* word by word Conversational-colloquial English-Spanish:
-"I (yo) gotta (tengo que) check (revisar) this (esto) out (fuera)" """)
-            if "informal" in english_styles:
-                prompt_parts.append("""* Conversational-informal:
-"I need to check this info" (informal, abbreviated)
-* word by word Conversational-informal English-Spanish:
-"I (yo) need (necesito) to (que) check (revisar) this (esta) info (información)" """)
-            if "formal" in english_styles:
-                prompt_parts.append("""* Conversational-formal:
-"I would like to verify this information" (formal, complete)
-* word by word Conversational-formal English-Spanish:
-"I (yo) would (me) like (gustaría) to (que) verify (verificar) this (esta) information (información)" """)
+            for style in english_styles:
+                if style == "native":
+                    prompt_parts.append('* Conversational-native:\n"[Natural English translation]"')
+                    if style_preferences.english_word_by_word:
+                        prompt_parts.append('* word by word Conversational-native English-Spanish:\n"[word] ([translation]) [word] ([translation]) ..."')
+                elif style == "colloquial":
+                    prompt_parts.append('* Conversational-colloquial:\n"[Colloquial English translation]"')
+                    if style_preferences.english_word_by_word:
+                        prompt_parts.append('* word by word Conversational-colloquial English-Spanish:\n"[word] ([translation]) [word] ([translation]) ..."')
+                elif style == "informal":
+                    prompt_parts.append('* Conversational-informal:\n"[Informal English translation]"')
+                    if style_preferences.english_word_by_word:
+                        prompt_parts.append('* word by word Conversational-informal English-Spanish:\n"[word] ([translation]) [word] ([translation]) ..."')
+                elif style == "formal":
+                    prompt_parts.append('* Conversational-formal:\n"[Formal English translation]"')
+                    if style_preferences.english_word_by_word:
+                        prompt_parts.append('* word by word Conversational-formal English-Spanish:\n"[word] ([translation]) [word] ([translation]) ..."')
 
         prompt_parts.append("\n</example to follow>")
         return "\n".join(prompt_parts)
+
+
 
     async def process_prompt(
         self, text: str, source_lang: str, target_lang: str, style_preferences=None
@@ -326,37 +413,244 @@ NO word should be left untranslated. Every article, preposition, pronoun, verb, 
             print(f"Error in process_prompt: {str(e)}")
             raise Exception(f"Translation processing failed: {str(e)}")
 
+    # def _extract_text_and_pairs_v2(
+    #     self, generated_text: str, style_preferences
+    # ) -> Dict:
+    #     """
+    #     Extract texts and word pairs with proper style-specific matching.
+    #     FIXED: Each style gets its own unique word pairs extracted from its specific section.
+    #     """
+    #     result = {
+    #         'translations': [],
+    #         'style_data': []  # List of (translation, word_pairs, is_german, style_name)
+    #     }
+
+    #     # Split the text into German and English sections
+    #     german_section = ""
+    #     english_section = ""
+        
+    #     if "German Translation:" in generated_text and "English Translation:" in generated_text:
+    #         parts = generated_text.split("English Translation:")
+    #         german_section = parts[0]
+    #         english_section = "English Translation:" + parts[1] if len(parts) > 1 else ""
+    #     elif "German Translation:" in generated_text:
+    #         german_section = generated_text
+    #     elif "English Translation:" in generated_text:
+    #         english_section = generated_text
+
+    #     # Process German styles
+    #     if style_preferences.german_native and german_section:
+    #         native_data = self._extract_single_style(
+    #             german_section,
+    #             r'\* Conversational-native:\s*"([^"]+)"',
+    #             r'\* word by word Conversational-native German-Spanish:\s*"([^"]+)"',
+    #             True,
+    #             "german_native",
+    #             style_preferences.german_word_by_word
+    #         )
+    #         if native_data:
+    #             result['translations'].append(native_data['translation'])
+    #             result['style_data'].append(native_data)
+
+    #     if style_preferences.german_colloquial and german_section:
+    #         colloquial_data = self._extract_single_style(
+    #             german_section,
+    #             r'\* Conversational-colloquial:\s*"([^"]+)"',
+    #             r'\* word by word Conversational-colloquial German-Spanish:\s*"([^"]+)"',
+    #             True,
+    #             "german_colloquial",
+    #             style_preferences.german_word_by_word
+    #         )
+    #         if colloquial_data:
+    #             result['translations'].append(colloquial_data['translation'])
+    #             result['style_data'].append(colloquial_data)
+
+    #     if style_preferences.german_informal and german_section:
+    #         informal_data = self._extract_single_style(
+    #             german_section,
+    #             r'\* Conversational-informal:\s*"([^"]+)"',
+    #             r'\* word by word Conversational-informal German-Spanish:\s*"([^"]+)"',
+    #             True,
+    #             "german_informal",
+    #             style_preferences.german_word_by_word
+    #         )
+    #         if informal_data:
+    #             result['translations'].append(informal_data['translation'])
+    #             result['style_data'].append(informal_data)
+
+    #     if style_preferences.german_formal and german_section:
+    #         formal_data = self._extract_single_style(
+    #             german_section,
+    #             r'\* [Cc]onversational-formal:\s*"([^"]+)"',
+    #             r'\* word by word [Cc]onversational-formal German-Spanish:\s*"([^"]+)"',
+    #             True,
+    #             "german_formal",
+    #             style_preferences.german_word_by_word
+    #         )
+    #         if formal_data:
+    #             result['translations'].append(formal_data['translation'])
+    #             result['style_data'].append(formal_data)
+
+    #     # Process English styles
+    #     if style_preferences.english_native and english_section:
+    #         native_data = self._extract_single_style(
+    #             english_section,
+    #             r'\* Conversational-native:\s*"([^"]+)"',
+    #             r'\* word by word Conversational-native English-Spanish:\s*"([^"]+)"',
+    #             False,
+    #             "english_native",
+    #             style_preferences.english_word_by_word
+    #         )
+    #         if native_data:
+    #             result['translations'].append(native_data['translation'])
+    #             result['style_data'].append(native_data)
+
+    #     if style_preferences.english_colloquial and english_section:
+    #         colloquial_data = self._extract_single_style(
+    #             english_section,
+    #             r'\* Conversational-colloquial:\s*"([^"]+)"',
+    #             r'\* word by word Conversational-colloquial English-Spanish:\s*"([^"]+)"',
+    #             False,
+    #             "english_colloquial",
+    #             style_preferences.english_word_by_word
+    #         )
+    #         if colloquial_data:
+    #             result['translations'].append(colloquial_data['translation'])
+    #             result['style_data'].append(colloquial_data)
+
+    #     if style_preferences.english_informal and english_section:
+    #         informal_data = self._extract_single_style(
+    #             english_section,
+    #             r'\* Conversational-informal:\s*"([^"]+)"',
+    #             r'\* word by word Conversational-informal English-Spanish:\s*"([^"]+)"',
+    #             False,
+    #             "english_informal",
+    #             style_preferences.english_word_by_word
+    #         )
+    #         if informal_data:
+    #             result['translations'].append(informal_data['translation'])
+    #             result['style_data'].append(informal_data)
+
+    #     if style_preferences.english_formal and english_section:
+    #         formal_data = self._extract_single_style(
+    #             english_section,
+    #             r'\* [Cc]onversational-formal:\s*"([^"]+)"',
+    #             r'\* word by word [Cc]onversational-formal English-Spanish:\s*"([^"]+)"',
+    #             False,
+    #             "english_formal",
+    #             style_preferences.english_word_by_word
+    #         )
+    #         if formal_data:
+    #             result['translations'].append(formal_data['translation'])
+    #             result['style_data'].append(formal_data)
+
+    #     print(f"🎵 Extraction summary:")
+    #     print(f"   Translations found: {len(result['translations'])}")
+    #     print(f"   Style data entries: {len(result['style_data'])}")
+    #     for style_info in result['style_data']:
+    #         print(f"   - {style_info['style_name']}: {len(style_info['word_pairs'])} word pairs")
+
+    #     return result
+
+
+
     def _extract_text_and_pairs_v2(
         self, generated_text: str, style_preferences
     ) -> Dict:
         """
         Extract texts and word pairs with proper style-specific matching.
-        FIXED: Each style gets its own unique word pairs extracted from its specific section.
+        FIXED: Now handles Spanish input and other language variations.
         """
         result = {
             'translations': [],
             'style_data': []  # List of (translation, word_pairs, is_german, style_name)
         }
 
-        # Split the text into German and English sections
+        # First, detect what language sections we have
+        has_german = "German Translation:" in generated_text
+        has_english = "English Translation:" in generated_text
+        has_spanish = "Spanish Translation:" in generated_text or "Spanish:" in generated_text
+        
+        # Log what we found
+        print(f"🔍 Detected sections: German={has_german}, English={has_english}, Spanish={has_spanish}")
+        print(f"📄 Generated text preview: {generated_text[:200]}...")
+
+        # Split the text into language sections
         german_section = ""
         english_section = ""
+        spanish_section = ""
         
-        if "German Translation:" in generated_text and "English Translation:" in generated_text:
-            parts = generated_text.split("English Translation:")
-            german_section = parts[0]
-            english_section = "English Translation:" + parts[1] if len(parts) > 1 else ""
-        elif "German Translation:" in generated_text:
-            german_section = generated_text
-        elif "English Translation:" in generated_text:
-            english_section = generated_text
+        # Handle different possible structures
+        if has_spanish and not has_german and not has_english:
+            # Input was Spanish, output is Spanish translations to German/English
+            # Gemini might have misunderstood - try to extract anyway
+            spanish_section = generated_text
+            
+            # Try to find German and English translations within the Spanish section
+            if "German:" in generated_text or "Alemán:" in generated_text:
+                parts = re.split(r'(?:German:|Alemán:)', generated_text)
+                if len(parts) > 1:
+                    german_section = parts[1].split("English:")[0] if "English:" in parts[1] else parts[1]
+                    
+            if "English:" in generated_text or "Inglés:" in generated_text:
+                parts = re.split(r'(?:English:|Inglés:)', generated_text)
+                if len(parts) > 1:
+                    english_section = parts[1]
+        
+        elif has_german and has_english:
+            # Standard case - input was translated to German and English
+            if "German Translation:" in generated_text and "English Translation:" in generated_text:
+                parts = generated_text.split("English Translation:")
+                german_section = parts[0]
+                english_section = "English Translation:" + parts[1] if len(parts) > 1 else ""
+            elif "German Translation:" in generated_text:
+                german_section = generated_text
+            elif "English Translation:" in generated_text:
+                english_section = generated_text
+        
+        # If we still don't have proper sections, try alternative patterns
+        if not german_section and not english_section:
+            # Try to extract any conversational patterns directly
+            lines = generated_text.split('\n')
+            current_language = None
+            
+            for i, line in enumerate(lines):
+                line = line.strip()
+                
+                # Detect language based on various patterns
+                if any(pattern in line.lower() for pattern in ['german', 'deutsch', 'alemán']):
+                    current_language = 'german'
+                    german_section = '\n'.join(lines[i:])
+                elif any(pattern in line.lower() for pattern in ['english', 'inglés']):
+                    current_language = 'english'
+                    english_section = '\n'.join(lines[i:])
+                
+                # Also try to detect conversational styles directly
+                if '* Conversational' in line or '* conversational' in line:
+                    # We found a style line, determine which language it belongs to
+                    if current_language == 'german':
+                        if not german_section:
+                            german_section = '\n'.join(lines[i:])
+                    elif current_language == 'english':
+                        if not english_section:
+                            english_section = '\n'.join(lines[i:])
+                    else:
+                        # Try to guess based on content
+                        if i > 0:
+                            prev_lines = '\n'.join(lines[max(0, i-3):i])
+                            if any(word in prev_lines.lower() for word in ['german', 'deutsch', 'alemán']):
+                                german_section = '\n'.join(lines[i:])
+                                current_language = 'german'
+                            elif any(word in prev_lines.lower() for word in ['english', 'inglés']):
+                                english_section = '\n'.join(lines[i:])
+                                current_language = 'english'
 
         # Process German styles
         if style_preferences.german_native and german_section:
             native_data = self._extract_single_style(
                 german_section,
-                r'\* Conversational-native:\s*"([^"]+)"',
-                r'\* word by word Conversational-native German-Spanish:\s*"([^"]+)"',
+                r'\*\s*[Cc]onversational-native:\s*"([^"]+)"',
+                r'\*\s*word by word [Cc]onversational-native (?:German-Spanish|German):\s*"([^"]+)"',
                 True,
                 "german_native",
                 style_preferences.german_word_by_word
@@ -368,8 +662,8 @@ NO word should be left untranslated. Every article, preposition, pronoun, verb, 
         if style_preferences.german_colloquial and german_section:
             colloquial_data = self._extract_single_style(
                 german_section,
-                r'\* Conversational-colloquial:\s*"([^"]+)"',
-                r'\* word by word Conversational-colloquial German-Spanish:\s*"([^"]+)"',
+                r'\*\s*[Cc]onversational-colloquial:\s*"([^"]+)"',
+                r'\*\s*word by word [Cc]onversational-colloquial (?:German-Spanish|German):\s*"([^"]+)"',
                 True,
                 "german_colloquial",
                 style_preferences.german_word_by_word
@@ -381,8 +675,8 @@ NO word should be left untranslated. Every article, preposition, pronoun, verb, 
         if style_preferences.german_informal and german_section:
             informal_data = self._extract_single_style(
                 german_section,
-                r'\* Conversational-informal:\s*"([^"]+)"',
-                r'\* word by word Conversational-informal German-Spanish:\s*"([^"]+)"',
+                r'\*\s*[Cc]onversational-informal:\s*"([^"]+)"',
+                r'\*\s*word by word [Cc]onversational-informal (?:German-Spanish|German):\s*"([^"]+)"',
                 True,
                 "german_informal",
                 style_preferences.german_word_by_word
@@ -394,8 +688,8 @@ NO word should be left untranslated. Every article, preposition, pronoun, verb, 
         if style_preferences.german_formal and german_section:
             formal_data = self._extract_single_style(
                 german_section,
-                r'\* [Cc]onversational-formal:\s*"([^"]+)"',
-                r'\* word by word [Cc]onversational-formal German-Spanish:\s*"([^"]+)"',
+                r'\*\s*[Cc]onversational-formal:\s*"([^"]+)"',
+                r'\*\s*word by word [Cc]onversational-formal (?:German-Spanish|German):\s*"([^"]+)"',
                 True,
                 "german_formal",
                 style_preferences.german_word_by_word
@@ -408,8 +702,8 @@ NO word should be left untranslated. Every article, preposition, pronoun, verb, 
         if style_preferences.english_native and english_section:
             native_data = self._extract_single_style(
                 english_section,
-                r'\* Conversational-native:\s*"([^"]+)"',
-                r'\* word by word Conversational-native English-Spanish:\s*"([^"]+)"',
+                r'\*\s*[Cc]onversational-native:\s*"([^"]+)"',
+                r'\*\s*word by word [Cc]onversational-native (?:English-Spanish|English):\s*"([^"]+)"',
                 False,
                 "english_native",
                 style_preferences.english_word_by_word
@@ -421,8 +715,8 @@ NO word should be left untranslated. Every article, preposition, pronoun, verb, 
         if style_preferences.english_colloquial and english_section:
             colloquial_data = self._extract_single_style(
                 english_section,
-                r'\* Conversational-colloquial:\s*"([^"]+)"',
-                r'\* word by word Conversational-colloquial English-Spanish:\s*"([^"]+)"',
+                r'\*\s*[Cc]onversational-colloquial:\s*"([^"]+)"',
+                r'\*\s*word by word [Cc]onversational-colloquial (?:English-Spanish|English):\s*"([^"]+)"',
                 False,
                 "english_colloquial",
                 style_preferences.english_word_by_word
@@ -434,8 +728,8 @@ NO word should be left untranslated. Every article, preposition, pronoun, verb, 
         if style_preferences.english_informal and english_section:
             informal_data = self._extract_single_style(
                 english_section,
-                r'\* Conversational-informal:\s*"([^"]+)"',
-                r'\* word by word Conversational-informal English-Spanish:\s*"([^"]+)"',
+                r'\*\s*[Cc]onversational-informal:\s*"([^"]+)"',
+                r'\*\s*word by word [Cc]onversational-informal (?:English-Spanish|English):\s*"([^"]+)"',
                 False,
                 "english_informal",
                 style_preferences.english_word_by_word
@@ -447,8 +741,8 @@ NO word should be left untranslated. Every article, preposition, pronoun, verb, 
         if style_preferences.english_formal and english_section:
             formal_data = self._extract_single_style(
                 english_section,
-                r'\* [Cc]onversational-formal:\s*"([^"]+)"',
-                r'\* word by word [Cc]onversational-formal English-Spanish:\s*"([^"]+)"',
+                r'\*\s*[Cc]onversational-formal:\s*"([^"]+)"',
+                r'\*\s*word by word [Cc]onversational-formal (?:English-Spanish|English):\s*"([^"]+)"',
                 False,
                 "english_formal",
                 style_preferences.english_word_by_word
@@ -457,6 +751,26 @@ NO word should be left untranslated. Every article, preposition, pronoun, verb, 
                 result['translations'].append(formal_data['translation'])
                 result['style_data'].append(formal_data)
 
+        # If still no translations found, try a more aggressive extraction
+        if len(result['translations']) == 0:
+            print("⚠️ No translations found with standard patterns, trying fallback extraction...")
+            
+            # Look for any quoted text after "Conversational" patterns
+            conversational_matches = re.findall(
+                r'\*\s*[Cc]onversational-\w+:\s*"([^"]+)"',
+                generated_text
+            )
+            
+            for match in conversational_matches[:4]:  # Take up to 4 matches
+                result['translations'].append(match)
+                # Create a basic style data entry
+                result['style_data'].append({
+                    'translation': match,
+                    'word_pairs': [],
+                    'is_german': 'German' in generated_text[:generated_text.find(match)] if match in generated_text else False,
+                    'style_name': 'extracted_style'
+                })
+
         print(f"🎵 Extraction summary:")
         print(f"   Translations found: {len(result['translations'])}")
         print(f"   Style data entries: {len(result['style_data'])}")
@@ -464,6 +778,85 @@ NO word should be left untranslated. Every article, preposition, pronoun, verb, 
             print(f"   - {style_info['style_name']}: {len(style_info['word_pairs'])} word pairs")
 
         return result
+
+    # def _extract_single_style(
+    #     self, 
+    #     text_section: str, 
+    #     text_pattern: str, 
+    #     pairs_pattern: str,
+    #     is_german: bool,
+    #     style_name: str,
+    #     word_by_word_enabled: bool
+    # ) -> Optional[Dict]:
+    #     """
+    #     Extract translation and word pairs for a single style with improved parsing.
+    #     FIXED: Better handling of word pair extraction to capture ALL words with their translations.
+    #     """
+    #     import logging
+    #     logger = logging.getLogger(__name__)
+        
+    #     # Extract translation text
+    #     text_match = re.search(text_pattern, text_section, re.DOTALL | re.IGNORECASE)
+        
+    #     if not text_match:
+    #         return None
+            
+    #     translation_text = text_match.group(1).strip()
+        
+    #     # Extract word pairs if word-by-word is enabled
+    #     word_pairs = []
+    #     if word_by_word_enabled:
+    #         pairs_match = re.search(pairs_pattern, text_section, re.IGNORECASE)
+    #         if pairs_match:
+    #             pairs_text = pairs_match.group(1)
+                
+    #             # Enhanced regex pattern to capture ALL word-translation pairs
+    #             # This pattern is more flexible and captures various formats
+    #             pair_matches = re.findall(
+    #                 r'([^()]+?)\s*\(([^)]+?)\)',
+    #                 pairs_text
+    #             )
+                
+    #             for source, target in pair_matches:
+    #                 # Clean up the extracted pairs
+    #                 source = source.strip().rstrip('.,!?;:')  # Remove trailing punctuation
+    #                 target = target.strip()
+                    
+    #                 # Skip empty pairs
+    #                 if not source or not target:
+    #                     continue
+                    
+    #                 # Skip pairs that are too long (likely parsing errors)
+    #                 if len(source.split()) > 8:  # Reasonable limit for phrases
+    #                     continue
+                        
+    #                 word_pairs.append((source, target))
+    #                 logger.debug(f"   Extracted pair: '{source}' -> '{target}'")
+                
+    #             # Fallback: If no pairs found with the main pattern, try alternative patterns
+    #             if not word_pairs:
+    #                 # Try pattern without quotes
+    #                 alt_pairs_text = pairs_text.replace('"', '')
+    #                 alt_matches = re.findall(
+    #                     r'(\w+(?:\s+\w+)*)\s*\(([^)]+?)\)',
+    #                     alt_pairs_text
+    #                 )
+    #                 for source, target in alt_matches:
+    #                     source = source.strip()
+    #                     target = target.strip()
+    #                     if source and target:
+    #                         word_pairs.append((source, target))
+        
+    #     logger.info(f"   {style_name}: Found {len(word_pairs)} word pairs")
+        
+    #     return {
+    #         'translation': translation_text,
+    #         'word_pairs': word_pairs,
+    #         'is_german': is_german,
+    #         'style_name': style_name
+    #     }
+
+# Updated _extract_single_style method for translation_service.py
 
     def _extract_single_style(
         self, 
@@ -476,64 +869,98 @@ NO word should be left untranslated. Every article, preposition, pronoun, verb, 
     ) -> Optional[Dict]:
         """
         Extract translation and word pairs for a single style with improved parsing.
-        FIXED: Better handling of word pair extraction to capture ALL words with their translations.
+        FIXED: More flexible pattern matching and better error handling.
         """
         import logging
         logger = logging.getLogger(__name__)
         
-        # Extract translation text
-        text_match = re.search(text_pattern, text_section, re.DOTALL | re.IGNORECASE)
+        # Try multiple pattern variations for better matching
+        text_patterns = [
+            text_pattern,
+            text_pattern.replace('"([^"]+)"', r'"?([^"\n]+)"?'),  # Optional quotes
+            text_pattern.replace('"([^"]+)"', r'["\']([^"\'\n]+)["\']'),  # Single or double quotes
+        ]
         
-        if not text_match:
+        translation_text = None
+        for pattern in text_patterns:
+            try:
+                text_match = re.search(pattern, text_section, re.DOTALL | re.IGNORECASE)
+                if text_match:
+                    translation_text = text_match.group(1).strip()
+                    break
+            except Exception as e:
+                logger.debug(f"Pattern failed: {pattern}, Error: {e}")
+                continue
+        
+        if not translation_text:
+            logger.debug(f"No translation found for {style_name} with patterns")
             return None
             
-        translation_text = text_match.group(1).strip()
+        # Clean up the translation text
+        translation_text = translation_text.strip('"\'').strip()
         
         # Extract word pairs if word-by-word is enabled
         word_pairs = []
         if word_by_word_enabled:
-            pairs_match = re.search(pairs_pattern, text_section, re.IGNORECASE)
-            if pairs_match:
-                pairs_text = pairs_match.group(1)
+            # Try multiple pattern variations for word pairs
+            pairs_patterns = [
+                pairs_pattern,
+                pairs_pattern.replace('"([^"]+)"', r'"?([^"\n]+)"?'),  # Optional quotes
+                pairs_pattern.replace('German-Spanish', '(?:German-Spanish|German|Alemán-Español)'),
+                pairs_pattern.replace('English-Spanish', '(?:English-Spanish|English|Inglés-Español)'),
+            ]
+            
+            pairs_text = None
+            for pattern in pairs_patterns:
+                try:
+                    pairs_match = re.search(pattern, text_section, re.IGNORECASE | re.DOTALL)
+                    if pairs_match:
+                        pairs_text = pairs_match.group(1)
+                        break
+                except Exception as e:
+                    logger.debug(f"Pairs pattern failed: {pattern}, Error: {e}")
+                    continue
+            
+            if pairs_text:
+                # Enhanced regex patterns to capture word-translation pairs
+                patterns_to_try = [
+                    r'([^()]+?)\s*\(([^)]+?)\)',  # Standard: word (translation)
+                    r'(\S+(?:\s+\S+)?)\s*\(([^)]+?)\)',  # One or two words (translation)
+                    r'"([^"]+)"\s*\(([^)]+?)\)',  # "word" (translation)
+                    r'([^,()]+?)\s*\(([^)]+?)\)',  # Anything except comma/parens (translation)
+                ]
                 
-                # Enhanced regex pattern to capture ALL word-translation pairs
-                # This pattern is more flexible and captures various formats
-                pair_matches = re.findall(
-                    r'([^()]+?)\s*\(([^)]+?)\)',
-                    pairs_text
-                )
-                
-                for source, target in pair_matches:
-                    # Clean up the extracted pairs
-                    source = source.strip().rstrip('.,!?;:')  # Remove trailing punctuation
-                    target = target.strip()
-                    
-                    # Skip empty pairs
-                    if not source or not target:
-                        continue
-                    
-                    # Skip pairs that are too long (likely parsing errors)
-                    if len(source.split()) > 8:  # Reasonable limit for phrases
-                        continue
-                        
-                    word_pairs.append((source, target))
-                    logger.debug(f"   Extracted pair: '{source}' -> '{target}'")
-                
-                # Fallback: If no pairs found with the main pattern, try alternative patterns
-                if not word_pairs:
-                    # Try pattern without quotes
-                    alt_pairs_text = pairs_text.replace('"', '')
-                    alt_matches = re.findall(
-                        r'(\w+(?:\s+\w+)*)\s*\(([^)]+?)\)',
-                        alt_pairs_text
-                    )
-                    for source, target in alt_matches:
-                        source = source.strip()
-                        target = target.strip()
-                        if source and target:
+                for pair_pattern in patterns_to_try:
+                    pair_matches = re.findall(pair_pattern, pairs_text)
+                    if pair_matches:
+                        for source, target in pair_matches:
+                            # Clean up the extracted pairs
+                            source = source.strip().strip('"\'').rstrip('.,!?;:')
+                            target = target.strip().strip('"\'')
+                            
+                            # Skip empty pairs or overly long ones
+                            if not source or not target or len(source.split()) > 8:
+                                continue
+                                
                             word_pairs.append((source, target))
+                            logger.debug(f"   Extracted pair: '{source}' -> '{target}'")
+                        
+                        if word_pairs:
+                            break  # We found pairs, stop trying other patterns
+                
+                # If still no pairs found, try a simpler approach
+                if not word_pairs:
+                    # Split by common separators and look for parentheses
+                    segments = re.split(r'[,;]\s*', pairs_text)
+                    for segment in segments:
+                        match = re.search(r'(.+?)\s*\(([^)]+)\)', segment)
+                        if match:
+                            source = match.group(1).strip().strip('"\'')
+                            target = match.group(2).strip().strip('"\'')
+                            if source and target:
+                                word_pairs.append((source, target))
         
-        logger.info(f"   {style_name}: Found {len(word_pairs)} word pairs")
+        logger.info(f"   {style_name}: Found translation and {len(word_pairs)} word pairs")
         
         return {
             'translation': translation_text,
@@ -541,6 +968,7 @@ NO word should be left untranslated. Every article, preposition, pronoun, verb, 
             'is_german': is_german,
             'style_name': style_name
         }
+
 
     def _extract_text_and_pairs(
         self, generated_text: str, style_preferences
