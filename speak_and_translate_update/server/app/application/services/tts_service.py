@@ -394,6 +394,93 @@ Spanish translation:"""
             logger.error(f"❌ Error in text_to_speech_word_pairs_v2: {str(e)}")
             return None
 
+    # def _generate_complete_coverage_ssml(
+    #     self,
+    #     translations_data: Dict,
+    #     style_preferences=None,
+    # ) -> str:
+    #     """
+    #     Generate SSML with complete word coverage - every word gets properly translated.
+    #     """
+    #     ssml = """<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">"""
+        
+    #     # Log configuration
+    #     logger.info("\n🎤 TTS COMPLETE COVERAGE GENERATION")
+    #     logger.info("="*60)
+        
+    #     # Process each style with comprehensive word coverage
+    #     for style_info in translations_data.get('style_data', []):
+    #         translation = style_info['translation']
+    #         word_pairs = style_info['word_pairs']
+    #         is_german = style_info['is_german']
+    #         style_name = style_info['style_name']
+            
+    #         # Escape XML special characters in translation
+    #         translation = translation.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            
+    #         logger.info(f"\n📝 Processing {style_name}:")
+    #         logger.info(f"   Translation: \"{translation}\"")
+    #         logger.info(f"   Word pairs count: {len(word_pairs)}")
+            
+    #         # Create comprehensive mapping
+    #         mapping = self._create_comprehensive_word_mapping(word_pairs, is_german)
+            
+    #         # Determine voice and language
+    #         if is_german:
+    #             voice = "de-DE-SeraphinaMultilingualNeural"
+    #             lang = "de-DE"
+    #         else:
+    #             voice = "en-US-JennyMultilingualNeural"
+    #             lang = "en-US"
+            
+    #         # Add main translation
+    #         ssml += f"""
+    #     <voice name="{voice}">
+    #         <prosody rate="1.0">
+    #             <lang xml:lang="{lang}">{translation}</lang>
+    #             <break time="1000ms"/>
+    #         </prosody>
+    #     </voice>"""
+            
+    #         # Add comprehensive word-by-word section
+    #         ssml += """
+    #     <voice name="en-US-JennyMultilingualNeural">
+    #         <prosody rate="0.8">"""
+            
+    #         # Tokenize the translation properly
+    #         words = self._smart_tokenize(translation)
+            
+    #         logger.info(f"   Tokenized into {len(words)} words/tokens")
+            
+    #         # Process each word/token
+    #         for i, word in enumerate(words):
+    #             # Find translation for this word (now with real translation fallback)
+    #             spanish_translation = self._find_translation_for_word(word, mapping, is_german)
+                
+    #             # Clean word for speech (remove brackets if added by fallback)
+    #             clean_word = word.strip()
+    #             clean_spanish = spanish_translation.replace("[", "").replace("]", "")
+                
+    #             # Add to SSML
+    #             ssml += f"""
+    #         <lang xml:lang="{lang}">{clean_word}</lang>
+    #         <break time="300ms"/>
+    #         <lang xml:lang="es-ES">{clean_spanish}</lang>
+    #         <break time="500ms"/>"""
+            
+    #             logger.debug(f"   {i+1:2d}. '{clean_word}' -> '{clean_spanish}'")
+            
+    #         ssml += """
+    #         <break time="1000ms"/>
+    #         </prosody>
+    #     </voice>"""
+        
+    #     ssml += "</speak>"
+        
+    #     logger.info(f"\n✅ Generated complete SSML with full word coverage")
+    #     return ssml
+
+
     def _generate_complete_coverage_ssml(
         self,
         translations_data: Dict,
@@ -402,6 +489,9 @@ Spanish translation:"""
         """
         Generate SSML with complete word coverage - every word gets properly translated.
         """
+        # Define punctuation characters to exclude from logging
+        PUNCTUATION = set('!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~')
+        
         ssml = """<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">"""
         
         # Log configuration
@@ -468,7 +558,9 @@ Spanish translation:"""
             <lang xml:lang="es-ES">{clean_spanish}</lang>
             <break time="500ms"/>"""
             
-                logger.debug(f"   {i+1:2d}. '{clean_word}' -> '{clean_spanish}'")
+                # Only log non-punctuation words
+                if clean_word and clean_word not in PUNCTUATION:
+                    logger.debug(f"   {i+1:2d}. '{clean_word}' -> '{clean_spanish}'")
             
             ssml += """
             <break time="1000ms"/>
