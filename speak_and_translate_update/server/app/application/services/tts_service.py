@@ -1,4 +1,9 @@
-# tts_service.py - FIXED VERSION WITH ASYNC LOOP ISSUE RESOLVED
+
+
+
+
+
+# tts_service.py - Complete fixed version with AI translation
 
 from azure.cognitiveservices.speech import (
     SpeechConfig,
@@ -33,20 +38,20 @@ class EnhancedTTSService:
                 "Azure Speech credentials not found in environment variables"
             )
 
-        # Initialize Gemini for AI translations
+        # Initialize Gemini for intelligent phrase translation
         self.gemini_api_key = os.getenv("GEMINI_API_KEY")
         if self.gemini_api_key:
             genai.configure(api_key=self.gemini_api_key)
             self.translation_model = genai.GenerativeModel(
                 model_name="gemini-2.0-flash",
                 generation_config={
-                    "temperature": 0.3,  # Lower temperature for consistent translations
+                    "temperature": 0.2,  # Lower temperature for more consistent translations
                     "top_p": 0.8,
-                    "max_output_tokens": 100,
+                    "max_output_tokens": 150,
                 }
             )
         else:
-            logger.warning("GEMINI_API_KEY not found - AI translations will be unavailable")
+            logger.warning("GEMINI_API_KEY not found - fallback translations will be limited")
             self.translation_model = None
 
         # Add this before creating SpeechConfig
@@ -71,15 +76,57 @@ class EnhancedTTSService:
             
         logger.info(f"Using TTS device: {tts_device}")
 
-        # Voice mapping
+        # Enhanced voice mapping with grammar-aware selection
         self.voice_mapping = {
             "en": "en-US-JennyMultilingualNeural",
             "es": "es-ES-ArabellaMultilingualNeural", 
             "de": "de-DE-SeraphinaMultilingualNeural",
         }
 
-        # Cache for AI translations
+        # Enhanced phrasal verb patterns - more comprehensive
+        self.phrasal_verb_patterns = [
+            # Common phrasal verbs with particles
+            r'\b(turn|switch|put|take|look|pick|set|get|wake|give|come|go|sit|stand|run|bring|call|carry|cut|fill|find|hang|hold|keep|let|make|move|pull|push|send|show|shut|slow|speak|start|stay|throw|try|work)\s+(on|off|up|down|in|out|away|back|over|through|around|about|after|for|into|onto|upon)\b',
+            # Phrasal verbs with prepositions
+            r'\b(look|care|deal|depend|insist|rely|result|succeed|think|worry|consist|account|approve|arrive|belong|complain|concentrate|congratulate|decide|dream|escape|excuse|forgive|hope|listen|object|participate|pay|prepare|prevent|protect|recover|refer|search|suffer|vote|wait|aim|apologize|apply|argue|ask|believe|choose|complain|decide|hear|know|learn|speak|talk|tell|think|wonder|worry)\s+(for|after|about|at|on|to|with|from|of|in|into|over|under|through|across|along|around|behind|beside|between|beyond|by|during|except|inside|near|outside|since|until|within|without)\b',
+            # Multi-word phrasal verbs
+            r'\b(come up with|put up with|look forward to|get along with|run out of|keep up with|look down on|catch up with|get rid of|look up to|cut down on|drop out of|face up to|get away with|get back at|get on with|give in to|go along with|live up to|make up for|put up with|run away from|stand up for|turn away from|watch out for)\b',
+        ]
+
+        # Enhanced German separable verb patterns
+        self.separable_verb_patterns = [
+            # Common separable prefixes
+            r'\b(ab|an|auf|aus|bei|dar|durch|ein|empor|entgegen|entlang|fort|her|hin|hinter|los|mit|nach|nieder|über|um|unter|vor|weg|weiter|wieder|zu|zurück|zusammen)([a-zäöüß]+)\b',
+            # Separated forms (prefix at end)
+            r'\b([a-zäöüß]+)\s+(ab|an|auf|aus|bei|dar|durch|ein|empor|entgegen|entlang|fort|her|hin|hinter|los|mit|nach|nieder|über|um|unter|vor|weg|weiter|wieder|zu|zurück|zusammen)\b',
+        ]
+
+        # Minimal core translations - only absolute essentials, everything else uses AI
+        self.core_translations = {
+            # Critical articles (most frequent)
+            "the": "el/la", "a": "un/una", "an": "un/una",
+            "der": "el", "die": "la", "das": "el/lo", "ein": "un", "eine": "una",
+            
+            # Critical pronouns
+            "i": "yo", "you": "tú", "he": "él", "she": "ella", "we": "nosotros", "they": "ellos",
+            "ich": "yo", "du": "tú", "er": "él", "sie": "ella", "wir": "nosotros",
+            
+            # Critical connectors
+            "and": "y", "or": "o", "but": "pero", "und": "y", "oder": "o", "aber": "pero",
+            
+            # Essential negations
+            "not": "no", "no": "no", "nicht": "no",
+            
+            # Punctuation stays the same
+            ".": ".", ",": ",", "!": "!", "?": "?", ";": ";", ":": ":", "(": "(", ")": ")",
+        }
+
+        # Enhanced cache for dynamic AI translations - larger cache since we rely on AI more
         self._translation_cache = {}
+        self._phrase_cache = {}
+        
+        # Batch translation for efficiency
+        self._batch_translation_queue = []
 
     def _get_temp_directory(self) -> str:
         """Create and return the temporary directory path"""
@@ -90,346 +137,271 @@ class EnhancedTTSService:
         os.makedirs(temp_dir, exist_ok=True)
         return temp_dir
 
-    def _identify_phrasal_verbs(self, words: List[str]) -> List[Tuple[int, int, str]]:
+    @lru_cache(maxsize=2000)
+    def _translate_with_ai_comprehensive(self, word_or_phrase: str, source_lang: str, context: str = "") -> str:
         """
-        Identify phrasal verbs in a list of words using pattern recognition.
-        Returns list of (start_index, end_index, phrasal_verb_string)
+        Comprehensive AI translation that builds dynamic dictionary entries.
+        This replaces the need for huge static dictionaries.
         """
-        found_phrases = []
+        if not self.translation_model:
+            return f"[{word_or_phrase}]"
         
-        # Common phrasal verb particles (for pattern detection only)
-        phrasal_patterns = [
-            "up", "down", "in", "out", "on", "off", "away", "back", 
-            "over", "through", "along", "around", "forward", "after", "into"
-        ]
-        
-        i = 0
-        while i < len(words):
-            # Check if current word could be a verb
-            if i + 1 < len(words):
-                next_word = words[i + 1].lower().rstrip('.,!?;:')
-                
-                # Check for 3-word phrasal verbs first
-                if i + 2 < len(words):
-                    third_word = words[i + 2].lower().rstrip('.,!?;:')
-                    # Common 3-word patterns: "come up with", "put up with", "look forward to"
-                    if next_word in phrasal_patterns and third_word in ["with", "to", "for", "at"]:
-                        phrase = f"{words[i]} {words[i + 1]} {words[i + 2]}"
-                        found_phrases.append((i, i + 2, phrase.lower()))
-                        i += 3
-                        continue
-                
-                # Check for 2-word phrasal verbs
-                if next_word in phrasal_patterns:
-                    phrase = f"{words[i]} {next_word}"
-                    found_phrases.append((i, i + 1, phrase.lower()))
-                    i += 2
-                    continue
+        try:
+            # Determine source language
+            lang_map = {"en": "English", "de": "German", "es": "Spanish"}
+            lang_name = lang_map.get(source_lang, "Unknown")
             
-            i += 1
-        
-        return found_phrases
+            # Smart prompt that handles all cases: single words, phrases, phrasal verbs, separable verbs
+            prompt = f"""You are a linguistic expert. Translate this {lang_name} word or phrase to Spanish.
 
-    def _identify_separable_verbs(self, words: List[str], is_german: bool) -> List[Tuple[int, int, str]]:
-        """
-        Identify German separable verbs in their separated form.
-        Returns list of (start_index, end_index, verb_string)
-        """
-        found_verbs = []
-        
-        if not is_german:
-            return found_verbs
-        
-        # Common German separable prefixes (for pattern detection only)
-        separable_prefixes = [
-            'auf', 'aus', 'an', 'ab', 'bei', 'ein', 'mit', 'nach', 
-            'vor', 'zu', 'zurück', 'weg', 'weiter', 'fort', 'her', 
-            'hin', 'los', 'nieder', 'um', 'unter', 'über', 'wieder'
-        ]
-        
-        # Look for verb...prefix pattern
-        for i in range(len(words)):
-            # Check next few words for separable prefix
-            for j in range(i + 1, min(i + 6, len(words))):  # Check within 5 words
-                prefix = words[j].lower().rstrip('.,!?;:')
+RULES:
+1. For phrasal verbs (like "turn off", "look up", "give up"), translate the complete meaning as one unit
+2. For German separable verbs (like "aufstehen", "ankommen"), translate the complete verb meaning
+3. For compound words (like "Krankenhaus", "toothbrush"), translate the complete concept
+4. For single words, give the most common Spanish equivalent
+5. For articles/pronouns/prepositions, give direct equivalent
+6. If multiple meanings exist, choose the most common one
+7. Keep response SHORT - just the Spanish translation
+
+Word/phrase: "{word_or_phrase}"
+{f"Context: {context}" if context else ""}
+
+Spanish translation:"""
+
+            response = self.translation_model.generate_content(prompt)
+            translation = response.text.strip()
+            
+            # Aggressive cleaning
+            translation = translation.replace('"', '').replace("'", '').replace('`', '').strip()
+            translation = re.sub(r'^\w+\s*:', '', translation)  # Remove "Spanish:" prefixes
+            translation = re.sub(r'\(.*?\)', '', translation)  # Remove parenthetical explanations
+            
+            # Handle multiple options - take the first reasonable one
+            if '/' in translation:
+                options = [opt.strip() for opt in translation.split('/')]
+                translation = options[0] if options else translation
                 
-                if prefix in separable_prefixes:
-                    # Found potential separable verb
-                    verb_phrase = f"{words[i]} {words[j]}"
-                    found_verbs.append((i, j, verb_phrase))
-                    break
-        
-        return found_verbs
+            if ',' in translation and len(translation.split(',')) > 2:
+                translation = translation.split(',')[0].strip()
+            
+            # Validation - ensure it's a reasonable translation
+            words = translation.split()
+            if len(words) > 5:  # Too verbose
+                logger.warning(f"AI translation too long for '{word_or_phrase}': {translation}")
+                return f"[{word_or_phrase}]"
+                
+            # Remove explanation artifacts
+            bad_words = ['translation', 'spanish', 'means', 'equivalent', 'would', 'could', 'used']
+            if any(bad_word in translation.lower() for bad_word in bad_words):
+                return f"[{word_or_phrase}]"
+            
+            # Clean final result
+            translation = translation.strip().strip('.,!?;:')
+            
+            if translation:
+                logger.debug(f"🤖 AI built: '{word_or_phrase}' -> '{translation}'")
+                return translation
+            else:
+                return f"[{word_or_phrase}]"
+                
+        except Exception as e:
+            logger.error(f"AI comprehensive translation failed for '{word_or_phrase}': {str(e)}")
+            return f"[{word_or_phrase}]"
 
-    def _smart_tokenize_with_phrases(self, text: str, is_german: bool = False) -> List[Tuple[str, bool]]:
+    def _detect_phrasal_verbs(self, text: str) -> List[Tuple[int, int, str]]:
         """
-        Smart tokenization that preserves phrasal verbs and separable verbs as units.
+        Detect phrasal verbs in English text and return their positions.
+        Returns list of (start_pos, end_pos, phrase) tuples.
+        """
+        phrasal_verbs = []
+        
+        for pattern in self.phrasal_verb_patterns:
+            for match in re.finditer(pattern, text, re.IGNORECASE):
+                start, end = match.span()
+                phrase = match.group()
+                phrasal_verbs.append((start, end, phrase))
+                logger.debug(f"Detected phrasal verb: '{phrase}' at position {start}-{end}")
+        
+        # Sort by position and merge overlapping
+        phrasal_verbs.sort(key=lambda x: x[0])
+        merged = []
+        for start, end, phrase in phrasal_verbs:
+            if merged and start < merged[-1][1]:
+                # Overlapping - take the longer one
+                if end > merged[-1][1]:
+                    merged[-1] = (merged[-1][0], end, text[merged[-1][0]:end])
+            else:
+                merged.append((start, end, phrase))
+        
+        return merged
+
+    def _detect_separable_verbs(self, text: str) -> List[Tuple[int, int, str]]:
+        """
+        Detect German separable verbs and return their positions.
+        Returns list of (start_pos, end_pos, phrase) tuples.
+        """
+        separable_verbs = []
+        
+        for pattern in self.separable_verb_patterns:
+            for match in re.finditer(pattern, text, re.IGNORECASE):
+                start, end = match.span()
+                phrase = match.group()
+                separable_verbs.append((start, end, phrase))
+                logger.debug(f"Detected separable verb: '{phrase}' at position {start}-{end}")
+        
+        # Look for separated forms (verb at beginning, prefix at end)
+        # Pattern: "Ich stehe früh auf" - detect "stehe...auf" as "aufstehen"
+        words = text.split()
+        for i, word in enumerate(words):
+            for j in range(i + 2, min(i + 6, len(words))):  # Look ahead 2-5 words
+                potential_prefix = words[j]
+                if potential_prefix in ['ab', 'an', 'auf', 'aus', 'bei', 'ein', 'mit', 'nach', 'vor', 'zu', 'zurück']:
+                    # Check if this could be a separable verb
+                    reconstructed = potential_prefix + word
+                    if len(reconstructed) > 5:  # Reasonable verb length
+                        # Calculate positions
+                        start_pos = text.find(word)
+                        end_pos = text.find(potential_prefix, start_pos) + len(potential_prefix)
+                        if start_pos != -1 and end_pos > start_pos:
+                            separable_verbs.append((start_pos, end_pos, f"{word}...{potential_prefix}"))
+                            logger.debug(f"Detected separated verb: '{word}...{potential_prefix}' -> '{reconstructed}'")
+        
+        return separable_verbs
+
+    def _smart_tokenize_with_phrases(self, text: str, is_german: bool) -> List[Tuple[str, bool]]:
+        """
+        Enhanced tokenization that preserves phrasal verbs and separable verbs as units.
         Returns list of (token, is_phrase) tuples.
         """
-        # First, do basic tokenization
-        tokens = re.findall(r"\b\w+(?:'\w+)?\b|[.,!?;:()\[\]{}\"'-]", text)
+        phrases = []
         
-        # Identify phrasal verbs and separable verbs
-        phrasal_verbs = self._identify_phrasal_verbs(tokens)
-        separable_verbs = self._identify_separable_verbs(tokens, is_german) if is_german else []
+        if is_german:
+            phrases = self._detect_separable_verbs(text)
+        else:
+            phrases = self._detect_phrasal_verbs(text)
         
-        # Combine all multi-word units
-        all_phrases = phrasal_verbs + separable_verbs
-        all_phrases.sort(key=lambda x: x[0])  # Sort by start index
+        # If no phrases detected, fall back to regular tokenization
+        if not phrases:
+            tokens = re.findall(r"\b\w+(?:'[a-z]+)?\b|[.,!?;:()\[\]{}\"'-]", text)
+            return [(token.strip(), False) for token in tokens if token.strip()]
         
-        # Build final token list with phrases grouped
+        # Build tokenization preserving phrases
         result = []
-        i = 0
+        last_end = 0
         
-        while i < len(tokens):
-            # Check if current position starts a phrase
-            phrase_found = False
-            for start, end, phrase_text in all_phrases:
-                if i == start:
-                    # Reconstruct the actual phrase from original tokens (preserving case)
-                    actual_phrase = ' '.join(tokens[start:end + 1])
-                    result.append((actual_phrase, True))
-                    i = end + 1
-                    phrase_found = True
-                    break
+        for start, end, phrase in phrases:
+            # Add tokens before this phrase
+            before_text = text[last_end:start]
+            if before_text.strip():
+                before_tokens = re.findall(r"\b\w+(?:'[a-z]+)?\b|[.,!?;:()\[\]{}\"'-]", before_text)
+                for token in before_tokens:
+                    if token.strip():
+                        result.append((token.strip(), False))
             
-            if not phrase_found:
-                # Add single token
-                result.append((tokens[i], False))
-                i += 1
+            # Add the phrase as a single unit
+            clean_phrase = phrase.strip()
+            if clean_phrase:
+                result.append((clean_phrase, True))
+            
+            last_end = end
         
+        # Add remaining tokens after last phrase
+        remaining_text = text[last_end:]
+        if remaining_text.strip():
+            remaining_tokens = re.findall(r"\b\w+(?:'[a-z]+)?\b|[.,!?;:()\[\]{}\"'-]", remaining_text)
+            for token in remaining_tokens:
+                if token.strip():
+                    result.append((token.strip(), False))
+        
+        logger.debug(f"Smart tokenization: {len(result)} tokens, {len(phrases)} phrases preserved")
         return result
 
-    @lru_cache(maxsize=1000)
-    def _translate_word_with_ai(self, word: str, source_lang: str) -> str:
+    def _find_translation_for_phrase(self, phrase: str, mapping: Dict[str, str], is_german: bool, is_phrase: bool) -> str:
         """
-        Use Gemini AI to translate a single word to Spanish.
-        Cached to avoid repeated API calls for the same words.
+        Enhanced translation finder using AI to build dynamic dictionary.
+        No more need for huge static dictionaries - AI builds what we need on demand.
         """
-        if not self.translation_model:
-            return f"[{word}]"  # Fallback if no AI model available
+        # Clean the phrase
+        clean_phrase = phrase.strip().lower().rstrip('.,!?;:()[]{}"\'-')
         
-        try:
-            # Determine source language name
-            lang_name = "English" if source_lang == "en" else "German"
-            
-            # Create a focused prompt for single word translation
-            prompt = f"""Translate this {lang_name} word to Spanish. 
-Only respond with the Spanish translation, nothing else.
-
-Word: "{word}"
-
-Spanish:"""
-
-            response = self.translation_model.generate_content(prompt)
-            translation = response.text.strip().strip('"').strip()
-            
-            # Validate the response
-            if len(translation.split()) > 10:  # Likely got an explanation instead
-                logger.warning(f"AI translation too long for '{word}': {translation}")
-                return f"[{word}]"
-            
-            logger.debug(f"AI translated word: '{word}' -> '{translation}'")
-            return translation
-            
-        except Exception as e:
-            logger.error(f"AI translation failed for '{word}': {str(e)}")
-            return f"[{word}]"
-
-    def _translate_phrase_with_ai(self, phrase: str, is_german: bool) -> str:
-        """
-        Use Gemini AI to translate a phrase to Spanish.
-        This is now a SYNCHRONOUS method to avoid async loop issues.
-        """
-        # Check cache first
-        cache_key = f"phrase_{phrase}_{is_german}"
+        # Strategy 1: Check if it's just punctuation
+        if phrase in ".,!?;:()[]{}\"'-":
+            return phrase
+        
+        # Strategy 2: Numbers stay the same
+        if clean_phrase.isdigit():
+            return clean_phrase
+        
+        # Strategy 3: Direct lookup in provided mapping (from word-by-word pairs)
+        for variant in [phrase, clean_phrase, phrase.lower()]:
+            if variant in mapping:
+                logger.debug(f"📋 Explicit mapping: '{phrase}' -> '{mapping[variant]}'")
+                return mapping[variant]
+        
+        # Strategy 4: Check core essentials (very small dictionary)
+        if clean_phrase in self.core_translations:
+            logger.debug(f"🎯 Core translation: '{phrase}' -> '{self.core_translations[clean_phrase]}'")
+            return self.core_translations[clean_phrase]
+        
+        # Strategy 5: Check cache for previous AI translations
+        cache_key = f"{clean_phrase}_{is_german}_{is_phrase}"
         if cache_key in self._translation_cache:
+            logger.debug(f"💾 Cached: '{phrase}' -> '{self._translation_cache[cache_key]}'")
             return self._translation_cache[cache_key]
         
-        if not self.translation_model:
-            return f"[{phrase}]"
-        
-        try:
-            source_lang = "German" if is_german else "English"
-            
-            # Create a simple, focused prompt
-            prompt = f"""Translate this {source_lang} phrase to Spanish. 
-Response with ONLY the Spanish translation, nothing else.
-
-Phrase: "{phrase}"
-
-Spanish:"""
-
-            response = self.translation_model.generate_content(prompt)
-            translation = response.text.strip().strip('"').strip()
-            
-            # Validate response length
-            if len(translation.split()) > len(phrase.split()) * 3:  # Sanity check
-                logger.warning(f"Translation seems too long for '{phrase}': {translation}")
-                translation = f"[{phrase}]"
-            else:
-                logger.debug(f"AI translated phrase: '{phrase}' -> '{translation}'")
-            
-            # Cache the result
-            self._translation_cache[cache_key] = translation
-            return translation
-            
-        except Exception as e:
-            logger.error(f"AI translation failed for phrase '{phrase}': {str(e)}")
-            return f"[{phrase}]"
-
-    def _find_translation_for_word_or_phrase(self, token: str, is_phrase: bool, mapping: Dict[str, str], is_german: bool) -> str:
-        """
-        Find translation for a word or phrase, using AI for all translations.
-        Fixed to handle async properly.
-        """
-        # Clean the token
-        clean_token = token.strip().lower().rstrip('.,!?;:()[]{}"\'-')
-        
-        # Check if it's just punctuation
-        if token in ".,!?;:()[]{}\"'-":
-            return token
-        
-        # Check if it's a number
-        if clean_token.isdigit():
-            return clean_token
-        
-        # Check mapping first (for provided word pairs)
-        if token in mapping:
-            return mapping[token]
-        if clean_token in mapping:
-            return mapping[clean_token]
-        
-        # Check cache
-        cache_key = f"{clean_token}_{is_german}_{is_phrase}"
-        if cache_key in self._translation_cache:
-            return self._translation_cache[cache_key]
-        
-        # Use AI for translation
+        # Strategy 6: Use AI to build translation dynamically
         source_lang = "de" if is_german else "en"
+        translation = self._translate_with_ai_comprehensive(clean_phrase, source_lang)
         
-        if is_phrase:
-            # Now using synchronous method for phrase translation
-            translation = self._translate_phrase_with_ai(clean_token, is_german)
-        else:
-            # Use existing method for single words
-            translation = self._translate_word_with_ai(clean_token, source_lang)
-        
-        # Cache the result
+        # Cache the translation for future use
         self._translation_cache[cache_key] = translation
+        
+        # Log the translation type
+        if translation.startswith('[') and translation.endswith(']'):
+            logger.debug(f"❌ AI failed: '{phrase}' -> '{translation}'")
+        else:
+            phrase_type = "PHRASE" if is_phrase else "WORD"
+            logger.debug(f"🤖 AI built {phrase_type}: '{phrase}' -> '{translation}'")
         
         return translation
 
-    def _generate_complete_coverage_ssml(
-        self,
-        translations_data: Dict,
-        style_preferences=None,
-    ) -> str:
+    def _create_intelligent_word_mapping(self, word_pairs: List[Tuple[str, str]], is_german: bool) -> Dict[str, str]:
         """
-        Generate SSML with complete word coverage using AI for translations.
+        Create a lightweight mapping that prioritizes explicit pairs.
+        AI handles everything else dynamically - no more huge dictionaries!
         """
-        PUNCTUATION = set('!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~')
+        mapping = {}
         
-        ssml = """<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">"""
+        # Add all explicit word pairs with high priority
+        for source, target in word_pairs:
+            source_clean = source.strip()
+            target_clean = target.strip()
+            
+            # Store multiple variants for better matching
+            variants = [
+                source_clean,
+                source_clean.lower(),
+                source_clean.strip('.,!?;:()[]{}"\'-'),
+                source_clean.lower().strip('.,!?;:()[]{}"\'-')
+            ]
+            
+            for variant in variants:
+                if variant:
+                    mapping[variant] = target_clean
+                    
+            logger.debug(f"📝 Explicit pair: '{source_clean}' -> '{target_clean}'")
         
-        logger.info("\n🎤 TTS GENERATION WITH AI-POWERED PHRASE TRANSLATION")
-        logger.info("="*60)
+        # Add only the minimal core translations (AI handles the rest)
+        core_added = 0
+        for core_word, core_translation in self.core_translations.items():
+            if core_word not in mapping:  # Don't override explicit pairs
+                mapping[core_word] = core_translation
+                core_added += 1
         
-        for style_info in translations_data.get('style_data', []):
-            translation = style_info['translation']
-            word_pairs = style_info['word_pairs']
-            is_german = style_info['is_german']
-            style_name = style_info['style_name']
-            
-            # Escape XML special characters
-            translation = translation.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-            
-            logger.info(f"\n📝 Processing {style_name}:")
-            logger.info(f"   Translation: \"{translation}\"")
-            logger.info(f"   Provided word pairs: {len(word_pairs)}")
-            
-            # Create basic mapping from provided word pairs
-            mapping = {}
-            for source, target in word_pairs:
-                mapping[source.strip()] = target.strip()
-                mapping[source.lower().strip()] = target.strip()
-            
-            # Add punctuation
-            punctuation_map = {
-                ".": ".", ",": ",", "!": "!", "?": "?", ";": ";", ":": ":", 
-                "(": "(", ")": ")", "'": "'", '"': '"'
-            }
-            mapping.update(punctuation_map)
-            
-            # Determine voice and language
-            if is_german:
-                voice = "de-DE-SeraphinaMultilingualNeural"
-                lang = "de-DE"
-            else:
-                voice = "en-US-JennyMultilingualNeural"
-                lang = "en-US"
-            
-            # Add main translation
-            ssml += f"""
-        <voice name="{voice}">
-            <prosody rate="1.0">
-                <lang xml:lang="{lang}">{translation}</lang>
-                <break time="1000ms"/>
-            </prosody>
-        </voice>"""
-            
-            # Add word-by-word section with AI-powered translation
-            ssml += """
-        <voice name="en-US-JennyMultilingualNeural">
-            <prosody rate="0.8">"""
-            
-            # Smart tokenize with phrase awareness
-            token_pairs = self._smart_tokenize_with_phrases(translation, is_german)
-            
-            logger.info(f"   Tokenized into {len(token_pairs)} units")
-            
-            for i, (token, is_phrase) in enumerate(token_pairs):
-                # Get translation using AI
-                spanish_translation = self._find_translation_for_word_or_phrase(
-                    token, is_phrase, mapping, is_german
-                )
-                
-                # Clean for speech
-                clean_token = token.strip()
-                clean_spanish = spanish_translation.replace("[", "").replace("]", "")
-                
-                # Add to SSML with appropriate timing
-                if is_phrase:
-                    # Longer pause after phrases
-                    ssml += f"""
-            <lang xml:lang="{lang}">{clean_token}</lang>
-            <break time="400ms"/>
-            <lang xml:lang="es-ES">{clean_spanish}</lang>
-            <break time="600ms"/>"""
-                else:
-                    # Normal timing for single words
-                    ssml += f"""
-            <lang xml:lang="{lang}">{clean_token}</lang>
-            <break time="300ms"/>
-            <lang xml:lang="es-ES">{clean_spanish}</lang>
-            <break time="500ms"/>"""
-            
-                # Log non-punctuation items
-                if clean_token and clean_token not in PUNCTUATION:
-                    if is_phrase:
-                        logger.debug(f"   {i+1:2d}. [PHRASE-AI] '{clean_token}' -> '{clean_spanish}'")
-                    else:
-                        logger.debug(f"   {i+1:2d}. [AI] '{clean_token}' -> '{clean_spanish}'")
-            
-            ssml += """
-            <break time="1000ms"/>
-            </prosody>
-        </voice>"""
+        logger.info(f"🏗️  Created lightweight mapping: {len(word_pairs)} explicit pairs + {core_added} core words")
+        logger.info(f"🤖 AI will handle all other translations dynamically")
         
-        ssml += "</speak>"
-        
-        logger.info(f"\n✅ Generated SSML with AI-powered translations")
-        return ssml
+        return mapping
 
     async def text_to_speech_word_pairs_v2(
         self,
@@ -440,7 +412,7 @@ Spanish:"""
         output_path: Optional[str] = None,
     ) -> Optional[str]:
         """
-        Enhanced version that uses AI for all word and phrase translations.
+        Enhanced version with intelligent phrase handling and AI translation.
         """
         try:
             if not output_path:
@@ -449,8 +421,8 @@ Spanish:"""
                 output_path = os.path.join(temp_dir, f"speech_{timestamp}.mp3")
                 logger.info(f"\n📂 Output path: {output_path}")
 
-            # Generate SSML with AI-powered translations
-            ssml = self._generate_complete_coverage_ssml(
+            # Generate SSML with intelligent phrase coverage
+            ssml = self._generate_intelligent_phrase_ssml(
                 translations_data=translations_data,
                 style_preferences=style_preferences,
             )
@@ -492,9 +464,137 @@ Spanish:"""
 
         except Exception as e:
             logger.error(f"❌ Error in text_to_speech_word_pairs_v2: {str(e)}")
-            import traceback
-            logger.error(f"Traceback: {traceback.format_exc()}")
             return None
+
+    def _generate_intelligent_phrase_ssml(
+        self,
+        translations_data: Dict,
+        style_preferences=None,
+    ) -> str:
+        """
+        Generate SSML with AI-powered dynamic dictionary - no huge static dictionaries needed!
+        """
+        # Define punctuation to exclude from detailed logging
+        PUNCTUATION = set('!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~')
+        
+        ssml = """<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">"""
+        
+        logger.info("\n🎤 TTS AI-POWERED DYNAMIC DICTIONARY")
+        logger.info("="*60)
+        logger.info("🤖 Building translations on-demand with AI")
+        logger.info("💾 No huge static dictionaries needed!")
+        
+        # Track AI usage statistics
+        ai_translations_used = 0
+        explicit_pairs_used = 0
+        core_translations_used = 0
+        
+        # Process each style with AI-powered dynamic translation
+        for style_info in translations_data.get('style_data', []):
+            translation = style_info['translation']
+            word_pairs = style_info['word_pairs']
+            is_german = style_info['is_german']
+            style_name = style_info['style_name']
+            
+            # Escape XML special characters
+            translation = translation.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            
+            logger.info(f"\n📝 Processing {style_name}:")
+            logger.info(f"   Translation: \"{translation}\"")
+            logger.info(f"   Explicit word pairs: {len(word_pairs)}")
+            
+            # Create lightweight mapping (AI handles most translations)
+            mapping = self._create_intelligent_word_mapping(word_pairs, is_german)
+            
+            # Determine voice and language
+            if is_german:
+                voice = "de-DE-SeraphinaMultilingualNeural"
+                lang = "de-DE"
+            else:
+                voice = "en-US-JennyMultilingualNeural"
+                lang = "en-US"
+            
+            # Add main translation
+            ssml += f"""
+        <voice name="{voice}">
+            <prosody rate="1.0">
+                <lang xml:lang="{lang}">{translation}</lang>
+                <break time="1000ms"/>
+            </prosody>
+        </voice>"""
+            
+            # Add AI-powered word-by-word section
+            ssml += """
+        <voice name="en-US-JennyMultilingualNeural">
+            <prosody rate="0.8">"""
+            
+            # Smart tokenization that preserves phrases
+            tokens = self._smart_tokenize_with_phrases(translation, is_german)
+            
+            logger.info(f"   Smart tokenization: {len(tokens)} tokens")
+            phrase_count = sum(1 for _, is_phrase in tokens if is_phrase)
+            logger.info(f"   Preserved phrases: {phrase_count}")
+            
+            # Process each token/phrase with AI-powered translation
+            for i, (token, is_phrase) in enumerate(tokens):
+                # Find translation - AI builds what we need dynamically
+                spanish_translation = self._find_translation_for_phrase(
+                    token, mapping, is_german, is_phrase
+                )
+                
+                # Track translation source for statistics
+                if token.lower() in mapping:
+                    if token.lower() in self.core_translations:
+                        core_translations_used += 1
+                    else:
+                        explicit_pairs_used += 1
+                elif not spanish_translation.startswith('['):
+                    ai_translations_used += 1
+                
+                # Clean for speech
+                clean_token = token.strip()
+                clean_spanish = spanish_translation.replace("[", "").replace("]", "")
+                
+                # Add to SSML
+                ssml += f"""
+            <lang xml:lang="{lang}">{clean_token}</lang>
+            <break time="300ms"/>
+            <lang xml:lang="es-ES">{clean_spanish}</lang>
+            <break time="500ms"/>"""
+                
+                # Log non-punctuation items with source indication
+                if clean_token and clean_token not in PUNCTUATION:
+                    source = ""
+                    if token.lower() in self.core_translations:
+                        source = " [CORE]"
+                    elif token.lower() in mapping:
+                        source = " [EXPLICIT]"
+                    elif not spanish_translation.startswith('['):
+                        source = " [AI-BUILT]"
+                    
+                    phrase_indicator = " [PHRASE]" if is_phrase else ""
+                    logger.debug(f"   {i+1:2d}. '{clean_token}'{phrase_indicator}{source} -> '{clean_spanish}'")
+            
+            ssml += """
+            <break time="1000ms"/>
+            </prosody>
+        </voice>"""
+        
+        ssml += "</speak>"
+        
+        # Log AI usage statistics
+        total_translations = ai_translations_used + explicit_pairs_used + core_translations_used
+        logger.info(f"\n📊 TRANSLATION STATISTICS:")
+        logger.info(f"   💫 AI-built translations: {ai_translations_used}")
+        logger.info(f"   📋 Explicit pairs used: {explicit_pairs_used}")
+        logger.info(f"   🎯 Core translations used: {core_translations_used}")
+        logger.info(f"   📈 Total translations: {total_translations}")
+        if total_translations > 0:
+            ai_percentage = (ai_translations_used / total_translations) * 100
+            logger.info(f"   🤖 AI coverage: {ai_percentage:.1f}%")
+        
+        logger.info(f"\n✅ Generated AI-powered SSML - no huge dictionaries needed!")
+        return ssml
 
     async def text_to_speech_word_pairs(
         self,
@@ -507,7 +607,6 @@ Spanish:"""
     ) -> Optional[str]:
         """
         Legacy method for backward compatibility.
-        Converts old format to new format and calls the v2 method.
         """
         # Convert legacy format to new structured format
         translations_data = {
@@ -515,7 +614,7 @@ Spanish:"""
             'style_data': []
         }
         
-        # Parse complete text to get individual translations
+        # Parse complete text to extract translations and word pairs per style
         if complete_text:
             lines = complete_text.split('\n')
             current_language = None
@@ -534,28 +633,21 @@ Spanish:"""
                     current_language = 'english'
                 
                 # Detect style and extract translation
-                if '* Conversational-native:' in line:
-                    current_style = f'{current_language}_native' if current_language else None
-                    match = re.search(r'"([^"]+)"', line)
-                    if match and current_style:
-                        style_translations[current_style] = match.group(1)
-                elif '* Conversational-colloquial:' in line:
-                    current_style = f'{current_language}_colloquial' if current_language else None
-                    match = re.search(r'"([^"]+)"', line)
-                    if match and current_style:
-                        style_translations[current_style] = match.group(1)
-                elif '* Conversational-informal:' in line:
-                    current_style = f'{current_language}_informal' if current_language else None
-                    match = re.search(r'"([^"]+)"', line)
-                    if match and current_style:
-                        style_translations[current_style] = match.group(1)
-                elif '* Conversational-formal:' in line:
-                    current_style = f'{current_language}_formal' if current_language else None
-                    match = re.search(r'"([^"]+)"', line)
-                    if match and current_style:
-                        style_translations[current_style] = match.group(1)
+                style_patterns = {
+                    'native': r'\* Conversational-native:',
+                    'colloquial': r'\* Conversational-colloquial:',
+                    'informal': r'\* Conversational-informal:',
+                    'formal': r'\* Conversational-formal:'
+                }
                 
-                # Extract word-by-word pairs for current style
+                for style_suffix, pattern in style_patterns.items():
+                    if pattern in line:
+                        current_style = f'{current_language}_{style_suffix}' if current_language else None
+                        match = re.search(r'"([^"]+)"', line)
+                        if match and current_style:
+                            style_translations[current_style] = match.group(1)
+                
+                # Extract word-by-word pairs
                 if 'word by word' in line and current_style:
                     match = re.search(r'"([^"]+)"', line)
                     if match:
@@ -580,10 +672,10 @@ Spanish:"""
                 style_enabled = False
                 if is_german:
                     style_enabled = getattr(style_preferences, f'german_{style_suffix}', False)
-                    word_by_word_enabled = style_preferences.german_word_by_word
+                    word_by_word_enabled = getattr(style_preferences, 'german_word_by_word', False)
                 else:
                     style_enabled = getattr(style_preferences, f'english_{style_suffix}', False)
-                    word_by_word_enabled = style_preferences.english_word_by_word
+                    word_by_word_enabled = getattr(style_preferences, 'english_word_by_word', False)
                 
                 if style_enabled and style_name in style_translations:
                     translations_data['style_data'].append({
@@ -605,14 +697,14 @@ Spanish:"""
     async def text_to_speech(
         self, ssml: str, output_path: Optional[str] = None
     ) -> Optional[str]:
-        """Convert SSML to speech"""
+        """Convert SSML to speech with enhanced phrase handling"""
         synthesizer = None
         try:
             if not output_path:
                 temp_dir = self._get_temp_directory()
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 output_path = os.path.join(temp_dir, f"speech_{timestamp}.mp3")
-                logger.info(f"🎵 Output path: {output_path}")
+                logger.info(f"🎵 Enhanced phrase-aware output path: {output_path}")
 
             audio_config = AudioOutputConfig(filename=output_path)
             synthesizer = SpeechSynthesizer(
@@ -629,7 +721,7 @@ Spanish:"""
             return None
 
         except Exception as e:
-            logger.error(f"❌ Exception in text_to_speech: {str(e)}")
+            logger.error(f"❌ Exception in enhanced text_to_speech: {str(e)}")
             return None
         finally:
             if synthesizer:
@@ -637,770 +729,3 @@ Spanish:"""
                     synthesizer.stop_speaking_async()
                 except:
                     pass
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-### THIS CODE DO WORD FOR WORD DETECTION WITHOUT AI (FOR TESTING PURPOSES) ###
-### DOSENT COUNT PHRASAL VERBS OR GERMAN SEPARABLE VERBS ###
-### THATS WHY IT IS COMMENTED OUT ###
-
-
-
-# # tts_service.py - Enhanced with real translation fallback
-
-# from azure.cognitiveservices.speech import (
-#     SpeechConfig,
-#     SpeechSynthesizer,
-#     SpeechSynthesisOutputFormat,
-#     ResultReason,
-#     CancellationReason,
-# )
-# from azure.cognitiveservices.speech.audio import AudioOutputConfig
-# import os
-# from typing import Optional, Dict, List, Tuple
-# from datetime import datetime
-# import asyncio
-# import re
-# import logging
-# import google.generativeai as genai
-# from functools import lru_cache
-
-# # Configure logging
-# logging.basicConfig(level=logging.INFO)
-# logger = logging.getLogger(__name__)
-
-
-# class EnhancedTTSService:
-#     def __init__(self):
-#         # Initialize Speech Config
-#         self.subscription_key = os.getenv("AZURE_SPEECH_KEY")
-#         self.region = os.getenv("AZURE_SPEECH_REGION")
-
-#         if not self.subscription_key or not self.region:
-#             raise ValueError(
-#                 "Azure Speech credentials not found in environment variables"
-#             )
-
-#         # Initialize Gemini for fallback translations
-#         self.gemini_api_key = os.getenv("GEMINI_API_KEY")
-#         if self.gemini_api_key:
-#             genai.configure(api_key=self.gemini_api_key)
-#             self.translation_model = genai.GenerativeModel(
-#                 model_name="gemini-2.0-flash",
-#                 generation_config={
-#                     "temperature": 0.3,  # Lower temperature for more consistent translations
-#                     "top_p": 0.8,
-#                     "max_output_tokens": 100,
-#                 }
-#             )
-#         else:
-#             logger.warning("GEMINI_API_KEY not found - fallback translations will be limited")
-#             self.translation_model = None
-
-#         # Add this before creating SpeechConfig
-#         os.environ["SPEECH_CONTAINER_OPTION"] = "1"
-#         os.environ["SPEECH_SYNTHESIS_PLATFORM_CONFIG"] = "container"
-        
-#         # Create speech config with endpoint
-#         self.speech_host = f"wss://{self.region}.tts.speech.microsoft.com/cognitiveservices/websocket/v1"
-#         self.speech_config = SpeechConfig(
-#             subscription=self.subscription_key,
-#             endpoint=self.speech_host
-#         )
-        
-#         self.speech_config.set_speech_synthesis_output_format(
-#             SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3
-#         )
-
-#         # Force CPU usage in container environment
-#         tts_device = os.getenv("TTS_DEVICE", "cpu").lower()
-#         if os.getenv("CONTAINER_ENV", "false").lower() == "true":
-#             tts_device = "cpu"
-            
-#         logger.info(f"Using TTS device: {tts_device}")
-
-#         # Enhanced voice mapping with grammar-aware selection
-#         self.voice_mapping = {
-#             "en": "en-US-JennyMultilingualNeural",
-#             "es": "es-ES-ArabellaMultilingualNeural", 
-#             "de": "de-DE-SeraphinaMultilingualNeural",
-#         }
-
-#         # Grammar patterns for enhanced grouping
-#         self.phrasal_verbs = [
-#             "turn off", "turn on", "look up", "look for", "come up with", "put up with",
-#             "get up", "wake up", "give up", "pick up", "set up", "take off", "put on",
-#             "go out", "come in", "sit down", "stand up", "run into", "look after"
-#         ]
-        
-#         self.separable_verbs = [
-#             "aufstehen", "mitkommen", "ausgehen", "nachschauen", "einladen", "vorstellen",
-#             "anrufen", "aufmachen", "zumachen", "abholen", "fernsehen", "einkaufen",
-#             "mitbringen", "vorlesen", "zurückkommen", "weggehen"
-#         ]
-
-#         # Extended common word translations (significantly expanded)
-#         self.common_translations = {
-#             # English articles, pronouns, prepositions
-#             "i": "yo", "you": "tú/usted", "he": "él", "she": "ella", "it": "eso/lo", 
-#             "we": "nosotros", "they": "ellos/ellas", "me": "me/mí", "him": "él/lo", 
-#             "her": "ella/la", "us": "nosotros", "them": "ellos/los",
-            
-#             # Articles
-#             "the": "el/la", "a": "un/una", "an": "un/una", "this": "este/esta", 
-#             "that": "ese/esa", "these": "estos/estas", "those": "esos/esas",
-            
-#             # Common verbs
-#             "is": "es/está", "are": "son/están", "was": "era/estaba", "were": "eran/estaban",
-#             "be": "ser/estar", "been": "sido/estado", "being": "siendo/estando",
-#             "have": "tener/haber", "has": "tiene/ha", "had": "tenía/había",
-#             "do": "hacer", "does": "hace", "did": "hizo", "done": "hecho",
-#             "will": "será/va", "would": "sería/iría", "shall": "deberá", "should": "debería",
-#             "may": "puede", "might": "podría", "must": "debe", "can": "puede", "could": "podría",
-#             "go": "ir", "goes": "va", "went": "fue", "gone": "ido", "going": "yendo",
-#             "come": "venir", "comes": "viene", "came": "vino", "coming": "viniendo",
-#             "make": "hacer", "makes": "hace", "made": "hizo", "making": "haciendo",
-#             "take": "tomar", "takes": "toma", "took": "tomó", "taken": "tomado",
-#             "give": "dar", "gives": "da", "gave": "dio", "given": "dado",
-#             "get": "obtener", "gets": "obtiene", "got": "obtuvo", "gotten": "obtenido",
-#             "say": "decir", "says": "dice", "said": "dijo", "saying": "diciendo",
-#             "see": "ver", "sees": "ve", "saw": "vio", "seen": "visto",
-#             "know": "saber", "knows": "sabe", "knew": "sabía", "known": "sabido",
-#             "think": "pensar", "thinks": "piensa", "thought": "pensó", "thinking": "pensando",
-#             "want": "querer", "wants": "quiere", "wanted": "quería", "wanting": "queriendo",
-#             "look": "mirar", "looks": "mira", "looked": "miró", "looking": "mirando",
-#             "use": "usar", "uses": "usa", "used": "usó", "using": "usando",
-#             "find": "encontrar", "finds": "encuentra", "found": "encontró", "finding": "encontrando",
-#             "tell": "decir", "tells": "dice", "told": "dijo", "telling": "diciendo",
-#             "ask": "preguntar", "asks": "pregunta", "asked": "preguntó", "asking": "preguntando",
-#             "work": "trabajar", "works": "trabaja", "worked": "trabajó", "working": "trabajando",
-#             "seem": "parecer", "seems": "parece", "seemed": "pareció", "seeming": "pareciendo",
-#             "feel": "sentir", "feels": "siente", "felt": "sintió", "feeling": "sintiendo",
-#             "try": "intentar", "tries": "intenta", "tried": "intentó", "trying": "intentando",
-#             "leave": "dejar", "leaves": "deja", "left": "dejó", "leaving": "dejando",
-#             "call": "llamar", "calls": "llama", "called": "llamó", "calling": "llamando",
-            
-#             # Prepositions and conjunctions
-#             "in": "en", "on": "sobre/en", "at": "en", "to": "a/para", "for": "para/por",
-#             "of": "de", "with": "con", "by": "por", "from": "de/desde", "up": "arriba",
-#             "about": "sobre/acerca", "into": "dentro", "through": "a través", "after": "después",
-#             "over": "sobre", "between": "entre", "out": "fuera", "against": "contra",
-#             "during": "durante", "without": "sin", "before": "antes", "under": "bajo",
-#             "around": "alrededor", "among": "entre", 
-            
-#             "and": "y", "or": "o", "but": "pero", "if": "si", "because": "porque",
-#             "as": "como", "until": "hasta", "while": "mientras", "since": "desde",
-#             "although": "aunque", "though": "aunque", "when": "cuando", "where": "donde",
-#             "so": "así/entonces", "than": "que", "too": "también", "very": "muy",
-#             "just": "solo/justo", "there": "allí/ahí", "here": "aquí", "then": "entonces",
-#             "now": "ahora", "only": "solo", "also": "también", "well": "bien",
-#             "even": "incluso", "back": "atrás", "still": "todavía", "why": "por qué",
-#             "how": "cómo", "what": "qué", "which": "cuál", "who": "quién",
-#             "all": "todo", "some": "algo/algunos", "no": "no", "not": "no",
-#             "more": "más", "other": "otro", "another": "otro", "much": "mucho",
-#             "many": "muchos", "such": "tal", "own": "propio", "same": "mismo",
-#             "each": "cada", "every": "cada/todo", "both": "ambos", "few": "pocos",
-#             "most": "mayoría", "any": "cualquier", "several": "varios",
-#             "therein": "allí/en eso", "thereof": "de eso", "whereby": "por lo cual",
-            
-#             # German common words
-#             "ich": "yo", "du": "tú", "er": "él", "sie": "ella/ellos", "es": "eso",
-#             "wir": "nosotros", "ihr": "vosotros", "mich": "me", "dich": "te",
-#             "sich": "se", "mir": "me", "dir": "te", "uns": "nos",
-            
-#             "der": "el", "die": "la/las", "das": "el/lo", "ein": "un", "eine": "una",
-#             "den": "el", "dem": "el", "des": "del", "einen": "un", "einem": "un",
-#             "einer": "una", "eines": "un",
-            
-#             "und": "y", "oder": "o", "aber": "pero", "denn": "pues", "weil": "porque",
-#             "wenn": "si/cuando", "dass": "que", "ob": "si", "als": "cuando/como",
-#             "wie": "como", "wo": "donde", "wann": "cuándo", "warum": "por qué",
-#             "was": "qué", "wer": "quién", "welcher": "cuál",
-            
-#             "nicht": "no", "kein": "ningún", "keine": "ninguna", "nie": "nunca",
-#             "nichts": "nada", "niemand": "nadie",
-            
-#             "zu": "a/para", "von": "de", "mit": "con", "bei": "en/con", "nach": "después/hacia",
-#             "aus": "de/desde", "auf": "sobre", "an": "en", "in": "en", "über": "sobre",
-#             "unter": "bajo", "vor": "antes", "hinter": "detrás", "neben": "al lado",
-#             "zwischen": "entre", "für": "para", "gegen": "contra", "ohne": "sin",
-#             "um": "alrededor/para", "durch": "a través",
-            
-#             "haben": "tener", "hat": "tiene", "hatte": "tenía", "gehabt": "tenido",
-#             "sein": "ser/estar", "ist": "es", "sind": "son", "war": "era", "waren": "eran",
-#             "werden": "llegar a ser", "wird": "será", "wurde": "fue", "geworden": "llegado a ser",
-#             "können": "poder", "kann": "puede", "konnte": "podía", "gekonnt": "podido",
-#             "müssen": "deber", "muss": "debe", "musste": "debía", "gemusst": "debido",
-#             "wollen": "querer", "will": "quiere", "wollte": "quería", "gewollt": "querido",
-#             "sollen": "deber", "soll": "debe", "sollte": "debería", "gesollt": "debido",
-#             "dürfen": "poder/permitir", "darf": "puede", "durfte": "podía", "gedurft": "podido",
-#             "mögen": "gustar", "mag": "gusta", "mochte": "gustaba", "gemocht": "gustado",
-#             "gehen": "ir", "geht": "va", "ging": "fue", "gegangen": "ido",
-#             "kommen": "venir", "kommt": "viene", "kam": "vino", "gekommen": "venido",
-#             "machen": "hacer", "macht": "hace", "machte": "hizo", "gemacht": "hecho",
-#             "sehen": "ver", "sieht": "ve", "sah": "vio", "gesehen": "visto",
-#             "geben": "dar", "gibt": "da", "gab": "dio", "gegeben": "dado",
-#             "nehmen": "tomar", "nimmt": "toma", "nahm": "tomó", "genommen": "tomado",
-#             "finden": "encontrar", "findet": "encuentra", "fand": "encontró", "gefunden": "encontrado",
-#             "sagen": "decir", "sagt": "dice", "sagte": "dijo", "gesagt": "dicho",
-#             "wissen": "saber", "weiß": "sabe", "wusste": "sabía", "gewusst": "sabido",
-#             "denken": "pensar", "denkt": "piensa", "dachte": "pensó", "gedacht": "pensado",
-#         }
-
-#         # Cache for dynamic translations
-#         self._translation_cache = {}
-
-#     def _get_temp_directory(self) -> str:
-#         """Create and return the temporary directory path"""
-#         if os.name == "nt":  # Windows
-#             temp_dir = os.path.join(os.environ.get("TEMP", ""), "tts_audio")
-#         else:  # Unix/Linux
-#             temp_dir = "/tmp/tts_audio"
-#         os.makedirs(temp_dir, exist_ok=True)
-#         return temp_dir
-
-#     @lru_cache(maxsize=1000)
-#     def _translate_word_with_ai(self, word: str, source_lang: str) -> str:
-#         """
-#         Use Gemini AI to translate a single word or short phrase to Spanish.
-#         Cached to avoid repeated API calls for the same words.
-#         """
-#         if not self.translation_model:
-#             return f"[{word}]"  # Fallback if no AI model available
-        
-#         try:
-#             # Determine source language name
-#             lang_name = "English" if source_lang == "en" else "German"
-            
-#             # Create a focused prompt for single word/phrase translation
-#             prompt = f"""Translate this {lang_name} word or phrase to Spanish. 
-# Only respond with the Spanish translation, nothing else.
-# If there are multiple possible translations, give the most common one.
-
-# Word/phrase: "{word}"
-
-# Spanish translation:"""
-
-#             response = self.translation_model.generate_content(prompt)
-#             translation = response.text.strip()
-            
-#             # Clean up the response
-#             translation = translation.replace('"', '').replace("'", "").strip()
-            
-#             # Validate the response (should be relatively short for a word/phrase)
-#             if len(translation.split()) > 10:  # Likely got an explanation instead of translation
-#                 logger.warning(f"AI translation too long for '{word}': {translation}")
-#                 return f"[{word}]"
-            
-#             logger.debug(f"AI translated: '{word}' -> '{translation}'")
-#             return translation
-            
-#         except Exception as e:
-#             logger.error(f"AI translation failed for '{word}': {str(e)}")
-#             return f"[{word}]"
-
-#     def _find_translation_for_word(self, word: str, mapping: Dict[str, str], is_german: bool) -> str:
-#         """
-#         Find translation for a word with multiple fallback strategies.
-#         Now includes real translation as the final fallback.
-#         """
-#         # Clean the word (remove punctuation for lookup)
-#         clean_word = word.strip().lower().rstrip('.,!?;:()[]{}"\'-')
-        
-#         # Strategy 1: Direct lookup in provided mapping
-#         if word in mapping:
-#             return mapping[word]
-#         if clean_word in mapping:
-#             return mapping[clean_word]
-#         if word.lower() in mapping:
-#             return mapping[word.lower()]
-            
-#         # Strategy 2: Try without punctuation
-#         if clean_word in mapping:
-#             return mapping[clean_word]
-            
-#         # Strategy 3: Check if it's just punctuation
-#         if word in ".,!?;:()[]{}\"'-":
-#             return word  # Keep punctuation as is
-            
-#         # Strategy 4: Numbers stay the same
-#         if clean_word.isdigit():
-#             return clean_word
-            
-#         # Strategy 5: Check translation cache
-#         cache_key = f"{clean_word}_{is_german}"
-#         if cache_key in self._translation_cache:
-#             return self._translation_cache[cache_key]
-            
-#         # Strategy 6: Use AI translation for missing words
-#         source_lang = "de" if is_german else "en"
-#         translation = self._translate_word_with_ai(clean_word, source_lang)
-        
-#         # Cache the translation
-#         self._translation_cache[cache_key] = translation
-        
-#         # Log the translation
-#         if translation.startswith('[') and translation.endswith(']'):
-#             logger.debug(f"🔄 Fallback (no translation found): '{word}' -> '{translation}'")
-#         else:
-#             logger.debug(f"✅ AI translated: '{word}' -> '{translation}'")
-            
-#         return translation
-
-#     def _create_comprehensive_word_mapping(self, word_pairs: List[Tuple[str, str]], is_german: bool) -> Dict[str, str]:
-#         """
-#         Create a comprehensive mapping that ensures ALL words have translations.
-#         """
-#         mapping = {}
-        
-#         # First, add all explicit word pairs
-#         for source, target in word_pairs:
-#             # Store both original case and lowercase versions
-#             mapping[source.strip()] = target.strip()
-#             mapping[source.lower().strip()] = target.strip()
-            
-#             # Handle compound phrases
-#             source_words = source.strip().split()
-#             if len(source_words) > 1:
-#                 # Store the full phrase
-#                 mapping[' '.join(source_words)] = target.strip()
-#                 mapping[' '.join(source_words).lower()] = target.strip()
-                
-#         # Add common word translations as fallback
-#         mapping.update(self.common_translations)
-        
-#         # Add punctuation handling
-#         punctuation_map = {
-#             ".": ".", ",": ",", "!": "!", "?": "?", ";": ";", ":": ":", 
-#             "(": "(", ")": ")", "'": "'", '"': '"'
-#         }
-#         mapping.update(punctuation_map)
-        
-#         logger.info(f"Created comprehensive word mapping with {len(mapping)} entries")
-#         return mapping
-
-#     async def text_to_speech_word_pairs_v2(
-#         self,
-#         translations_data: Dict,
-#         source_lang: str,
-#         target_lang: str,
-#         style_preferences=None,
-#         output_path: Optional[str] = None,
-#     ) -> Optional[str]:
-#         """
-#         Enhanced version that ensures ALL words are translated using AI when needed.
-#         """
-#         try:
-#             if not output_path:
-#                 temp_dir = self._get_temp_directory()
-#                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-#                 output_path = os.path.join(temp_dir, f"speech_{timestamp}.mp3")
-#                 logger.info(f"\n📂 Output path: {output_path}")
-
-#             # Generate SSML with comprehensive word coverage
-#             ssml = self._generate_complete_coverage_ssml(
-#                 translations_data=translations_data,
-#                 style_preferences=style_preferences,
-#             )
-            
-#             # Log the generated SSML for debugging
-#             logger.info(f"\n📄 Generated SSML preview:")
-#             print("Generated SSML preview (first 500 chars):")
-#             print(ssml[:500] + "..." if len(ssml) > 500 else ssml)
-
-#             # Create audio config and synthesizer
-#             audio_config = AudioOutputConfig(filename=output_path)
-#             speech_config = SpeechConfig(
-#                 subscription=self.subscription_key, region=self.region
-#             )
-#             speech_config.set_speech_synthesis_output_format(
-#                 SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3
-#             )
-
-#             synthesizer = SpeechSynthesizer(
-#                 speech_config=speech_config, audio_config=audio_config
-#             )
-
-#             # Synthesize speech
-#             result = await asyncio.get_event_loop().run_in_executor(
-#                 None, lambda: synthesizer.speak_ssml_async(ssml).get()
-#             )
-
-#             if result.reason == ResultReason.SynthesizingAudioCompleted:
-#                 logger.info(f"\n✅ Successfully generated audio: {os.path.basename(output_path)}")
-#                 return os.path.basename(output_path)
-
-#             if result.reason == ResultReason.Canceled:
-#                 cancellation_details = result.cancellation_details
-#                 logger.error(f"❌ Synthesis canceled: {cancellation_details.reason}")
-#                 if cancellation_details.reason == CancellationReason.Error:
-#                     logger.error(f"❌ Error details: {cancellation_details.error_details}")
-
-#             return None
-
-#         except Exception as e:
-#             logger.error(f"❌ Error in text_to_speech_word_pairs_v2: {str(e)}")
-#             return None
-
-#     # def _generate_complete_coverage_ssml(
-#     #     self,
-#     #     translations_data: Dict,
-#     #     style_preferences=None,
-#     # ) -> str:
-#     #     """
-#     #     Generate SSML with complete word coverage - every word gets properly translated.
-#     #     """
-#     #     ssml = """<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">"""
-        
-#     #     # Log configuration
-#     #     logger.info("\n🎤 TTS COMPLETE COVERAGE GENERATION")
-#     #     logger.info("="*60)
-        
-#     #     # Process each style with comprehensive word coverage
-#     #     for style_info in translations_data.get('style_data', []):
-#     #         translation = style_info['translation']
-#     #         word_pairs = style_info['word_pairs']
-#     #         is_german = style_info['is_german']
-#     #         style_name = style_info['style_name']
-            
-#     #         # Escape XML special characters in translation
-#     #         translation = translation.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-            
-#     #         logger.info(f"\n📝 Processing {style_name}:")
-#     #         logger.info(f"   Translation: \"{translation}\"")
-#     #         logger.info(f"   Word pairs count: {len(word_pairs)}")
-            
-#     #         # Create comprehensive mapping
-#     #         mapping = self._create_comprehensive_word_mapping(word_pairs, is_german)
-            
-#     #         # Determine voice and language
-#     #         if is_german:
-#     #             voice = "de-DE-SeraphinaMultilingualNeural"
-#     #             lang = "de-DE"
-#     #         else:
-#     #             voice = "en-US-JennyMultilingualNeural"
-#     #             lang = "en-US"
-            
-#     #         # Add main translation
-#     #         ssml += f"""
-#     #     <voice name="{voice}">
-#     #         <prosody rate="1.0">
-#     #             <lang xml:lang="{lang}">{translation}</lang>
-#     #             <break time="1000ms"/>
-#     #         </prosody>
-#     #     </voice>"""
-            
-#     #         # Add comprehensive word-by-word section
-#     #         ssml += """
-#     #     <voice name="en-US-JennyMultilingualNeural">
-#     #         <prosody rate="0.8">"""
-            
-#     #         # Tokenize the translation properly
-#     #         words = self._smart_tokenize(translation)
-            
-#     #         logger.info(f"   Tokenized into {len(words)} words/tokens")
-            
-#     #         # Process each word/token
-#     #         for i, word in enumerate(words):
-#     #             # Find translation for this word (now with real translation fallback)
-#     #             spanish_translation = self._find_translation_for_word(word, mapping, is_german)
-                
-#     #             # Clean word for speech (remove brackets if added by fallback)
-#     #             clean_word = word.strip()
-#     #             clean_spanish = spanish_translation.replace("[", "").replace("]", "")
-                
-#     #             # Add to SSML
-#     #             ssml += f"""
-#     #         <lang xml:lang="{lang}">{clean_word}</lang>
-#     #         <break time="300ms"/>
-#     #         <lang xml:lang="es-ES">{clean_spanish}</lang>
-#     #         <break time="500ms"/>"""
-            
-#     #             logger.debug(f"   {i+1:2d}. '{clean_word}' -> '{clean_spanish}'")
-            
-#     #         ssml += """
-#     #         <break time="1000ms"/>
-#     #         </prosody>
-#     #     </voice>"""
-        
-#     #     ssml += "</speak>"
-        
-#     #     logger.info(f"\n✅ Generated complete SSML with full word coverage")
-#     #     return ssml
-
-
-#     def _generate_complete_coverage_ssml(
-#         self,
-#         translations_data: Dict,
-#         style_preferences=None,
-#     ) -> str:
-#         """
-#         Generate SSML with complete word coverage - every word gets properly translated.
-#         """
-#         # Define punctuation characters to exclude from logging
-#         PUNCTUATION = set('!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~')
-        
-#         ssml = """<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">"""
-        
-#         # Log configuration
-#         logger.info("\n🎤 TTS COMPLETE COVERAGE GENERATION")
-#         logger.info("="*60)
-        
-#         # Process each style with comprehensive word coverage
-#         for style_info in translations_data.get('style_data', []):
-#             translation = style_info['translation']
-#             word_pairs = style_info['word_pairs']
-#             is_german = style_info['is_german']
-#             style_name = style_info['style_name']
-            
-#             # Escape XML special characters in translation
-#             translation = translation.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-            
-#             logger.info(f"\n📝 Processing {style_name}:")
-#             logger.info(f"   Translation: \"{translation}\"")
-#             logger.info(f"   Word pairs count: {len(word_pairs)}")
-            
-#             # Create comprehensive mapping
-#             mapping = self._create_comprehensive_word_mapping(word_pairs, is_german)
-            
-#             # Determine voice and language
-#             if is_german:
-#                 voice = "de-DE-SeraphinaMultilingualNeural"
-#                 lang = "de-DE"
-#             else:
-#                 voice = "en-US-JennyMultilingualNeural"
-#                 lang = "en-US"
-            
-#             # Add main translation
-#             ssml += f"""
-#         <voice name="{voice}">
-#             <prosody rate="1.0">
-#                 <lang xml:lang="{lang}">{translation}</lang>
-#                 <break time="1000ms"/>
-#             </prosody>
-#         </voice>"""
-            
-#             # Add comprehensive word-by-word section
-#             ssml += """
-#         <voice name="en-US-JennyMultilingualNeural">
-#             <prosody rate="0.8">"""
-            
-#             # Tokenize the translation properly
-#             words = self._smart_tokenize(translation)
-            
-#             logger.info(f"   Tokenized into {len(words)} words/tokens")
-            
-#             # Process each word/token
-#             for i, word in enumerate(words):
-#                 # Find translation for this word (now with real translation fallback)
-#                 spanish_translation = self._find_translation_for_word(word, mapping, is_german)
-                
-#                 # Clean word for speech (remove brackets if added by fallback)
-#                 clean_word = word.strip()
-#                 clean_spanish = spanish_translation.replace("[", "").replace("]", "")
-                
-#                 # Add to SSML
-#                 ssml += f"""
-#             <lang xml:lang="{lang}">{clean_word}</lang>
-#             <break time="300ms"/>
-#             <lang xml:lang="es-ES">{clean_spanish}</lang>
-#             <break time="500ms"/>"""
-            
-#                 # Only log non-punctuation words
-#                 if clean_word and clean_word not in PUNCTUATION:
-#                     logger.debug(f"   {i+1:2d}. '{clean_word}' -> '{clean_spanish}'")
-            
-#             ssml += """
-#             <break time="1000ms"/>
-#             </prosody>
-#         </voice>"""
-        
-#         ssml += "</speak>"
-        
-#         logger.info(f"\n✅ Generated complete SSML with full word coverage")
-#         return ssml
-
-#     def _smart_tokenize(self, text: str) -> List[str]:
-#         """
-#         Smart tokenization that preserves meaningful phrases and handles punctuation.
-#         """
-#         # First, handle common contractions and phrases
-#         text = text.replace("don't", "do not").replace("won't", "will not").replace("can't", "cannot")
-#         text = text.replace("I'm", "I am").replace("you're", "you are").replace("it's", "it is")
-#         text = text.replace("we're", "we are").replace("they're", "they are")
-#         text = text.replace("I've", "I have").replace("you've", "you have").replace("we've", "we have")
-#         text = text.replace("hasn't", "has not").replace("haven't", "have not").replace("hadn't", "had not")
-#         text = text.replace("isn't", "is not").replace("aren't", "are not").replace("wasn't", "was not")
-#         text = text.replace("weren't", "were not").replace("doesn't", "does not").replace("didn't", "did not")
-        
-#         # Use regex to split while preserving punctuation
-#         tokens = re.findall(r"\b\w+\b|[.,!?;:()\[\]{}\"'-]", text)
-        
-#         # Filter out empty tokens
-#         tokens = [token.strip() for token in tokens if token.strip()]
-        
-#         return tokens
-
-#     async def text_to_speech_word_pairs(
-#         self,
-#         word_pairs: List[Tuple[str, str, bool]],
-#         source_lang: str,
-#         target_lang: str,
-#         output_path: Optional[str] = None,
-#         complete_text: Optional[str] = None,
-#         style_preferences=None,
-#     ) -> Optional[str]:
-#         """
-#         Legacy method for backward compatibility.
-#         Converts old format to new format and calls the v2 method.
-#         """
-#         # Convert legacy format to new structured format
-#         translations_data = {
-#             'translations': [],
-#             'style_data': []
-#         }
-        
-#         # Parse complete text to get individual translations and their word pairs
-#         if complete_text:
-#             # Parse the complete text to extract translations and word-by-word pairs per style
-#             lines = complete_text.split('\n')
-#             current_language = None
-#             current_style = None
-            
-#             # Track which translation and word pairs belong to which style
-#             style_translations = {}
-#             style_word_pairs = {}
-            
-#             for line in lines:
-#                 line = line.strip()
-                
-#                 # Detect language section
-#                 if 'German Translation:' in line:
-#                     current_language = 'german'
-#                 elif 'English Translation:' in line:
-#                     current_language = 'english'
-                
-#                 # Detect style and extract translation
-#                 if '* Conversational-native:' in line:
-#                     current_style = f'{current_language}_native' if current_language else None
-#                     match = re.search(r'"([^"]+)"', line)
-#                     if match and current_style:
-#                         style_translations[current_style] = match.group(1)
-#                 elif '* Conversational-colloquial:' in line:
-#                     current_style = f'{current_language}_colloquial' if current_language else None
-#                     match = re.search(r'"([^"]+)"', line)
-#                     if match and current_style:
-#                         style_translations[current_style] = match.group(1)
-#                 elif '* Conversational-informal:' in line:
-#                     current_style = f'{current_language}_informal' if current_language else None
-#                     match = re.search(r'"([^"]+)"', line)
-#                     if match and current_style:
-#                         style_translations[current_style] = match.group(1)
-#                 elif '* Conversational-formal:' in line:
-#                     current_style = f'{current_language}_formal' if current_language else None
-#                     match = re.search(r'"([^"]+)"', line)
-#                     if match and current_style:
-#                         style_translations[current_style] = match.group(1)
-                
-#                 # Extract word-by-word pairs for current style
-#                 if 'word by word' in line and current_style:
-#                     # Extract the word pairs from the line
-#                     match = re.search(r'"([^"]+)"', line)
-#                     if match:
-#                         pairs_text = match.group(1)
-#                         pairs = []
-#                         # Parse pairs like "Pineapple juice (jugo de piña)"
-#                         pair_matches = re.findall(r'([^()]+?)\s*\(([^)]+)\)', pairs_text)
-#                         for source, target in pair_matches:
-#                             source = source.strip()
-#                             target = target.strip()
-#                             if source and target:
-#                                 pairs.append((source, target))
-#                         style_word_pairs[current_style] = pairs
-            
-#             # Now create style data entries with correct associations
-#             for style_name in ['german_native', 'german_colloquial', 'german_informal', 'german_formal',
-#                               'english_native', 'english_colloquial', 'english_informal', 'english_formal']:
-                
-#                 # Check if this style is enabled and has data
-#                 is_german = style_name.startswith('german')
-#                 style_suffix = style_name.split('_')[1]
-                
-#                 # Check if style is enabled
-#                 style_enabled = False
-#                 if is_german:
-#                     style_enabled = getattr(style_preferences, f'german_{style_suffix}', False)
-#                     word_by_word_enabled = style_preferences.german_word_by_word
-#                 else:
-#                     style_enabled = getattr(style_preferences, f'english_{style_suffix}', False)
-#                     word_by_word_enabled = style_preferences.english_word_by_word
-                
-#                 if style_enabled and style_name in style_translations:
-#                     translations_data['style_data'].append({
-#                         'translation': style_translations[style_name],
-#                         'word_pairs': style_word_pairs.get(style_name, []) if word_by_word_enabled else [],
-#                         'is_german': is_german,
-#                         'style_name': style_name
-#                     })
-        
-#         # Call the v2 method with structured data
-#         return await self.text_to_speech_word_pairs_v2(
-#             translations_data=translations_data,
-#             source_lang=source_lang,
-#             target_lang=target_lang,
-#             style_preferences=style_preferences,
-#             output_path=output_path,
-#         )
-
-#     async def text_to_speech(
-#         self, ssml: str, output_path: Optional[str] = None
-#     ) -> Optional[str]:
-#         """Convert SSML to speech with grammar-aware language handling"""
-#         synthesizer = None
-#         try:
-#             if not output_path:
-#                 temp_dir = self._get_temp_directory()
-#                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-#                 output_path = os.path.join(temp_dir, f"speech_{timestamp}.mp3")
-#                 logger.info(f"🎵 Grammar-enhanced output path: {output_path}")
-
-#             audio_config = AudioOutputConfig(filename=output_path)
-#             synthesizer = SpeechSynthesizer(
-#                 speech_config=self.speech_config, audio_config=audio_config
-#             )
-
-#             result = await asyncio.get_event_loop().run_in_executor(
-#                 None, lambda: synthesizer.speak_ssml_async(ssml).get()
-#             )
-
-#             if result.reason == ResultReason.SynthesizingAudioCompleted:
-#                 return os.path.basename(output_path)
-
-#             return None
-
-#         except Exception as e:
-#             logger.error(f"❌ Exception in grammar-enhanced text_to_speech: {str(e)}")
-#             return None
-#         finally:
-#             if synthesizer:
-#                 try:
-#                     synthesizer.stop_speaking_async()
-#                 except:
-#                     pass
