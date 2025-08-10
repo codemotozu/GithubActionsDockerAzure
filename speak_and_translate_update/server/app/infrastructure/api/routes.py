@@ -108,7 +108,7 @@ async def health_check():
         "environment_vars": env_vars
     }
 
-# Health check endpoint
+# Health check endpoint..........
 @app.get("/")
 async def root():
     return {"status": "ok from server/app/infrastructure/api/routes.py test 42 testing purposes"}
