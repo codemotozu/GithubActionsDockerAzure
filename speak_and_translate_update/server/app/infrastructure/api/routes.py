@@ -1,5 +1,5 @@
+# server/app/infrastructure/api/routes.py - Updated with mother tongue support
 
-# server/app/infrastructure/api/routes.py
 import logging
 import tempfile
 import os
@@ -57,17 +57,24 @@ translation_service = TranslationService()
 speech_service = SpeechService()
 
 class TranslationStylePreferences(BaseModel):
+    # German styles
     german_native: bool = False
     german_colloquial: bool = False
     german_informal: bool = False
     german_formal: bool = False
+    
+    # English styles  
     english_native: bool = False
     english_colloquial: bool = False
     english_informal: bool = False
     english_formal: bool = False
-    # Add word-by-word audio preferences
-    german_word_by_word: bool = True
+    
+    # Word-by-word audio preferences
+    german_word_by_word: bool = False
     english_word_by_word: bool = False
+    
+    # Mother tongue setting (NEW)
+    mother_tongue: Optional[str] = "spanish"  # spanish, english, german
 
 class PromptRequest(BaseModel):
     text: str
@@ -111,82 +118,73 @@ async def health_check():
 # Health check endpoint
 @app.get("/")
 async def root():
-    return {"status": "ok from server/app/infrastructure/api/routes.py test 46"}
-
-# @app.post("/api/conversation", response_model=Translation)
-# async def start_conversation(prompt: PromptRequest):
-#     try:
-#         # Pass style preferences to the translation service
-#         response = await translation_service.process_prompt(
-#             prompt.text, 
-#             prompt.source_lang, 
-#             prompt.target_lang,
-#             style_preferences=prompt.style_preferences
-#         )
-#         return response
-#     except Exception as e:
-#         logger.error(f"Conversation error: {str(e)}", exc_info=True)
-#         raise HTTPException(status_code=500, detail=str(e))
-
-
-# @app.post("/api/conversation", response_model=Translation)
-# async def start_conversation(prompt: PromptRequest):
-#     try:
-#         logger.info("\n" + "="*80)
-#         logger.info("📨 NEW CONVERSATION REQUEST")
-#         logger.info("="*80)
-#         logger.info(f"Text: {prompt.text}")
-#         logger.info(f"Source Language: {prompt.source_lang}")
-#         logger.info(f"Target Language: {prompt.target_lang}")
-        
-#         if prompt.style_preferences:
-#             logger.info("Style Preferences:")
-#             logger.info(f"  German: Native={prompt.style_preferences.german_native}, "
-#                        f"Colloquial={prompt.style_preferences.german_colloquial}, "
-#                        f"Informal={prompt.style_preferences.german_informal}, "
-#                        f"Formal={prompt.style_preferences.german_formal}")
-#             logger.info(f"  German Word-by-Word: {prompt.style_preferences.german_word_by_word}")
-#             logger.info(f"  English: Native={prompt.style_preferences.english_native}, "
-#                        f"Colloquial={prompt.style_preferences.english_colloquial}, "
-#                        f"Informal={prompt.style_preferences.english_informal}, "
-#                        f"Formal={prompt.style_preferences.english_formal}")
-#             logger.info(f"  English Word-by-Word: {prompt.style_preferences.english_word_by_word}")
-#         logger.info("="*80 + "\n")
-        
-#         # Pass style preferences to the translation service
-#         response = await translation_service.process_prompt(
-#             prompt.text, 
-#             prompt.source_lang, 
-#             prompt.target_lang,
-#             style_preferences=prompt.style_preferences
-#         )
-#         return response
-#     except Exception as e:
-#         logger.error(f"Conversation error: {str(e)}", exc_info=True)
-#         raise HTTPException(status_code=500, detail=str(e))
-
+    return {"status": "ok from server/app/infrastructure/api/routes.py - Dynamic Mother Tongue Support   47"}
 
 @app.post("/api/conversation", response_model=Translation)
 async def start_conversation(prompt: PromptRequest):
     try:
-        logger.info(f"📨 NEW CONVERSATION REQUEST")
+        logger.info(f"📨 NEW DYNAMIC TRANSLATION REQUEST")
         logger.info(f"Text: {prompt.text}")
         
-        if prompt.style_preferences:
-            logger.info(f"  German Word-by-Word: {prompt.style_preferences.german_word_by_word}")
-            logger.info(f"  English Word-by-Word: {prompt.style_preferences.english_word_by_word}")
+        # Extract mother tongue from style preferences
+        mother_tongue = "spanish"  # default
+        if prompt.style_preferences and prompt.style_preferences.mother_tongue:
+            mother_tongue = prompt.style_preferences.mother_tongue
         
+        logger.info(f"🌐 Mother Tongue: {mother_tongue}")
+        
+        if prompt.style_preferences:
+            logger.info("📋 Style Preferences:")
+            logger.info(f"  🇩🇪 German: Native={prompt.style_preferences.german_native}, "
+                       f"Colloquial={prompt.style_preferences.german_colloquial}, "
+                       f"Informal={prompt.style_preferences.german_informal}, "
+                       f"Formal={prompt.style_preferences.german_formal}")
+            logger.info(f"  🎵 German Word-by-Word: {prompt.style_preferences.german_word_by_word}")
+            logger.info(f"  🇺🇸 English: Native={prompt.style_preferences.english_native}, "
+                       f"Colloquial={prompt.style_preferences.english_colloquial}, "
+                       f"Informal={prompt.style_preferences.english_informal}, "
+                       f"Formal={prompt.style_preferences.english_formal}")
+            logger.info(f"  🎵 English Word-by-Word: {prompt.style_preferences.english_word_by_word}")
+        
+        # Validate that at least one style is selected
+        if prompt.style_preferences:
+            has_any_style = any([
+                prompt.style_preferences.german_native,
+                prompt.style_preferences.german_colloquial,
+                prompt.style_preferences.german_informal,
+                prompt.style_preferences.german_formal,
+                prompt.style_preferences.english_native,
+                prompt.style_preferences.english_colloquial,
+                prompt.style_preferences.english_informal,
+                prompt.style_preferences.english_formal
+            ])
+            
+            if not has_any_style:
+                logger.warning("⚠️ No translation styles selected, using defaults")
+                # Apply minimal defaults based on mother tongue
+                if mother_tongue == "spanish":
+                    prompt.style_preferences.german_colloquial = True
+                    prompt.style_preferences.english_colloquial = True
+                elif mother_tongue == "english":
+                    prompt.style_preferences.german_colloquial = True
+                elif mother_tongue == "german":
+                    prompt.style_preferences.english_colloquial = True
+        
+        # Pass mother tongue and style preferences to translation service
         response = await translation_service.process_prompt(
-            prompt.text, 
-            prompt.source_lang, 
-            prompt.target_lang,
-            style_preferences=prompt.style_preferences
+            text=prompt.text, 
+            source_lang=prompt.source_lang, 
+            target_lang=prompt.target_lang,
+            style_preferences=prompt.style_preferences,
+            mother_tongue=mother_tongue  # NEW: Pass mother tongue explicitly
         )
+        
+        logger.info(f"✅ Translation completed successfully")
         return response
+        
     except Exception as e:
-        logger.error(f"Conversation error: {str(e)}", exc_info=True)
+        logger.error(f"❌ Conversation error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.post("/api/speech-to-text")
 async def speech_to_text(file: UploadFile = File(...)):

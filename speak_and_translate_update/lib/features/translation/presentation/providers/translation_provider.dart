@@ -1,4 +1,4 @@
-// lib/features/translation/presentation/providers/translation_provider.dart
+// lib/features/translation/presentation/providers/translation_provider.dart - Updated with mother tongue support
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speak_and_translate_update/features/translation/presentation/providers/shared_provider.dart' show settingsProvider;
 
@@ -55,10 +55,14 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
     // DEBUGGER POINT 1: Log raw settings
     _debugPrintSettings('Raw Settings from Provider', settings);
     
+    // Extract mother tongue - CRITICAL FOR DYNAMIC TRANSLATION
+    final motherTongue = settings['motherTongue'] as String? ?? 'spanish';
+    
     // Check if we're in language learning mode
     if (settings['appMode'] != 'languageLearning') {
       // For travel mode or other modes, return minimal preferences
       final minimalPrefs = <String, dynamic>{
+        'motherTongue': motherTongue,  // ALWAYS include mother tongue
         'germanNative': false,
         'germanColloquial': true,  // Default to colloquial
         'germanInformal': false,
@@ -75,8 +79,9 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
       return minimalPrefs;
     }
 
-    // For language learning mode, use EXACT user preferences - NO FORCING
+    // For language learning mode, use EXACT user preferences with mother tongue
     final userPreferences = <String, dynamic>{
+      'motherTongue': motherTongue,  // CRITICAL: Include mother tongue for dynamic translation
       'germanNative': settings['germanNative'] ?? false,
       'germanColloquial': settings['germanColloquial'] ?? false,
       'germanInformal': settings['germanInformal'] ?? false,
@@ -89,8 +94,8 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
       'englishWordByWord': settings['englishWordByWord'] ?? false,
     };
     
-    // DEBUGGER POINT 2: Log processed preferences
-    _debugPrintSettings('Processed User Preferences', userPreferences);
+    // DEBUGGER POINT 2: Log processed preferences with mother tongue
+    _debugPrintSettings('Processed User Preferences with Mother Tongue', userPreferences);
     
     return userPreferences;
   }
@@ -116,11 +121,46 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
     return hasStyle;
   }
 
+  Map<String, dynamic> _applyMotherTongueDefaults(Map<String, dynamic> preferences) {
+    final motherTongue = preferences['motherTongue'] as String? ?? 'spanish';
+    
+    print('🌐 Applying defaults for mother tongue: $motherTongue');
+    
+    // Apply intelligent defaults based on mother tongue
+    switch (motherTongue) {
+      case 'spanish':
+        // Spanish speakers typically want German and English translations
+        preferences['germanColloquial'] = true;
+        preferences['englishColloquial'] = true;
+        break;
+      case 'english':
+        // English speakers typically want German translations, Spanish is automatic
+        preferences['germanColloquial'] = true;
+        // Note: Spanish translation is automatic for English speakers
+        break;
+      case 'german':
+        // German speakers typically want English translations, Spanish is automatic  
+        preferences['englishColloquial'] = true;
+        // Note: Spanish translation is automatic for German speakers
+        break;
+      default:
+        // Fallback to Spanish->German+English
+        preferences['germanColloquial'] = true;
+        preferences['englishColloquial'] = true;
+        break;
+    }
+    
+    return preferences;
+  }
+
   // Debug helper method
   void _debugPrintSettings(String label, Map<String, dynamic> settings) {
     print('\n' + '='*60);
     print('🎯 $label:');
     print('='*60);
+    
+    // Mother tongue (CRITICAL)
+    print('🌐 Mother Tongue: ${settings['motherTongue']}');
     
     // German settings
     print('🇩🇪 German Settings:');
@@ -146,30 +186,32 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
 
     try {
       // DEBUGGER POINT 4: Log conversation start
-      print('\n🚀 STARTING CONVERSATION');
+      print('\n🚀 STARTING DYNAMIC CONVERSATION');
       print('Input text: "$text"');
       
-      // Get user's exact style preferences
+      // Get user's exact style preferences INCLUDING mother tongue
       var stylePreferences = _getStylePreferences();
       
       // Validate and apply defaults ONLY if nothing is selected
       if (!_hasAnyStyleSelected()) {
-        print('⚠️ No styles selected - applying minimal defaults');
-        stylePreferences['germanColloquial'] = true;
-        stylePreferences['englishColloquial'] = true;
+        print('⚠️ No styles selected - applying intelligent defaults based on mother tongue');
+        stylePreferences = _applyMotherTongueDefaults(stylePreferences);
         
         // DEBUGGER POINT 5: Log default application
-        _debugPrintSettings('After Applying Defaults', stylePreferences);
+        _debugPrintSettings('After Applying Mother Tongue Defaults', stylePreferences);
       }
 
-      // DEBUGGER POINT 6: Final preferences being sent
+      // DEBUGGER POINT 6: Final preferences being sent to backend
       print('\n📤 SENDING TO BACKEND:');
+      print('Mother Tongue: ${stylePreferences['motherTongue']}');
       print('Style Preferences:');
       stylePreferences.forEach((key, value) {
-        if (value == true) {
-          print('  ✅ $key: $value');
-        } else {
-          print('  ❌ $key: $value');
+        if (key != 'motherTongue') {  // Don't repeat mother tongue
+          if (value == true) {
+            print('  ✅ $key: $value');
+          } else {
+            print('  ❌ $key: $value');
+          }
         }
       });
 
@@ -183,10 +225,10 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
       state = state.copyWith(messages: updatedMessages, isLoading: true);
       await _repository.stopAudio();
 
-      // Send to translation service with exact preferences
+      // Send to translation service with exact preferences INCLUDING mother tongue
       final translation = await _repository.getTranslation(
         text, 
-        stylePreferences: stylePreferences,
+        stylePreferences: stylePreferences,  // Now includes mother tongue
       );
       
       if (!_mounted) return;
@@ -195,6 +237,7 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
       print('\n📥 RESPONSE RECEIVED:');
       print('Translation text length: ${translation.translatedText.length}');
       print('Audio path: ${translation.audioPath ?? "No audio"}');
+      print('Source language detected: ${translation.sourceLanguage}');
       
       // Prune again after receiving response
       final newMessages = _pruneMessageHistory(

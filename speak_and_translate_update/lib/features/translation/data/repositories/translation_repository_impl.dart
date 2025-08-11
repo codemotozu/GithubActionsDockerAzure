@@ -1,3 +1,4 @@
+// Updated translation_repository_impl.dart with mother tongue support
 
 import 'package:audio_session/audio_session.dart';
 import 'package:http/http.dart' as http;
@@ -33,6 +34,7 @@ class TranslationStylePreferences {
   final bool englishFormal;
   final bool germanWordByWord;
   final bool englishWordByWord;
+  final String motherTongue; // NEW: Mother tongue support
 
   TranslationStylePreferences({
     this.germanNative = false,
@@ -45,6 +47,7 @@ class TranslationStylePreferences {
     this.englishFormal = false,
     this.germanWordByWord = true,
     this.englishWordByWord = false,
+    this.motherTongue = 'spanish', // Default to Spanish
   });
 
   Map<String, dynamic> toJson() {
@@ -59,6 +62,7 @@ class TranslationStylePreferences {
       'english_formal': englishFormal,
       'german_word_by_word': germanWordByWord,
       'english_word_by_word': englishWordByWord,
+      'mother_tongue': motherTongue, // NEW: Include mother tongue in API payload
     };
   }
 
@@ -74,10 +78,10 @@ class TranslationStylePreferences {
       englishFormal: settings['englishFormal'] as bool? ?? false,
       germanWordByWord: settings['germanWordByWord'] as bool? ?? true,
       englishWordByWord: settings['englishWordByWord'] as bool? ?? false,
+      motherTongue: settings['motherTongue'] as String? ?? 'spanish', // NEW: Extract mother tongue
     );
   }
 }
-// 
 
 class TranslationRepositoryImpl implements TranslationRepository {
   // final String baseUrl = 'http://10.0.2.2:8000'; // here you can hear the translaion in my local machine dont forget to update main.py
@@ -176,60 +180,87 @@ class TranslationRepositoryImpl implements TranslationRepository {
     }
   }
 
-
-// Update getTranslation method to accept style preferences
-@override
-Future<Translation> getTranslation(String text, {Map<String, dynamic>? stylePreferences}) async {
-  try {
-    // Create style preferences object
-    TranslationStylePreferences? preferences;
-    if (stylePreferences != null) {
-      preferences = TranslationStylePreferences.fromSettings(stylePreferences);
-    }
-
-    // Prepare request body
-    final Map<String, dynamic> requestBody = {
-      'text': text,
-      'source_lang': 'en',
-      'target_lang': 'de',
-    };
-
-    // Add style preferences if provided
-    if (preferences != null) {
-      requestBody['style_preferences'] = preferences.toJson();
-    }
-
-    final response = await _client.post(
-      Uri.parse('$baseUrl/api/conversation'),
-      headers: {
-        'Content-Type': 'application/json; charset=UTF-8',
-        'Accept': 'application/json; charset=UTF-8',
-      },
-      body: utf8.encode(json.encode(requestBody)),
-    ).timeout(timeoutDuration);
-
-    if (response.statusCode == 200) {
-      final String decodedBody = utf8.decode(response.bodyBytes);
-      final Map<String, dynamic> data = json.decode(decodedBody);
-      final translation = Translation.fromJson(data);
-      
-      if (translation.audioPath != null) {
-        final audioUrl = _getAudioUrl(translation.audioPath!);
-        print('Audio URL: $audioUrl');
+  // Updated getTranslation method with mother tongue support
+  @override
+  Future<Translation> getTranslation(String text, {Map<String, dynamic>? stylePreferences}) async {
+    try {
+      // Create style preferences object with mother tongue support
+      TranslationStylePreferences? preferences;
+      if (stylePreferences != null) {
+        preferences = TranslationStylePreferences.fromSettings(stylePreferences);
       }
-      
-      return translation;
-    } else {
-      throw Exception('Server error: ${response.statusCode}\n${utf8.decode(response.bodyBytes)}');
+
+      // Log the mother tongue being used
+      print('\n🌐 REPOSITORY: Making API call with:');
+      print('   Text: "$text"');
+      print('   Mother Tongue: ${preferences?.motherTongue ?? "not specified"}');
+      print('   German word-by-word: ${preferences?.germanWordByWord ?? false}');
+      print('   English word-by-word: ${preferences?.englishWordByWord ?? false}');
+      print('   German styles: Native=${preferences?.germanNative}, Colloquial=${preferences?.germanColloquial}, Informal=${preferences?.germanInformal}, Formal=${preferences?.germanFormal}');
+      print('   English styles: Native=${preferences?.englishNative}, Colloquial=${preferences?.englishColloquial}, Informal=${preferences?.englishInformal}, Formal=${preferences?.englishFormal}');
+
+      // Prepare request body with mother tongue support
+      final Map<String, dynamic> requestBody = {
+        'text': text,
+        'source_lang': preferences?.motherTongue ?? 'spanish',  // Use mother tongue as source
+        'target_lang': 'multi',  // Multiple target languages based on mother tongue
+      };
+
+      // Add style preferences if provided (includes mother tongue)
+      if (preferences != null) {
+        requestBody['style_preferences'] = preferences.toJson();
+        print('   📤 Style preferences JSON: ${jsonEncode(preferences.toJson())}');
+      }
+
+      print('📤 Full request body: ${jsonEncode(requestBody)}');
+
+      final response = await _client.post(
+        Uri.parse('$baseUrl/api/conversation'),
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Accept': 'application/json; charset=UTF-8',
+        },
+        body: utf8.encode(json.encode(requestBody)),
+      ).timeout(timeoutDuration);
+
+      print('📥 API Response status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final String decodedBody = utf8.decode(response.bodyBytes);
+        print('📥 Response body preview: ${decodedBody.substring(0, min(200, decodedBody.length))}...');
+        
+        final Map<String, dynamic> data = json.decode(decodedBody);
+        final translation = Translation.fromJson(data);
+        
+        if (translation.audioPath != null) {
+          final audioUrl = _getAudioUrl(translation.audioPath!);
+          print('🎵 Audio URL generated: $audioUrl');
+        } else {
+          print('🔇 No audio path in response');
+          
+          // Additional debugging for audio generation
+          if (preferences?.germanWordByWord == true || preferences?.englishWordByWord == true) {
+            print('⚠️ WARNING: Word-by-word audio was requested but no audio path returned');
+            print('   German word-by-word requested: ${preferences?.germanWordByWord}');
+            print('   English word-by-word requested: ${preferences?.englishWordByWord}');
+          }
+        }
+        
+        print('✅ Translation completed successfully');
+        return translation;
+      } else {
+        final errorBody = utf8.decode(response.bodyBytes);
+        print('❌ Server error ${response.statusCode}: $errorBody');
+        throw Exception('Server error: ${response.statusCode}\n$errorBody');
+      }
+    } catch (e) {
+      print('❌ Error in getTranslation: $e');
+      if (e.toString().contains('Connection refused')) {
+        throw Exception('Cannot connect to server. Please make sure the server is running at $baseUrl');
+      }
+      rethrow;
     }
-  } catch (e) {
-    print('Error in getTranslation: $e');
-    if (e.toString().contains('Connection refused')) {
-      throw Exception('Cannot connect to server. Please make sure the server is running at $baseUrl');
-    }
-    rethrow;
   }
-}
 
   @override
   Future<void> stopAudio() async {
@@ -244,7 +275,7 @@ Future<Translation> getTranslation(String text, {Map<String, dynamic>? stylePref
     _uiSoundPlayer.dispose();
   }
 
-  // Update processAudioInput in translation_repository_impl.dart
+  // Update processAudioInput to support different mother tongue languages
   @override
   Future<String> processAudioInput(String audioPath) async {
     try {
@@ -261,7 +292,9 @@ Future<Translation> getTranslation(String text, {Map<String, dynamic>? stylePref
       final response = await request.send().timeout(timeoutDuration);
       
       if (response.statusCode == 200) {
-        return json.decode(await response.stream.bytesToString())['text'];
+        final responseText = await response.stream.bytesToString();
+        final responseData = json.decode(responseText);
+        return responseData['text'];
       } else {
         final errorBody = await response.stream.bytesToString();
         throw Exception('ASR Error ${response.statusCode}: $errorBody');
@@ -287,4 +320,7 @@ Future<Translation> getTranslation(String text, {Map<String, dynamic>? stylePref
         throw FormatException('Unsupported audio format: $ext');
     }
   }
+
+  // Helper function for min operation
+  int min(int a, int b) => a < b ? a : b;
 }

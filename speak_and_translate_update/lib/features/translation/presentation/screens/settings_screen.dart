@@ -1,3 +1,5 @@
+// Updated settings_screen.dart with dynamic translation explanation
+
 import 'package:flutter/material.dart';
 import 'package:speak_and_translate_update/features/translation/data/repositories/hive_user_settings_repository.dart';
 
@@ -51,7 +53,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  MotherTongue _motherTongue = MotherTongue.english;
+  MotherTongue _motherTongue = MotherTongue.spanish;
   AppMode _appMode = AppMode.languageLearning;
   
   // Fluency practice settings
@@ -87,21 +89,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _loadInitialSettings();
-    
-    // DEBUGGER POINT 1: Log initial settings load
-    _debugLog('initState', 'Loading initial settings');
   }
 
   void _loadInitialSettings() {
     if (widget.initialSettings != null) {
       final settings = widget.initialSettings!;
       
-      // DEBUGGER POINT 2: Log settings being loaded
-      _debugLog('_loadInitialSettings', 'Settings from parent: $settings');
-      
       // Load mother tongue
       final motherTongueString = settings['motherTongue'] as String?;
-      _motherTongue = _getMotherTongueFromString(motherTongueString ?? 'english');
+      _motherTongue = _getMotherTongueFromString(motherTongueString ?? 'spanish');
       
       // Load app mode
       final appModeString = settings['appMode'] as String?;
@@ -125,11 +121,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _vocabularyEnhancement = settings['vocabularyEnhancement'] as bool? ?? true;
       _realTimeCorrection = settings['realTimeCorrection'] as bool? ?? false;
       
-      // Load word-by-word audio settings - NO DEFAULTS FORCED
+      // Load word-by-word audio settings
       _germanWordByWord = settings['germanWordByWord'] as bool? ?? false;
       _englishWordByWord = settings['englishWordByWord'] as bool? ?? false;
       
-      // Load translation style preferences - NO DEFAULTS FORCED
+      // Load translation style preferences
       _germanNative = settings['germanNative'] as bool? ?? false;
       _germanColloquial = settings['germanColloquial'] as bool? ?? false;
       _germanInformal = settings['germanInformal'] as bool? ?? false;
@@ -138,36 +134,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _englishColloquial = settings['englishColloquial'] as bool? ?? false;
       _englishInformal = settings['englishInformal'] as bool? ?? false;
       _englishFormal = settings['englishFormal'] as bool? ?? false;
-      
-      // DEBUGGER POINT 3: Log loaded state
-      _debugLogCurrentState('After loading settings');
     }
   }
 
-  // Debug helper methods
-  void _debugLog(String method, String message) {
-    debugPrint('\n🔍 [$method] $message');
-  }
-
-  void _debugLogCurrentState(String context) {
-    debugPrint('\n' + '='*60);
-    debugPrint('📋 SETTINGS STATE: $context');
-    debugPrint('='*60);
-    debugPrint('🇩🇪 German Settings:');
-    debugPrint('  Native: $_germanNative');
-    debugPrint('  Colloquial: $_germanColloquial');
-    debugPrint('  Informal: $_germanInformal');
-    debugPrint('  Formal: $_germanFormal');
-    debugPrint('  Word-by-Word: $_germanWordByWord');
-    debugPrint('🇺🇸 English Settings:');
-    debugPrint('  Native: $_englishNative');
-    debugPrint('  Colloquial: $_englishColloquial');
-    debugPrint('  Informal: $_englishInformal');
-    debugPrint('  Formal: $_englishFormal');
-    debugPrint('  Word-by-Word: $_englishWordByWord');
-    debugPrint('='*60 + '\n');
-  }
-
+  // Helper methods (keeping existing ones)
   MotherTongue _getMotherTongueFromString(String value) {
     switch (value) {
       case 'english': return MotherTongue.english;
@@ -212,23 +182,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   String _getLanguageName(MotherTongue language) {
     switch (language) {
-      case MotherTongue.spanish: return 'Spanish';
+      case MotherTongue.spanish: return 'Spanish (Español)';
       case MotherTongue.english: return 'English';
-      case MotherTongue.german: return 'German';
-      case MotherTongue.french: return 'French';
-      case MotherTongue.italian: return 'Italian';
-      case MotherTongue.portuguese: return 'Portuguese';
-      case MotherTongue.chinese: return 'Chinese';
-      case MotherTongue.japanese: return 'Japanese';
-      case MotherTongue.korean: return 'Korean';
-      case MotherTongue.arabic: return 'Arabic';
-      case MotherTongue.russian: return 'Russian';
-      case MotherTongue.dutch: return 'Dutch';
-      case MotherTongue.hindi: return 'Hindi';
-      case MotherTongue.bengali: return 'Bengali';
+      case MotherTongue.german: return 'German (Deutsch)';
+      case MotherTongue.french: return 'French (Français)';
+      case MotherTongue.italian: return 'Italian (Italiano)';
+      case MotherTongue.portuguese: return 'Portuguese (Português)';
+      case MotherTongue.chinese: return 'Chinese (中文)';
+      case MotherTongue.japanese: return 'Japanese (日本語)';
+      case MotherTongue.korean: return 'Korean (한국어)';
+      case MotherTongue.arabic: return 'Arabic (العربية)';
+      case MotherTongue.russian: return 'Russian (Русский)';
+      case MotherTongue.dutch: return 'Dutch (Nederlands)';
+      case MotherTongue.hindi: return 'Hindi (हिन्दी)';
+      case MotherTongue.bengali: return 'Bengali (বাংলা)';
     }
   }
 
+  String _getLanguageFlag(MotherTongue language) {
+    switch (language) {
+      case MotherTongue.spanish: return '🇪🇸';
+      case MotherTongue.english: return '🇺🇸';
+      case MotherTongue.german: return '🇩🇪';
+      case MotherTongue.french: return '🇫🇷';
+      case MotherTongue.italian: return '🇮🇹';
+      case MotherTongue.portuguese: return '🇵🇹';
+      case MotherTongue.chinese: return '🇨🇳';
+      case MotherTongue.japanese: return '🇯🇵';
+      case MotherTongue.korean: return '🇰🇷';
+      case MotherTongue.arabic: return '🇸🇦';
+      case MotherTongue.russian: return '🇷🇺';
+      case MotherTongue.dutch: return '🇳🇱';
+      case MotherTongue.hindi: return '🇮🇳';
+      case MotherTongue.bengali: return '🇧🇩';
+    }
+  }
+
+  // Helper methods for string conversion
   String _getPracticeLanguageName(PracticeLanguage language) {
     switch (language) {
       case PracticeLanguage.english: return 'English';
@@ -281,6 +271,202 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   bool get _isAnyStyleSelected {
     return _isGermanSelected || _isEnglishSelected;
+  }
+
+  // NEW: Get expected target languages based on mother tongue
+  List<String> _getExpectedTargetLanguages() {
+    switch (_motherTongue) {
+      case MotherTongue.spanish:
+        List<String> targets = [];
+        if (_isGermanSelected) targets.add('German');
+        if (_isEnglishSelected) targets.add('English');
+        return targets;
+      case MotherTongue.english:
+        List<String> targets = ['Spanish']; // Always translate to Spanish
+        if (_isGermanSelected) targets.add('German');
+        return targets;
+      case MotherTongue.german:
+        List<String> targets = ['Spanish']; // Always translate to Spanish
+        if (_isEnglishSelected) targets.add('English');
+        return targets;
+      default:
+        return ['German', 'English']; // Fallback
+    }
+  }
+
+  // NEW: Build dynamic translation explanation widget
+  Widget _buildDynamicTranslationInfo() {
+    final expectedTargets = _getExpectedTargetLanguages();
+    final audioFeatures = <String>[];
+    
+    if (_germanWordByWord) audioFeatures.add('German Word-by-Word');
+    if (_englishWordByWord) audioFeatures.add('English Word-by-Word');
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue[900]!.withOpacity(0.3), Colors.purple[900]!.withOpacity(0.3)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.translate, color: Colors.lightBlue, size: 24),
+              const SizedBox(width: 12),
+              const Text(
+                'Dynamic Translation Setup',
+                style: TextStyle(
+                  color: Colors.lightBlue,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // Source language
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Text(
+                  _getLanguageFlag(_motherTongue),
+                  style: const TextStyle(fontSize: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Your input language:',
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                      Text(
+                        _getLanguageName(_motherTongue),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Translation arrow and targets
+          Row(
+            children: [
+              const SizedBox(width: 20),
+              const Icon(Icons.arrow_downward, color: Colors.lightBlue),
+              const SizedBox(width: 12),
+              const Text(
+                'Will be translated to:',
+                style: TextStyle(color: Colors.lightBlue, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 8),
+          
+          // Target languages
+          if (expectedTargets.isNotEmpty) ...[
+            ...expectedTargets.map((target) => Padding(
+              padding: const EdgeInsets.only(left: 32, bottom: 4),
+              child: Row(
+                children: [
+                  Text(
+                    target == 'German' ? '🇩🇪' : target == 'English' ? '🇺🇸' : '🇪🇸',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    target,
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                  ),
+                  if (target == 'German' && _germanWordByWord)
+                    Container(
+                      margin: const EdgeInsets.only(left: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'AUDIO',
+                        style: TextStyle(color: Colors.orange, fontSize: 10),
+                      ),
+                    ),
+                  if (target == 'English' && _englishWordByWord)
+                    Container(
+                      margin: const EdgeInsets.only(left: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'AUDIO',
+                        style: TextStyle(color: Colors.orange, fontSize: 10),
+                      ),
+                    ),
+                ],
+              ),
+            )).toList(),
+          ] else ...[
+            Padding(
+              padding: const EdgeInsets.only(left: 32),
+              child: Text(
+                'Select translation styles below to enable translations',
+                style: TextStyle(color: Colors.yellow[300], fontStyle: FontStyle.italic),
+              ),
+            ),
+          ],
+          
+          if (audioFeatures.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Divider(color: Colors.white30),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.volume_up, color: Colors.orange, size: 20),
+                const SizedBox(width: 8),
+                const Text(
+                  'Audio Features:',
+                  style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            ...audioFeatures.map((feature) => Padding(
+              padding: const EdgeInsets.only(left: 28, bottom: 2),
+              child: Text(
+                '• $feature pronunciation breakdown',
+                style: const TextStyle(color: Colors.orange, fontSize: 12),
+              ),
+            )).toList(),
+          ],
+        ],
+      ),
+    );
   }
 
   // Build current selection summary widget
@@ -349,40 +535,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             if (audioFeatures.isNotEmpty) ...[
               const SizedBox(height: 4),
-              // Row(
-              //   children: [
-              //     const Icon(Icons.volume_up, size: 16, color: Colors.cyan),
-              //     const SizedBox(width: 4),
-              //     Text(
-              //       audioFeatures.join(', '),
-              //       style: const TextStyle(
-              //         color: Colors.cyan,
-              //         fontStyle: FontStyle.italic,
-              //       ),
-              //     ),
-              //   ],
-              // ),
-               Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: audioFeatures.map((feature) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.volume_up, size: 16, color: Colors.cyan),
-                      const SizedBox(width: 4),
-                      Text(
-                        feature,
-                        style: const TextStyle(
-                          color: Colors.cyan,
-                          fontStyle: FontStyle.italic,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: audioFeatures.map((feature) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.volume_up, size: 16, color: Colors.cyan),
+                        const SizedBox(width: 4),
+                        Text(
+                          feature,
+                          style: const TextStyle(
+                            color: Colors.cyan,
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
             ],
           ],
         ],
@@ -391,25 +564,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _handleSave() async {
-    // DEBUGGER POINT 4: Log save attempt
-    _debugLog('_handleSave', 'User clicked save');
-    _debugLogCurrentState('Before validation');
-    
     // Check if at least one style is selected
     if (!_isAnyStyleSelected) {
-      // DEBUGGER POINT 5: Log validation failure
-      _debugLog('_handleSave', 'No styles selected - showing warning');
-      
       // Show warning dialog
       final shouldUseDefaults = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('⚠️ No Translation Styles Selected'),
-          content: const Text(
+          content: Text(
             'You haven\'t selected any translation styles.\n\n'
-            'Would you like to:\n'
+            'Based on your mother tongue (${_getLanguageName(_motherTongue)}), would you like to:\n'
             '• Go back and select styles, or\n'
-            '• Use default settings (Colloquial for both languages)?'
+            '• Use intelligent defaults?'
           ),
           actions: [
             TextButton(
@@ -418,22 +584,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Use Defaults'),
+              child: const Text('Use Smart Defaults'),
             ),
           ],
         ),
       );
       
       if (shouldUseDefaults == true) {
-        // Apply minimal defaults
+        // Apply intelligent defaults based on mother tongue
         setState(() {
-          _germanColloquial = true;
-          _englishColloquial = true;
+          switch (_motherTongue) {
+            case MotherTongue.spanish:
+              _germanColloquial = true;
+              _englishColloquial = true;
+              break;
+            case MotherTongue.english:
+              _germanColloquial = true;
+              break;
+            case MotherTongue.german:
+              _englishColloquial = true;
+              break;
+            default:
+              _germanColloquial = true;
+              _englishColloquial = true;
+              break;
+          }
         });
-        
-        // DEBUGGER POINT 6: Log default application
-        _debugLog('_handleSave', 'User chose to use defaults');
-        _debugLogCurrentState('After applying defaults');
       } else {
         return; // User chose to go back
       }
@@ -452,11 +628,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       'vocabularyEnhancement': _vocabularyEnhancement,
       'realTimeCorrection': _realTimeCorrection,
       
-      // Word-by-word audio settings - EXACT user selection
+      // Word-by-word audio settings
       'germanWordByWord': _germanWordByWord,
       'englishWordByWord': _englishWordByWord,
       
-      // Translation style preferences - EXACT user selection
+      // Translation style preferences
       'germanNative': _germanNative,
       'germanColloquial': _germanColloquial,
       'germanInformal': _germanInformal,
@@ -466,10 +642,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       'englishInformal': _englishInformal,
       'englishFormal': _englishFormal,
     };
-
-    // DEBUGGER POINT 7: Log final settings being saved
-    _debugLog('_handleSave', 'Final settings to save:');
-    debugPrint(updatedSettings.toString());
 
     try {
       // Show loading indicator
@@ -489,9 +661,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final repository = UserSettingsRepository();
       await repository.saveUserSettings(updatedSettings);
       
-      // DEBUGGER POINT 8: Log successful save
-      _debugLog('_handleSave', '✅ Settings saved to Hive successfully');
-      
       // Close loading dialog
       Navigator.of(context).pop();
       
@@ -508,9 +677,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       Navigator.pop(context, updatedSettings);
       
     } catch (e) {
-      // DEBUGGER POINT 9: Log save error
-      _debugLog('_handleSave', '❌ Error saving settings: $e');
-      
       // Close loading dialog if it's open
       Navigator.of(context).pop();
       
@@ -542,9 +708,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           IconButton(
             icon: const Icon(Icons.clear_all, color: Colors.orange),
             onPressed: () {
-              // DEBUGGER POINT 10: Log clear all action
-              _debugLog('AppBar', 'User clicked clear all');
-              
               setState(() {
                 // Clear all selections
                 _germanNative = false;
@@ -558,8 +721,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _germanWordByWord = false;
                 _englishWordByWord = false;
               });
-              
-              _debugLogCurrentState('After clearing all');
             },
             tooltip: 'Clear All Selections',
           ),
@@ -627,7 +788,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     items: MotherTongue.values.map<DropdownMenuItem<MotherTongue>>((MotherTongue value) {
                       return DropdownMenuItem<MotherTongue>(
                         value: value,
-                        child: Text(_getLanguageName(value), style: const TextStyle(color: Colors.white)),
+                        child: Row(
+                          children: [
+                            Text(_getLanguageFlag(value), style: const TextStyle(fontSize: 18)),
+                            const SizedBox(width: 8),
+                            Text(_getLanguageName(value), style: const TextStyle(color: Colors.white)),
+                          ],
+                        ),
                       );
                     }).toList(),
                   ),
@@ -691,6 +858,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const Text('Translation Styles', style: TextStyle(color: Colors.cyan, fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 
+                // Dynamic translation explanation
+                _buildDynamicTranslationInfo(),
+                
                 // Selection summary
                 _buildSelectionSummary(),
                 
@@ -716,7 +886,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('German', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+                              Row(
+                                children: [
+                                  const Text('🇩🇪', style: TextStyle(fontSize: 20)),
+                                  const SizedBox(width: 8),
+                                  const Text('German', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+                                ],
+                              ),
                               Row(
                                 children: [
                                   if (_isGermanSelected)
@@ -763,8 +939,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     value: _germanWordByWord,
                                     onChanged: (value) {
                                       setState(() => _germanWordByWord = value);
-                                      // DEBUGGER POINT 11: Log toggle change
-                                      _debugLog('German Word-by-Word', 'Changed to: $value');
                                     },
                                     activeColor: Colors.cyan,
                                   ),
@@ -867,7 +1041,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text('English', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+                              Row(
+                                children: [
+                                  const Text('🇺🇸', style: TextStyle(fontSize: 20)),
+                                  const SizedBox(width: 8),
+                                  const Text('English', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+                                ],
+                              ),
                               Row(
                                 children: [
                                   if (_isEnglishSelected)
@@ -914,8 +1094,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     value: _englishWordByWord,
                                     onChanged: (value) {
                                       setState(() => _englishWordByWord = value);
-                                      // DEBUGGER POINT 12: Log toggle change
-                                      _debugLog('English Word-by-Word', 'Changed to: $value');
                                     },
                                     activeColor: Colors.cyan,
                                   ),

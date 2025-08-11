@@ -1,9 +1,4 @@
-
-
-
-
-
-# tts_service.py - Complete fixed version with AI translation
+# tts_service.py - Updated with dynamic mother tongue audio generation
 
 from azure.cognitiveservices.speech import (
     SpeechConfig,
@@ -76,11 +71,38 @@ class EnhancedTTSService:
             
         logger.info(f"Using TTS device: {tts_device}")
 
-        # Enhanced voice mapping with grammar-aware selection
+        # Dynamic voice mapping with support for multiple mother tongues
         self.voice_mapping = {
-            "en": "en-US-JennyMultilingualNeural",
-            "es": "es-ES-ArabellaMultilingualNeural", 
-            "de": "de-DE-SeraphinaMultilingualNeural",
+            "es": {
+                "voice": "es-ES-ArabellaMultilingualNeural",
+                "language": "es-ES",
+                "name": "Spanish"
+            },
+            "en": {
+                "voice": "en-US-JennyMultilingualNeural", 
+                "language": "en-US",
+                "name": "English"
+            },
+            "de": {
+                "voice": "de-DE-SeraphinaMultilingualNeural",
+                "language": "de-DE", 
+                "name": "German"
+            },
+            "fr": {
+                "voice": "fr-FR-DeniseMultilingualNeural",
+                "language": "fr-FR",
+                "name": "French"
+            },
+            "it": {
+                "voice": "it-IT-ElsaMultilingualNeural",
+                "language": "it-IT",
+                "name": "Italian"
+            },
+            "pt": {
+                "voice": "pt-PT-RaquelMultilingualNeural",
+                "language": "pt-PT",
+                "name": "Portuguese"
+            },
         }
 
         # Enhanced phrasal verb patterns - more comprehensive
@@ -101,18 +123,21 @@ class EnhancedTTSService:
             r'\b([a-zäöüß]+)\s+(ab|an|auf|aus|bei|dar|durch|ein|empor|entgegen|entlang|fort|her|hin|hinter|los|mit|nach|nieder|über|um|unter|vor|weg|weiter|wieder|zu|zurück|zusammen)\b',
         ]
 
-        # Minimal core translations - only absolute essentials, everything else uses AI
+        # Enhanced core translations for multiple languages
         self.core_translations = {
             # Critical articles (most frequent)
             "the": "el/la", "a": "un/una", "an": "un/una",
             "der": "el", "die": "la", "das": "el/lo", "ein": "un", "eine": "una",
+            "el": "the", "la": "the", "un": "a", "una": "a",
             
             # Critical pronouns
             "i": "yo", "you": "tú", "he": "él", "she": "ella", "we": "nosotros", "they": "ellos",
             "ich": "yo", "du": "tú", "er": "él", "sie": "ella", "wir": "nosotros",
+            "yo": "I", "tú": "you", "él": "he", "ella": "she", "nosotros": "we", "ellos": "they",
             
             # Critical connectors
             "and": "y", "or": "o", "but": "pero", "und": "y", "oder": "o", "aber": "pero",
+            "y": "and", "o": "or", "pero": "but",
             
             # Essential negations
             "not": "no", "no": "no", "nicht": "no",
@@ -121,12 +146,9 @@ class EnhancedTTSService:
             ".": ".", ",": ",", "!": "!", "?": "?", ";": ";", ":": ":", "(": "(", ")": ")",
         }
 
-        # Enhanced cache for dynamic AI translations - larger cache since we rely on AI more
+        # Enhanced cache for dynamic AI translations
         self._translation_cache = {}
         self._phrase_cache = {}
-        
-        # Batch translation for efficiency
-        self._batch_translation_queue = []
 
     def _get_temp_directory(self) -> str:
         """Create and return the temporary directory path"""
@@ -137,21 +159,41 @@ class EnhancedTTSService:
         os.makedirs(temp_dir, exist_ok=True)
         return temp_dir
 
+    def _get_voice_config(self, language_code: str) -> dict:
+        """Get voice configuration for a language"""
+        # Map full language names to codes
+        lang_map = {
+            'spanish': 'es',
+            'english': 'en', 
+            'german': 'de',
+            'french': 'fr',
+            'italian': 'it',
+            'portuguese': 'pt'
+        }
+        
+        # Get the language code
+        if language_code in lang_map:
+            code = lang_map[language_code]
+        else:
+            code = language_code
+            
+        return self.voice_mapping.get(code, self.voice_mapping['es'])  # Default to Spanish
+
     @lru_cache(maxsize=2000)
     def _translate_with_ai_comprehensive(self, word_or_phrase: str, source_lang: str, context: str = "") -> str:
         """
         Comprehensive AI translation that builds dynamic dictionary entries.
-        This replaces the need for huge static dictionaries.
+        Enhanced to handle multiple mother tongues.
         """
         if not self.translation_model:
             return f"[{word_or_phrase}]"
         
         try:
             # Determine source language
-            lang_map = {"en": "English", "de": "German", "es": "Spanish"}
+            lang_map = {"en": "English", "de": "German", "es": "Spanish", "fr": "French", "it": "Italian", "pt": "Portuguese"}
             lang_name = lang_map.get(source_lang, "Unknown")
             
-            # Smart prompt that handles all cases: single words, phrases, phrasal verbs, separable verbs
+            # Smart prompt that handles all cases
             prompt = f"""You are a linguistic expert. Translate this {lang_name} word or phrase to Spanish.
 
 RULES:
@@ -209,10 +251,7 @@ Spanish translation:"""
             return f"[{word_or_phrase}]"
 
     def _detect_phrasal_verbs(self, text: str) -> List[Tuple[int, int, str]]:
-        """
-        Detect phrasal verbs in English text and return their positions.
-        Returns list of (start_pos, end_pos, phrase) tuples.
-        """
+        """Detect phrasal verbs in English text and return their positions."""
         phrasal_verbs = []
         
         for pattern in self.phrasal_verb_patterns:
@@ -236,10 +275,7 @@ Spanish translation:"""
         return merged
 
     def _detect_separable_verbs(self, text: str) -> List[Tuple[int, int, str]]:
-        """
-        Detect German separable verbs and return their positions.
-        Returns list of (start_pos, end_pos, phrase) tuples.
-        """
+        """Detect German separable verbs and return their positions."""
         separable_verbs = []
         
         for pattern in self.separable_verb_patterns:
@@ -250,7 +286,6 @@ Spanish translation:"""
                 logger.debug(f"Detected separable verb: '{phrase}' at position {start}-{end}")
         
         # Look for separated forms (verb at beginning, prefix at end)
-        # Pattern: "Ich stehe früh auf" - detect "stehe...auf" as "aufstehen"
         words = text.split()
         for i, word in enumerate(words):
             for j in range(i + 2, min(i + 6, len(words))):  # Look ahead 2-5 words
@@ -269,10 +304,7 @@ Spanish translation:"""
         return separable_verbs
 
     def _smart_tokenize_with_phrases(self, text: str, is_german: bool) -> List[Tuple[str, bool]]:
-        """
-        Enhanced tokenization that preserves phrasal verbs and separable verbs as units.
-        Returns list of (token, is_phrase) tuples.
-        """
+        """Enhanced tokenization that preserves phrasal verbs and separable verbs as units."""
         phrases = []
         
         if is_german:
@@ -316,11 +348,8 @@ Spanish translation:"""
         logger.debug(f"Smart tokenization: {len(result)} tokens, {len(phrases)} phrases preserved")
         return result
 
-    def _find_translation_for_phrase(self, phrase: str, mapping: Dict[str, str], is_german: bool, is_phrase: bool) -> str:
-        """
-        Enhanced translation finder using AI to build dynamic dictionary.
-        No more need for huge static dictionaries - AI builds what we need on demand.
-        """
+    def _find_translation_for_phrase(self, phrase: str, mapping: Dict[str, str], is_german: bool, is_phrase: bool, source_lang: str) -> str:
+        """Enhanced translation finder using AI to build dynamic dictionary."""
         # Clean the phrase
         clean_phrase = phrase.strip().lower().rstrip('.,!?;:()[]{}"\'-')
         
@@ -344,13 +373,12 @@ Spanish translation:"""
             return self.core_translations[clean_phrase]
         
         # Strategy 5: Check cache for previous AI translations
-        cache_key = f"{clean_phrase}_{is_german}_{is_phrase}"
+        cache_key = f"{clean_phrase}_{source_lang}_{is_phrase}"
         if cache_key in self._translation_cache:
             logger.debug(f"💾 Cached: '{phrase}' -> '{self._translation_cache[cache_key]}'")
             return self._translation_cache[cache_key]
         
         # Strategy 6: Use AI to build translation dynamically
-        source_lang = "de" if is_german else "en"
         translation = self._translate_with_ai_comprehensive(clean_phrase, source_lang)
         
         # Cache the translation for future use
@@ -365,11 +393,8 @@ Spanish translation:"""
         
         return translation
 
-    def _create_intelligent_word_mapping(self, word_pairs: List[Tuple[str, str]], is_german: bool) -> Dict[str, str]:
-        """
-        Create a lightweight mapping that prioritizes explicit pairs.
-        AI handles everything else dynamically - no more huge dictionaries!
-        """
+    def _create_intelligent_word_mapping(self, word_pairs: List[Tuple[str, str]], source_lang: str) -> Dict[str, str]:
+        """Create a lightweight mapping that prioritizes explicit pairs."""
         mapping = {}
         
         # Add all explicit word pairs with high priority
@@ -412,7 +437,7 @@ Spanish translation:"""
         output_path: Optional[str] = None,
     ) -> Optional[str]:
         """
-        Enhanced version with intelligent phrase handling and AI translation.
+        Enhanced version with dynamic mother tongue support and intelligent phrase handling.
         """
         try:
             if not output_path:
@@ -421,44 +446,85 @@ Spanish translation:"""
                 output_path = os.path.join(temp_dir, f"speech_{timestamp}.mp3")
                 logger.info(f"\n📂 Output path: {output_path}")
 
-            # Generate SSML with intelligent phrase coverage
-            ssml = self._generate_intelligent_phrase_ssml(
-                translations_data=translations_data,
-                style_preferences=style_preferences,
+            logger.info(f"🌐 Generating audio for source language: {source_lang}")
+            
+            # Debug word-by-word settings
+            if style_preferences:
+                logger.info(f"🎵 TTS Audio Settings:")
+                logger.info(f"   German word-by-word: {getattr(style_preferences, 'german_word_by_word', False)}")
+                logger.info(f"   English word-by-word: {getattr(style_preferences, 'english_word_by_word', False)}")
+            
+            # Check if any style has word pairs or if word-by-word is requested
+            has_word_pairs = any(
+                len(style_info.get('word_pairs', [])) > 0 
+                for style_info in translations_data.get('style_data', [])
             )
             
-            # Log the generated SSML for debugging
-            logger.info(f"\n📄 Generated SSML preview:")
-            print("Generated SSML preview (first 500 chars):")
-            print(ssml[:500] + "..." if len(ssml) > 500 else ssml)
+            word_by_word_requested = False
+            if style_preferences:
+                word_by_word_requested = (
+                    getattr(style_preferences, 'german_word_by_word', False) or 
+                    getattr(style_preferences, 'english_word_by_word', False)
+                )
+            
+            logger.info(f"🔍 Audio generation analysis:")
+            logger.info(f"   Style data entries: {len(translations_data.get('style_data', []))}")
+            logger.info(f"   Has word pairs: {has_word_pairs}")
+            logger.info(f"   Word-by-word requested: {word_by_word_requested}")
+            
+            # Log each style data entry
+            for i, style_info in enumerate(translations_data.get('style_data', [])):
+                logger.info(f"   Style {i+1}: {style_info.get('style_name', 'unknown')} - {len(style_info.get('word_pairs', []))} pairs")
+            
+            # Generate SSML even if no word pairs (the TTS will handle it)
+            if translations_data.get('translations') and word_by_word_requested:
+                logger.info("🎵 Proceeding with audio generation (word-by-word requested)")
+                
+                # Generate SSML with dynamic mother tongue support
+                ssml = self._generate_dynamic_mother_tongue_ssml(
+                    translations_data=translations_data,
+                    source_lang=source_lang,
+                    style_preferences=style_preferences,
+                )
+                
+                # Log the generated SSML for debugging
+                logger.info(f"\n📄 Generated SSML preview:")
+                print("Generated SSML preview (first 500 chars):")
+                print(ssml[:500] + "..." if len(ssml) > 500 else ssml)
 
-            # Create audio config and synthesizer
-            audio_config = AudioOutputConfig(filename=output_path)
-            speech_config = SpeechConfig(
-                subscription=self.subscription_key, region=self.region
-            )
-            speech_config.set_speech_synthesis_output_format(
-                SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3
-            )
+                # Create audio config and synthesizer
+                audio_config = AudioOutputConfig(filename=output_path)
+                speech_config = SpeechConfig(
+                    subscription=self.subscription_key, region=self.region
+                )
+                speech_config.set_speech_synthesis_output_format(
+                    SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3
+                )
 
-            synthesizer = SpeechSynthesizer(
-                speech_config=speech_config, audio_config=audio_config
-            )
+                synthesizer = SpeechSynthesizer(
+                    speech_config=speech_config, audio_config=audio_config
+                )
 
-            # Synthesize speech
-            result = await asyncio.get_event_loop().run_in_executor(
-                None, lambda: synthesizer.speak_ssml_async(ssml).get()
-            )
+                # Synthesize speech
+                result = await asyncio.get_event_loop().run_in_executor(
+                    None, lambda: synthesizer.speak_ssml_async(ssml).get()
+                )
 
-            if result.reason == ResultReason.SynthesizingAudioCompleted:
-                logger.info(f"\n✅ Successfully generated audio: {os.path.basename(output_path)}")
-                return os.path.basename(output_path)
+                if result.reason == ResultReason.SynthesizingAudioCompleted:
+                    logger.info(f"\n✅ Successfully generated audio: {os.path.basename(output_path)}")
+                    return os.path.basename(output_path)
 
-            if result.reason == ResultReason.Canceled:
-                cancellation_details = result.cancellation_details
-                logger.error(f"❌ Synthesis canceled: {cancellation_details.reason}")
-                if cancellation_details.reason == CancellationReason.Error:
-                    logger.error(f"❌ Error details: {cancellation_details.error_details}")
+                if result.reason == ResultReason.Canceled:
+                    cancellation_details = result.cancellation_details
+                    logger.error(f"❌ Synthesis canceled: {cancellation_details.reason}")
+                    if cancellation_details.reason == CancellationReason.Error:
+                        logger.error(f"❌ Error details: {cancellation_details.error_details}")
+            else:
+                logger.info("🔇 Skipping audio generation:")
+                if not translations_data.get('translations'):
+                    logger.info("   - No translations available")
+                if not word_by_word_requested:
+                    logger.info("   - Word-by-word not requested")
 
             return None
 
@@ -466,53 +532,71 @@ Spanish translation:"""
             logger.error(f"❌ Error in text_to_speech_word_pairs_v2: {str(e)}")
             return None
 
-    def _generate_intelligent_phrase_ssml(
+    def _generate_dynamic_mother_tongue_ssml(
         self,
         translations_data: Dict,
+        source_lang: str,
         style_preferences=None,
     ) -> str:
         """
-        Generate SSML with AI-powered dynamic dictionary - no huge static dictionaries needed!
+        Generate SSML with dynamic mother tongue support and AI-powered translation.
+        Enhanced with fallback mechanisms for missing word pairs.
         """
         # Define punctuation to exclude from detailed logging
         PUNCTUATION = set('!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~')
         
         ssml = """<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">"""
         
-        logger.info("\n🎤 TTS AI-POWERED DYNAMIC DICTIONARY")
+        logger.info("\n🎤 TTS DYNAMIC MOTHER TONGUE AUDIO GENERATION")
         logger.info("="*60)
+        logger.info(f"🌐 Source Language: {source_lang}")
         logger.info("🤖 Building translations on-demand with AI")
-        logger.info("💾 No huge static dictionaries needed!")
         
         # Track AI usage statistics
         ai_translations_used = 0
         explicit_pairs_used = 0
         core_translations_used = 0
         
-        # Process each style with AI-powered dynamic translation
+        # Check if word-by-word is requested
+        german_word_by_word = getattr(style_preferences, 'german_word_by_word', False)
+        english_word_by_word = getattr(style_preferences, 'english_word_by_word', False)
+        
+        logger.info(f"🎵 Word-by-word settings: German={german_word_by_word}, English={english_word_by_word}")
+        
+        # Process each style with dynamic mother tongue support
         for style_info in translations_data.get('style_data', []):
             translation = style_info['translation']
-            word_pairs = style_info['word_pairs']
+            word_pairs = style_info.get('word_pairs', [])
             is_german = style_info['is_german']
             style_name = style_info['style_name']
             
-            # Escape XML special characters
-            translation = translation.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            # Check if word-by-word is requested for this language
+            should_do_word_by_word = (
+                (is_german and german_word_by_word) or 
+                (not is_german and english_word_by_word)
+            )
             
             logger.info(f"\n📝 Processing {style_name}:")
             logger.info(f"   Translation: \"{translation}\"")
             logger.info(f"   Explicit word pairs: {len(word_pairs)}")
+            logger.info(f"   Should do word-by-word: {should_do_word_by_word}")
             
-            # Create lightweight mapping (AI handles most translations)
-            mapping = self._create_intelligent_word_mapping(word_pairs, is_german)
+            # Skip if word-by-word is not requested for this language
+            if not should_do_word_by_word:
+                logger.info(f"   ⏭️ Skipping {style_name} - word-by-word not requested")
+                continue
             
-            # Determine voice and language
-            if is_german:
-                voice = "de-DE-SeraphinaMultilingualNeural"
-                lang = "de-DE"
-            else:
-                voice = "en-US-JennyMultilingualNeural"
-                lang = "en-US"
+            # Escape XML special characters
+            translation = translation.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            
+            # Create lightweight mapping with dynamic language support
+            lang_code = 'de' if is_german else 'en'
+            mapping = self._create_intelligent_word_mapping(word_pairs, lang_code)
+            
+            # Get voice configuration for the target language
+            voice_config = self._get_voice_config('german' if is_german else 'english')
+            voice = voice_config['voice']
+            lang = voice_config['language']
             
             # Add main translation
             ssml += f"""
@@ -535,11 +619,15 @@ Spanish translation:"""
             phrase_count = sum(1 for _, is_phrase in tokens if is_phrase)
             logger.info(f"   Preserved phrases: {phrase_count}")
             
+            # If no explicit word pairs, generate them using AI
+            if len(word_pairs) == 0:
+                logger.info(f"   🤖 No explicit word pairs found, generating with AI...")
+                
             # Process each token/phrase with AI-powered translation
             for i, (token, is_phrase) in enumerate(tokens):
                 # Find translation - AI builds what we need dynamically
                 spanish_translation = self._find_translation_for_phrase(
-                    token, mapping, is_german, is_phrase
+                    token, mapping, is_german, is_phrase, lang_code
                 )
                 
                 # Track translation source for statistics
@@ -555,7 +643,7 @@ Spanish translation:"""
                 clean_token = token.strip()
                 clean_spanish = spanish_translation.replace("[", "").replace("]", "")
                 
-                # Add to SSML
+                # Add to SSML with proper language codes
                 ssml += f"""
             <lang xml:lang="{lang}">{clean_token}</lang>
             <break time="300ms"/>
@@ -593,9 +681,10 @@ Spanish translation:"""
             ai_percentage = (ai_translations_used / total_translations) * 100
             logger.info(f"   🤖 AI coverage: {ai_percentage:.1f}%")
         
-        logger.info(f"\n✅ Generated AI-powered SSML - no huge dictionaries needed!")
+        logger.info(f"\n✅ Generated dynamic mother tongue SSML!")
         return ssml
 
+    # Keep other existing methods unchanged...
     async def text_to_speech_word_pairs(
         self,
         word_pairs: List[Tuple[str, str, bool]],
@@ -605,9 +694,7 @@ Spanish translation:"""
         complete_text: Optional[str] = None,
         style_preferences=None,
     ) -> Optional[str]:
-        """
-        Legacy method for backward compatibility.
-        """
+        """Legacy method for backward compatibility."""
         # Convert legacy format to new structured format
         translations_data = {
             'translations': [],
@@ -631,6 +718,8 @@ Spanish translation:"""
                     current_language = 'german'
                 elif 'English Translation:' in line:
                     current_language = 'english'
+                elif 'Spanish Translation:' in line:
+                    current_language = 'spanish'
                 
                 # Detect style and extract translation
                 style_patterns = {
@@ -663,19 +752,23 @@ Spanish translation:"""
             
             # Create style data entries
             for style_name in ['german_native', 'german_colloquial', 'german_informal', 'german_formal',
-                              'english_native', 'english_colloquial', 'english_informal', 'english_formal']:
+                              'english_native', 'english_colloquial', 'english_informal', 'english_formal',
+                              'spanish_colloquial']:
                 
                 is_german = style_name.startswith('german')
-                style_suffix = style_name.split('_')[1]
+                style_suffix = style_name.split('_')[1] if '_' in style_name else 'colloquial'
                 
                 # Check if style is enabled
                 style_enabled = False
                 if is_german:
                     style_enabled = getattr(style_preferences, f'german_{style_suffix}', False)
                     word_by_word_enabled = getattr(style_preferences, 'german_word_by_word', False)
-                else:
+                elif style_name.startswith('english'):
                     style_enabled = getattr(style_preferences, f'english_{style_suffix}', False)
                     word_by_word_enabled = getattr(style_preferences, 'english_word_by_word', False)
+                else:  # spanish
+                    style_enabled = True  # Spanish is always enabled as reference
+                    word_by_word_enabled = False  # Spanish doesn't need word-by-word
                 
                 if style_enabled and style_name in style_translations:
                     translations_data['style_data'].append({
