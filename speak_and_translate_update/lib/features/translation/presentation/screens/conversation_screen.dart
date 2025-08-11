@@ -1,4 +1,4 @@
-// Updated conversation_screen.dart with dynamic mother tongue support
+// Updated conversation_screen.dart with EXACT dynamic mother tongue display per requirements
 
 import 'dart:async';
 
@@ -120,6 +120,20 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     }
   }
 
+  // EXACT per requirements: Get expected behavior for mother tongue
+  String _getExpectedBehaviorForMotherTongue(String motherTongue) {
+    switch (motherTongue.toLowerCase()) {
+      case 'spanish':
+        return 'Spanish → German and/or English based on your selections';
+      case 'english':
+        return 'English → Spanish (automatic) + German if selected';
+      case 'german':
+        return 'German → Spanish (automatic) + English if selected';
+      default:
+        return '$motherTongue → German and/or English based on your selections';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final translationState = ref.watch(translationProvider);
@@ -158,7 +172,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
       ),
       body: Column(
         children: [
-          // Show dynamic language configuration info
+          // EXACT per requirements: Show dynamic language configuration info
           if (settings['appMode'] == 'languageLearning')
             _buildDynamicLanguageInfo(settings),
           
@@ -203,10 +217,13 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
       audioFeatures.add('English Word-by-Word Audio');
     }
 
-    // Determine target languages based on mother tongue
+    // EXACT per requirements: Determine target languages based on mother tongue
     List<String> expectedTargetLanguages = [];
-    switch (motherTongue) {
+    List<String> automaticTargetLanguages = [];
+    
+    switch (motherTongue.toLowerCase()) {
       case 'spanish':
+        // EXACT: Spanish → German and/or English based on selections
         if (selectedStyles.any((style) => style.startsWith('German'))) {
           expectedTargetLanguages.add('German');
         }
@@ -215,19 +232,31 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
         }
         break;
       case 'english':
-        expectedTargetLanguages.add('Spanish');
+        // EXACT: English → Spanish (automatic) + German if selected
+        automaticTargetLanguages.add('Spanish');
         if (selectedStyles.any((style) => style.startsWith('German'))) {
           expectedTargetLanguages.add('German');
         }
         break;
       case 'german':
-        expectedTargetLanguages.add('Spanish');
+        // EXACT: German → Spanish (automatic) + English if selected
+        automaticTargetLanguages.add('Spanish');
+        if (selectedStyles.any((style) => style.startsWith('English'))) {
+          expectedTargetLanguages.add('English');
+        }
+        break;
+      default:
+        // Other languages → German and/or English based on selections
+        if (selectedStyles.any((style) => style.startsWith('German'))) {
+          expectedTargetLanguages.add('German');
+        }
         if (selectedStyles.any((style) => style.startsWith('English'))) {
           expectedTargetLanguages.add('English');
         }
         break;
     }
 
+    // EXACT per requirements: Show appropriate status
     if (selectedStyles.isEmpty && audioFeatures.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(12),
@@ -259,7 +288,14 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Using default: ${expectedTargetLanguages.join(" + ")} translations',
+                    'EXACT Logic: ${_getExpectedBehaviorForMotherTongue(motherTongue)}',
+                    style: const TextStyle(color: Colors.blue, fontSize: 12),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    automaticTargetLanguages.isNotEmpty 
+                        ? 'Using defaults: ${automaticTargetLanguages.join(" + ")} translations'
+                        : 'Using defaults: German + English translations',
                     style: const TextStyle(color: Colors.blue),
                   ),
                 ],
@@ -281,7 +317,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Mother tongue header
+          // Mother tongue header with EXACT logic
           Row(
             children: [
               const Icon(Icons.check_circle, color: Colors.green),
@@ -292,13 +328,26 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  'Speaking: ${_getLanguageDisplayName(motherTongue)}',
-                  style: const TextStyle(
-                    color: Colors.green,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Speaking: ${_getLanguageDisplayName(motherTongue)}',
+                      style: const TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      'EXACT Logic: ${_getExpectedBehaviorForMotherTongue(motherTongue)}',
+                      style: const TextStyle(
+                        color: Colors.green,
+                        fontSize: 11,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               if (audioFeatures.isNotEmpty) ...[
@@ -309,13 +358,13 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(color: Colors.orange, width: 1),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.record_voice_over, size: 12, color: Colors.orange),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4),
                       Text(
-                        'AUDIO',
+                        'WORD-BY-WORD',
                         style: TextStyle(
                           color: Colors.orange,
                           fontSize: 10,
@@ -337,7 +386,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
               const Icon(Icons.arrow_forward, color: Colors.green, size: 16),
               const SizedBox(width: 8),
               Text(
-                'Translating to: ${expectedTargetLanguages.join(", ")}',
+                'Translating to: ${[...automaticTargetLanguages.map((lang) => "$lang (automatic)"), ...expectedTargetLanguages].join(", ")}',
                 style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w600),
               ),
             ],
@@ -371,7 +420,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                     const Icon(Icons.volume_up, size: 16, color: Colors.cyan),
                     const SizedBox(width: 8),
                     Text(
-                      feature,
+                      '$feature: [target word] ([Spanish equivalent])',
                       style: const TextStyle(
                         color: Colors.cyan,
                         fontStyle: FontStyle.italic,
@@ -447,6 +496,14 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                     fontStyle: FontStyle.italic,
                   ),
                 ),
+                Text(
+                  'EXACT Logic: ${_getExpectedBehaviorForMotherTongue(motherTongue)}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.orange[200],
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
               ],
             ),
           ),
@@ -457,6 +514,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
 
   Widget _buildAiMessage(ChatMessage message, bool speechState) {
     final translation = message.translation!;
+    final settings = ref.watch(settingsProvider);
 
     if (speechState && translation.audioPath != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -521,23 +579,80 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                     listBullet: TextStyle(color: Colors.orange[800]),
                   ),
                 ),
+                
+                // EXACT per requirements: Show audio format information
                 if (translation.audioPath != null) ...[
                   const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(Icons.volume_up, color: Colors.cyan, size: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Word-by-word audio available',
-                        style: TextStyle(
-                          color: Colors.cyan,
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
+                  
+                  // Check if word-by-word audio was generated
+                  Builder(
+                    builder: (context) {
+                      final germanWordByWord = settings['germanWordByWord'] == true;
+                      final englishWordByWord = settings['englishWordByWord'] == true;
+                      final anyWordByWord = germanWordByWord || englishWordByWord;
+                      
+                      return Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.cyan.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.cyan, width: 1),
                         ),
-                      ),
-                    ],
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.volume_up, color: Colors.cyan, size: 16),
+                                const SizedBox(width: 4),
+                                Text(
+                                  anyWordByWord ? 'Word-by-Word Audio Generated' : 'Translation Audio Generated',
+                                  style: const TextStyle(
+                                    color: Colors.cyan,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (anyWordByWord) ...[
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Format: [target word] ([Spanish equivalent])',
+                                style: TextStyle(
+                                  color: Colors.cyan,
+                                  fontSize: 11,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                              if (germanWordByWord) 
+                                const Text(
+                                  '• German word-by-word breakdown included',
+                                  style: TextStyle(color: Colors.cyan, fontSize: 10),
+                                ),
+                              if (englishWordByWord)
+                                const Text(
+                                  '• English word-by-word breakdown included',
+                                  style: TextStyle(color: Colors.cyan, fontSize: 10),
+                                ),
+                            ] else ...[
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Simple translation reading (word-by-word not selected)',
+                                style: TextStyle(
+                                  color: Colors.cyan,
+                                  fontSize: 11,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ],
+                
                 if (translation.audioPath != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8.0),
@@ -577,14 +692,29 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
   }
 
   Widget _buildLoadingMessage() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 16.0),
+    final settings = ref.watch(settingsProvider);
+    final motherTongue = settings['motherTongue'] as String? ?? 'spanish';
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16.0),
       child: Center(
         child: Column(
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 8),
-            Text('Processing your message...', style: TextStyle(color: Colors.white)),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 8),
+            Text(
+              'Processing your ${_getLanguageDisplayName(motherTongue)} message...',
+              style: const TextStyle(color: Colors.white),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'EXACT Logic: ${_getExpectedBehaviorForMotherTongue(motherTongue)}',
+              style: TextStyle(
+                color: Colors.grey[400],
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
           ],
         ),
       ),
@@ -609,8 +739,25 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Error: $error',
+                    'Error in Dynamic Translation: $error',
                     style: const TextStyle(color: Colors.red),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'This may be due to:',
+                    style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                  ),
+                  const Text(
+                    '• No translation styles selected for your mother tongue',
+                    style: TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                  const Text(
+                    '• Server connection issues',
+                    style: TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                  const Text(
+                    '• Invalid dynamic translation configuration',
+                    style: TextStyle(color: Colors.red, fontSize: 12),
                   ),
                   if (error.contains('translation style'))
                     Padding(

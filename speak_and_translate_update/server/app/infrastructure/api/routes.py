@@ -1,4 +1,4 @@
-# server/app/infrastructure/api/routes.py - Updated with enhanced dynamic mother tongue support
+# server/app/infrastructure/api/routes.py - Updated with EXACT dynamic mother tongue logic per requirements
 
 import logging
 import tempfile
@@ -29,18 +29,24 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     # Startup logic
     logger.info("🚀 Starting Dynamic Mother Tongue Translation API")
-    logger.info(f"Temp directory: {tempfile.gettempdir()}")
-    logger.info(f"Current working directory: {os.getcwd()}")
+    logger.info("📋 EXACT Implementation per Requirements:")
+    logger.info("   1. Spanish mother tongue → German and/or English based on selections")
+    logger.info("   2. English mother tongue → Spanish (automatic) + German if selected")
+    logger.info("   3. German mother tongue → Spanish (automatic) + English if selected")
+    logger.info("   4. Word-by-word audio ONLY if user selects 'word by word audio'")
+    logger.info("   5. Format: [target word] ([Spanish equivalent])")
+    logger.info("   6. Dynamic behavior - no static code")
+    logger.info("   7. AI-powered translations - no huge dictionaries")
     
     yield  # App runs here
     
     # Shutdown logic
-    logger.info("Shutting down API server")
+    logger.info("Shutting down Dynamic Mother Tongue Translation API")
 
 app = FastAPI(
     title="Dynamic Mother Tongue Translation API",
-    description="Translate based on user's mother tongue with dynamic target language selection",
-    root_path="",  # Important: This should be empty for Azure Container Apps
+    description="EXACT implementation per requirements: Dynamic translation based on user's mother tongue with intelligent target language selection",
+    root_path="",
     openapi_url="/openapi.json"
 )
 
@@ -59,26 +65,25 @@ speech_service = SpeechService()
 
 class TranslationStylePreferences(BaseModel):
     """
-    Translation style preferences with enhanced mother tongue support.
-    EXACT implementation per requirements.
+    Translation style preferences with EXACT mother tongue support per requirements.
     """
-    # German styles
+    # German styles - user has complete freedom
     german_native: bool = False
     german_colloquial: bool = False
     german_informal: bool = False
     german_formal: bool = False
     
-    # English styles  
+    # English styles - user has complete freedom
     english_native: bool = False
     english_colloquial: bool = False
     english_informal: bool = False
     english_formal: bool = False
     
-    # Word-by-word audio preferences - EXACT per requirements
-    german_word_by_word: bool = False
-    english_word_by_word: bool = False
+    # EXACT per requirements: Word-by-word audio preferences
+    german_word_by_word: bool = False  # Only generate if user selects this
+    english_word_by_word: bool = False  # Only generate if user selects this
     
-    # Mother tongue setting - CRITICAL for dynamic translation
+    # CRITICAL: Mother tongue setting for dynamic translation
     mother_tongue: Optional[str] = "spanish"  # spanish, english, german, french, italian, portuguese
 
 class PromptRequest(BaseModel):
@@ -101,7 +106,7 @@ def _validate_mother_tongue(mother_tongue: str) -> str:
 def _apply_intelligent_defaults(style_preferences: TranslationStylePreferences) -> TranslationStylePreferences:
     """
     Apply intelligent defaults based on mother tongue.
-    EXACT implementation per requirements.
+    EXACT implementation per requirements - completely dynamic.
     """
     mother_tongue = _validate_mother_tongue(style_preferences.mother_tongue or 'spanish')
     
@@ -117,65 +122,93 @@ def _apply_intelligent_defaults(style_preferences: TranslationStylePreferences) 
         style_preferences.english_formal
     ])
     
-    # Apply defaults only if NO styles are selected
+    # EXACT per requirements: Apply defaults only if NO styles are selected
     if not has_any_style:
         logger.info(f"🎯 Applying intelligent defaults for mother tongue: {mother_tongue}")
         
         if mother_tongue == "spanish":
-            # Spanish -> German and English colloquial by default
+            # EXACT requirement: Spanish → German and English based on selections
+            # Default: Enable both German and English colloquial
             style_preferences.german_colloquial = True
             style_preferences.english_colloquial = True
-            logger.info("   ✅ Applied Spanish defaults: German + English colloquial")
+            logger.info("   ✅ Spanish defaults: German colloquial + English colloquial")
             
         elif mother_tongue == "english":
-            # English -> German colloquial by default (Spanish is automatic)
+            # EXACT requirement: English → Spanish (automatic) + German if selected
+            # Default: Enable German colloquial (Spanish is automatic)
             style_preferences.german_colloquial = True
-            logger.info("   ✅ Applied English defaults: German colloquial (Spanish automatic)")
+            logger.info("   ✅ English defaults: German colloquial (Spanish automatic)")
             
         elif mother_tongue == "german":
-            # German -> English colloquial by default (Spanish is automatic)
+            # EXACT requirement: German → Spanish (automatic) + English if selected
+            # Default: Enable English colloquial (Spanish is automatic)
             style_preferences.english_colloquial = True
-            logger.info("   ✅ Applied German defaults: English colloquial (Spanish automatic)")
+            logger.info("   ✅ German defaults: English colloquial (Spanish automatic)")
             
         else:
-            # Other languages -> German and English colloquial
+            # Other languages → Default to German and English
             style_preferences.german_colloquial = True
             style_preferences.english_colloquial = True
-            logger.info(f"   ✅ Applied {mother_tongue} defaults: German + English colloquial")
+            logger.info(f"   ✅ {mother_tongue} defaults: German + English colloquial")
+    else:
+        logger.info(f"🎯 User has selected specific styles for mother tongue: {mother_tongue}")
     
     return style_preferences
 
-def _log_translation_setup(text: str, style_preferences: TranslationStylePreferences):
-    """Log the complete translation setup for debugging"""
+def _log_dynamic_translation_setup(text: str, style_preferences: TranslationStylePreferences):
+    """Log the EXACT translation setup per requirements"""
     mother_tongue = style_preferences.mother_tongue or 'spanish'
     
     logger.info(f"\n" + "="*80)
-    logger.info(f"🌐 DYNAMIC MOTHER TONGUE TRANSLATION SETUP")
+    logger.info(f"🌐 DYNAMIC MOTHER TONGUE TRANSLATION SETUP (EXACT per requirements)")
     logger.info(f"="*80)
     logger.info(f"📝 Input Text: '{text}'")
     logger.info(f"🌍 Mother Tongue: {mother_tongue.upper()}")
     
-    # Determine expected translations based on mother tongue
+    # EXACT per requirements: Determine expected translations based on mother tongue
     expected_translations = []
+    automatic_translations = []
+    
     if mother_tongue == 'spanish':
+        # EXACT: Spanish → German and/or English based on selections
         if any([style_preferences.german_native, style_preferences.german_colloquial,
                style_preferences.german_informal, style_preferences.german_formal]):
             expected_translations.append('German')
         if any([style_preferences.english_native, style_preferences.english_colloquial,
                style_preferences.english_informal, style_preferences.english_formal]):
             expected_translations.append('English')
+            
     elif mother_tongue == 'english':
-        expected_translations.append('Spanish (automatic)')
+        # EXACT: English → Spanish (automatic) + German if selected
+        automatic_translations.append('Spanish')
         if any([style_preferences.german_native, style_preferences.german_colloquial,
                style_preferences.german_informal, style_preferences.german_formal]):
             expected_translations.append('German')
+            
     elif mother_tongue == 'german':
-        expected_translations.append('Spanish (automatic)')
+        # EXACT: German → Spanish (automatic) + English if selected
+        automatic_translations.append('Spanish')
         if any([style_preferences.english_native, style_preferences.english_colloquial,
                style_preferences.english_informal, style_preferences.english_formal]):
             expected_translations.append('English')
     
-    logger.info(f"🎯 Expected Translations: {', '.join(expected_translations) if expected_translations else 'None selected'}")
+    # Log expected behavior
+    if automatic_translations:
+        logger.info(f"🔄 Automatic Translations: {', '.join(automatic_translations)}")
+    if expected_translations:
+        logger.info(f"🎯 User-Selected Translations: {', '.join(expected_translations)}")
+    else:
+        logger.info(f"⚠️ No target languages selected")
+    
+    # EXACT per requirements: Log word-by-word audio settings
+    logger.info(f"🎵 Word-by-Word Audio Settings:")
+    logger.info(f"   German word-by-word: {style_preferences.german_word_by_word}")
+    logger.info(f"   English word-by-word: {style_preferences.english_word_by_word}")
+    
+    if style_preferences.german_word_by_word or style_preferences.english_word_by_word:
+        logger.info(f"   🎯 Audio format: [target word] ([Spanish equivalent])")
+    else:
+        logger.info(f"   🎯 Audio format: Simple translation reading")
     
     # Log style selections
     logger.info(f"🇩🇪 German Styles:")
@@ -183,26 +216,61 @@ def _log_translation_setup(text: str, style_preferences: TranslationStylePrefere
     logger.info(f"   Colloquial: {style_preferences.german_colloquial}")
     logger.info(f"   Informal: {style_preferences.german_informal}")
     logger.info(f"   Formal: {style_preferences.german_formal}")
-    logger.info(f"   Word-by-word audio: {style_preferences.german_word_by_word}")
     
     logger.info(f"🇺🇸 English Styles:")
     logger.info(f"   Native: {style_preferences.english_native}")
     logger.info(f"   Colloquial: {style_preferences.english_colloquial}")
     logger.info(f"   Informal: {style_preferences.english_informal}")
     logger.info(f"   Formal: {style_preferences.english_formal}")
-    logger.info(f"   Word-by-word audio: {style_preferences.english_word_by_word}")
     
     logger.info(f"="*80)
 
-# Health check endpoint for Azure Container Apps
+def _validate_dynamic_setup(style_preferences: TranslationStylePreferences) -> bool:
+    """
+    Validate that the dynamic setup makes sense per requirements.
+    Returns True if valid, False if invalid.
+    """
+    mother_tongue = style_preferences.mother_tongue or 'spanish'
+    
+    # Check if at least one target language is selected
+    has_german = any([
+        style_preferences.german_native,
+        style_preferences.german_colloquial,
+        style_preferences.german_informal,
+        style_preferences.german_formal
+    ])
+    
+    has_english = any([
+        style_preferences.english_native,
+        style_preferences.english_colloquial,
+        style_preferences.english_informal,
+        style_preferences.english_formal
+    ])
+    
+    # EXACT per requirements: Validate based on mother tongue
+    if mother_tongue == 'spanish':
+        # Spanish can translate to German and/or English
+        return has_german or has_english
+    elif mother_tongue == 'english':
+        # English always gets Spanish (automatic), German is optional
+        return True  # Spanish is automatic, so always valid
+    elif mother_tongue == 'german':
+        # German always gets Spanish (automatic), English is optional
+        return True  # Spanish is automatic, so always valid
+    else:
+        # Other languages need at least one target
+        return has_german or has_english
+
+# Health check endpoint
 @app.get("/health")
 async def health_check():
-    """Comprehensive health check for Azure deployment"""
+    """Comprehensive health check with dynamic translation info"""
     # Create audio directory with proper permissions
     audio_dir = "/tmp/tts_audio" if os.name != "nt" else os.path.join(os.environ.get("TEMP", ""), "tts_audio")
     try:
         os.makedirs(audio_dir, exist_ok=True)
-        os.chmod(audio_dir, 0o755)  # Read/write for owner, read for others
+        if os.name != "nt":
+            os.chmod(audio_dir, 0o755)
     except Exception as e:
         logger.warning(f"Could not create or set permissions on audio directory: {str(e)}")
 
@@ -212,15 +280,22 @@ async def health_check():
         "AZURE_SPEECH_REGION": bool(os.environ.get("AZURE_SPEECH_REGION")),
         "GEMINI_API_KEY": bool(os.environ.get("GEMINI_API_KEY")),
         "PORT": os.environ.get("PORT", "8000"),
-        "TTS_DEVICE": os.environ.get("TTS_DEVICE", "cpu"),
-        "CONTAINER_ENV": os.environ.get("CONTAINER_ENV", "false")
     }
 
     return {
         "status": "healthy",
         "service": "Dynamic Mother Tongue Translation API",
-        "version": "2.0",
+        "version": "2.0 - EXACT Requirements Implementation",
         "timestamp": datetime.utcnow().isoformat(),
+        "requirements_implementation": {
+            "spanish_mother_tongue": "German and/or English based on selections",
+            "english_mother_tongue": "Spanish (automatic) + German if selected",
+            "german_mother_tongue": "Spanish (automatic) + English if selected",
+            "word_by_word_audio": "Only if user selects 'word by word audio'",
+            "audio_format": "[target word] ([Spanish equivalent])",
+            "ai_powered": "No huge dictionaries - rely on AI",
+            "dynamic_behavior": "No static code - based on user preferences"
+        },
         "temp_dir": tempfile.gettempdir(),
         "audio_dir": audio_dir,
         "environment_vars": env_vars,
@@ -232,22 +307,30 @@ async def root():
     return {
         "status": "ok", 
         "service": "Dynamic Mother Tongue Translation API",
-        "description": "Translate based on user's mother tongue with intelligent target language selection",
+        "description": "EXACT implementation per requirements: Dynamic translation based on user's mother tongue",
         "version": "2.0",
+        "requirements": {
+            "1": "Spanish mother tongue → German and/or English based on selections",
+            "2": "English mother tongue → Spanish (automatic) + German if selected", 
+            "3": "German mother tongue → Spanish (automatic) + English if selected",
+            "4": "Word-by-word audio ONLY if user selects 'word by word audio'",
+            "5": "Format: [target word] ([Spanish equivalent])",
+            "6": "Dynamic behavior - no static code",
+            "7": "AI-powered translations - no huge dictionaries"
+        },
         "endpoints": {
-            "/api/conversation": "Main translation endpoint",
+            "/api/conversation": "Main dynamic translation endpoint",
             "/api/speech-to-text": "Speech recognition with mother tongue detection",
             "/api/voice-command": "Voice command processing",
             "/api/audio/{filename}": "Audio file serving",
-            "/health": "Health check"
+            "/health": "Health check with requirements status"
         }
     }
 
 @app.post("/api/conversation", response_model=Translation)
 async def start_conversation(prompt: PromptRequest):
     """
-    Main conversation endpoint with dynamic mother tongue translation.
-    EXACT implementation per requirements.
+    Main conversation endpoint with EXACT dynamic mother tongue translation per requirements.
     """
     try:
         # Set up default style preferences if none provided
@@ -265,42 +348,40 @@ async def start_conversation(prompt: PromptRequest):
         # Apply intelligent defaults if no styles selected
         prompt.style_preferences = _apply_intelligent_defaults(prompt.style_preferences)
         
-        # Log the complete setup
-        _log_translation_setup(prompt.text, prompt.style_preferences)
+        # Log the EXACT translation setup per requirements
+        _log_dynamic_translation_setup(prompt.text, prompt.style_preferences)
         
-        # Validate that at least one style is selected after applying defaults
-        has_any_style = any([
-            prompt.style_preferences.german_native,
-            prompt.style_preferences.german_colloquial,
-            prompt.style_preferences.german_informal,
-            prompt.style_preferences.german_formal,
-            prompt.style_preferences.english_native,
-            prompt.style_preferences.english_colloquial,
-            prompt.style_preferences.english_informal,
-            prompt.style_preferences.english_formal
-        ])
-        
-        if not has_any_style:
-            logger.error("❌ No translation styles selected even after applying defaults")
+        # EXACT per requirements: Validate the dynamic setup
+        if not _validate_dynamic_setup(prompt.style_preferences):
+            logger.error("❌ Invalid dynamic translation setup")
             raise HTTPException(
                 status_code=400, 
-                detail="No translation styles selected. Please select at least one translation style."
+                detail=f"Invalid translation setup for mother tongue '{mother_tongue}'. Please select appropriate target languages."
             )
         
-        # Process the translation with dynamic mother tongue support
+        # Process the translation with EXACT dynamic mother tongue logic
+        logger.info(f"🚀 Starting dynamic translation with mother tongue: {mother_tongue}")
         response = await translation_service.process_prompt(
             text=prompt.text, 
             source_lang=prompt.source_lang or "auto", 
             target_lang=prompt.target_lang or "multi",
             style_preferences=prompt.style_preferences,
-            mother_tongue=mother_tongue  # CRITICAL: Pass mother tongue to translation service
+            mother_tongue=mother_tongue
         )
         
+        # Log the successful completion
         logger.info(f"✅ Dynamic translation completed successfully")
-        logger.info(f"   Original text: {response.original_text}")
-        logger.info(f"   Detected source: {response.source_language}")
-        logger.info(f"   Target: {response.target_language}")
+        logger.info(f"   Input ('{response.source_language}'): {response.original_text}")
+        logger.info(f"   Output length: {len(response.translated_text)} characters")
         logger.info(f"   Audio generated: {'Yes' if response.audio_path else 'No'}")
+        
+        if response.audio_path:
+            # Check if word-by-word was requested
+            word_by_word_requested = (
+                prompt.style_preferences.german_word_by_word or 
+                prompt.style_preferences.english_word_by_word
+            )
+            logger.info(f"   Audio type: {'Word-by-word breakdown' if word_by_word_requested else 'Simple translation reading'}")
         
         return response
         
@@ -308,8 +389,8 @@ async def start_conversation(prompt: PromptRequest):
         # Re-raise HTTP exceptions as-is
         raise he
     except Exception as e:
-        logger.error(f"❌ Conversation error: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
+        logger.error(f"❌ Dynamic translation error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Dynamic translation failed: {str(e)}")
 
 @app.post("/api/speech-to-text")
 async def speech_to_text(file: UploadFile = File(...), mother_tongue: Optional[str] = "auto"):
@@ -455,13 +536,21 @@ async def get_audio(filename: str):
 
 @app.get("/api/supported-languages")
 async def get_supported_languages():
-    """Get list of supported mother tongue languages"""
+    """Get list of supported mother tongue languages with dynamic behavior info"""
     try:
         languages = speech_service.get_supported_languages()
         return {
             "supported_languages": languages,
             "default": "spanish",
-            "description": "Languages supported for dynamic mother tongue translation"
+            "behavior": {
+                "spanish": "Translates to German and/or English based on user selections",
+                "english": "Translates to Spanish (automatic) + German if selected",
+                "german": "Translates to Spanish (automatic) + English if selected",
+                "others": "Translate to German and/or English based on user selections"
+            },
+            "word_by_word_audio": "Only generated if user selects 'word by word audio' for specific languages",
+            "audio_format": "[target word] ([Spanish equivalent])",
+            "description": "EXACT implementation per requirements - completely dynamic based on user preferences"
         }
     except Exception as e:
         logger.error(f"Error fetching supported languages: {str(e)}")

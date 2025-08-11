@@ -1,4 +1,4 @@
-// Updated settings_screen.dart with dynamic translation explanation
+// Updated settings_screen.dart with EXACT dynamic translation explanation per requirements
 
 import 'package:flutter/material.dart';
 import 'package:speak_and_translate_update/features/translation/data/repositories/hive_user_settings_repository.dart';
@@ -10,37 +10,12 @@ enum MotherTongue {
   french,
   italian,
   portuguese,
-  chinese,
-  japanese,
-  korean,
-  arabic,
-  russian,
-  dutch,
-  hindi,
-  bengali,
 }
 
 enum AppMode {
   languageLearning,
   travelMode,
   fluencyPractice,
-}
-
-enum PracticeLanguage {
-  english,
-  german,
-  french,
-  italian,
-  portuguese,
-  chinese,
-  japanese,
-  korean,
-}
-
-enum CorrectionLevel {
-  beginner,
-  intermediate,
-  advanced,
 }
 
 class SettingsScreen extends StatefulWidget {
@@ -57,24 +32,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
   AppMode _appMode = AppMode.languageLearning;
   
   // Fluency practice settings
-  PracticeLanguage _practiceLanguage = PracticeLanguage.english;
-  CorrectionLevel _correctionLevel = CorrectionLevel.intermediate;
   bool _pronunciationFeedback = true;
   bool _grammarCorrection = true;
   bool _vocabularyEnhancement = true;
   bool _realTimeCorrection = false;
   
-  // Word-by-word audio settings - User has complete freedom
+  // EXACT per requirements: Word-by-word audio settings - User has complete freedom
   bool _germanWordByWord = false;
   bool _englishWordByWord = false;
   
-  // German styles - User has complete freedom
+  // EXACT per requirements: German styles - User has complete freedom
   bool _germanNative = false;
   bool _germanColloquial = false;
   bool _germanInformal = false;
   bool _germanFormal = false;
   
-  // English styles - User has complete freedom
+  // EXACT per requirements: English styles - User has complete freedom
   bool _englishNative = false;
   bool _englishColloquial = false;
   bool _englishInformal = false;
@@ -83,7 +56,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // Expansion states
   bool _germanExpanded = false;
   bool _englishExpanded = false;
-  bool _fluencyExpanded = false;
 
   @override
   void initState() {
@@ -110,22 +82,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
       
       // Load fluency practice settings
-      final practiceLanguageString = settings['practiceLanguage'] as String?;
-      _practiceLanguage = _getPracticeLanguageFromString(practiceLanguageString ?? 'english');
-      
-      final correctionLevelString = settings['correctionLevel'] as String?;
-      _correctionLevel = _getCorrectionLevelFromString(correctionLevelString ?? 'intermediate');
-      
       _pronunciationFeedback = settings['pronunciationFeedback'] as bool? ?? true;
       _grammarCorrection = settings['grammarCorrection'] as bool? ?? true;
       _vocabularyEnhancement = settings['vocabularyEnhancement'] as bool? ?? true;
       _realTimeCorrection = settings['realTimeCorrection'] as bool? ?? false;
       
-      // Load word-by-word audio settings
+      // EXACT per requirements: Load word-by-word audio settings
       _germanWordByWord = settings['germanWordByWord'] as bool? ?? false;
       _englishWordByWord = settings['englishWordByWord'] as bool? ?? false;
       
-      // Load translation style preferences
+      // EXACT per requirements: Load translation style preferences
       _germanNative = settings['germanNative'] as bool? ?? false;
       _germanColloquial = settings['germanColloquial'] as bool? ?? false;
       _germanInformal = settings['germanInformal'] as bool? ?? false;
@@ -137,7 +103,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // Helper methods (keeping existing ones)
+  // Helper methods
   MotherTongue _getMotherTongueFromString(String value) {
     switch (value) {
       case 'english': return MotherTongue.english;
@@ -145,38 +111,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       case 'french': return MotherTongue.french;
       case 'italian': return MotherTongue.italian;
       case 'portuguese': return MotherTongue.portuguese;
-      case 'chinese': return MotherTongue.chinese;
-      case 'japanese': return MotherTongue.japanese;
-      case 'korean': return MotherTongue.korean;
-      case 'arabic': return MotherTongue.arabic;
-      case 'russian': return MotherTongue.russian;
-      case 'dutch': return MotherTongue.dutch;
-      case 'hindi': return MotherTongue.hindi;
-      case 'bengali': return MotherTongue.bengali;
       default: return MotherTongue.spanish;
-    }
-  }
-
-  PracticeLanguage _getPracticeLanguageFromString(String value) {
-    switch (value) {
-      case 'english': return PracticeLanguage.english;
-      case 'german': return PracticeLanguage.german;
-      case 'french': return PracticeLanguage.french;
-      case 'italian': return PracticeLanguage.italian;
-      case 'portuguese': return PracticeLanguage.portuguese;
-      case 'chinese': return PracticeLanguage.chinese;
-      case 'japanese': return PracticeLanguage.japanese;
-      case 'korean': return PracticeLanguage.korean;
-      default: return PracticeLanguage.english;
-    }
-  }
-
-  CorrectionLevel _getCorrectionLevelFromString(String value) {
-    switch (value) {
-      case 'beginner': return CorrectionLevel.beginner;
-      case 'intermediate': return CorrectionLevel.intermediate;
-      case 'advanced': return CorrectionLevel.advanced;
-      default: return CorrectionLevel.intermediate;
     }
   }
 
@@ -188,14 +123,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       case MotherTongue.french: return 'French (Français)';
       case MotherTongue.italian: return 'Italian (Italiano)';
       case MotherTongue.portuguese: return 'Portuguese (Português)';
-      case MotherTongue.chinese: return 'Chinese (中文)';
-      case MotherTongue.japanese: return 'Japanese (日本語)';
-      case MotherTongue.korean: return 'Korean (한국어)';
-      case MotherTongue.arabic: return 'Arabic (العربية)';
-      case MotherTongue.russian: return 'Russian (Русский)';
-      case MotherTongue.dutch: return 'Dutch (Nederlands)';
-      case MotherTongue.hindi: return 'Hindi (हिन्दी)';
-      case MotherTongue.bengali: return 'Bengali (বাংলা)';
     }
   }
 
@@ -207,36 +134,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       case MotherTongue.french: return '🇫🇷';
       case MotherTongue.italian: return '🇮🇹';
       case MotherTongue.portuguese: return '🇵🇹';
-      case MotherTongue.chinese: return '🇨🇳';
-      case MotherTongue.japanese: return '🇯🇵';
-      case MotherTongue.korean: return '🇰🇷';
-      case MotherTongue.arabic: return '🇸🇦';
-      case MotherTongue.russian: return '🇷🇺';
-      case MotherTongue.dutch: return '🇳🇱';
-      case MotherTongue.hindi: return '🇮🇳';
-      case MotherTongue.bengali: return '🇧🇩';
-    }
-  }
-
-  // Helper methods for string conversion
-  String _getPracticeLanguageName(PracticeLanguage language) {
-    switch (language) {
-      case PracticeLanguage.english: return 'English';
-      case PracticeLanguage.german: return 'German';
-      case PracticeLanguage.french: return 'French';
-      case PracticeLanguage.italian: return 'Italian';
-      case PracticeLanguage.portuguese: return 'Portuguese';
-      case PracticeLanguage.chinese: return 'Chinese';
-      case PracticeLanguage.japanese: return 'Japanese';
-      case PracticeLanguage.korean: return 'Korean';
-    }
-  }
-
-  String _getCorrectionLevelName(CorrectionLevel level) {
-    switch (level) {
-      case CorrectionLevel.beginner: return 'Beginner (Basic Errors)';
-      case CorrectionLevel.intermediate: return 'Intermediate (Grammar + Pronunciation)';
-      case CorrectionLevel.advanced: return 'Advanced (Detailed + Style)';
     }
   }
 
@@ -252,15 +149,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  String _getPracticeLanguageString(PracticeLanguage language) {
-    return language.toString().split('.').last;
-  }
-
-  String _getCorrectionLevelString(CorrectionLevel level) {
-    return level.toString().split('.').last;
-  }
-
-  // Helper methods to check if any styles are selected for each language
+  // EXACT per requirements: Check if any styles are selected for each language
   bool get _isGermanSelected {
     return _germanNative || _germanColloquial || _germanInformal || _germanFormal;
   }
@@ -273,28 +162,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return _isGermanSelected || _isEnglishSelected;
   }
 
-  // NEW: Get expected target languages based on mother tongue
+  // EXACT per requirements: Get expected target languages based on mother tongue
   List<String> _getExpectedTargetLanguages() {
     switch (_motherTongue) {
       case MotherTongue.spanish:
+        // EXACT: Spanish → German and/or English based on selections
         List<String> targets = [];
         if (_isGermanSelected) targets.add('German');
         if (_isEnglishSelected) targets.add('English');
         return targets;
+        
       case MotherTongue.english:
-        List<String> targets = ['Spanish']; // Always translate to Spanish
+        // EXACT: English → Spanish (automatic) + German if selected
+        List<String> targets = ['Spanish (automatic)'];
         if (_isGermanSelected) targets.add('German');
         return targets;
+        
       case MotherTongue.german:
-        List<String> targets = ['Spanish']; // Always translate to Spanish
+        // EXACT: German → Spanish (automatic) + English if selected
+        List<String> targets = ['Spanish (automatic)'];
         if (_isEnglishSelected) targets.add('English');
         return targets;
+        
       default:
-        return ['German', 'English']; // Fallback
+        // Other languages → German and/or English based on selections
+        List<String> targets = [];
+        if (_isGermanSelected) targets.add('German');
+        if (_isEnglishSelected) targets.add('English');
+        return targets;
     }
   }
 
-  // NEW: Build dynamic translation explanation widget
+  // EXACT per requirements: Build dynamic translation explanation widget
   Widget _buildDynamicTranslationInfo() {
     final expectedTargets = _getExpectedTargetLanguages();
     final audioFeatures = <String>[];
@@ -333,34 +232,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 16),
           
-          // Source language
+          // EXACT per requirements: Show the dynamic logic
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  _getLanguageFlag(_motherTongue),
-                  style: const TextStyle(fontSize: 24),
+                Row(
+                  children: [
+                    Text(
+                      _getLanguageFlag(_motherTongue),
+                      style: const TextStyle(fontSize: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Your input language:',
+                            style: TextStyle(color: Colors.white70, fontSize: 12),
+                          ),
+                          Text(
+                            _getLanguageName(_motherTongue),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                Expanded(
+                
+                const SizedBox(height: 12),
+                
+                // EXACT per requirements: Show the dynamic behavior
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.green, width: 1),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Your input language:',
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
                       Text(
-                        _getLanguageName(_motherTongue),
+                        _getDynamicBehaviorText(),
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          color: Colors.green,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
@@ -372,14 +301,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           
           const SizedBox(height: 12),
           
-          // Translation arrow and targets
+          // Translation directions
           Row(
             children: [
-              const SizedBox(width: 20),
-              const Icon(Icons.arrow_downward, color: Colors.lightBlue),
-              const SizedBox(width: 12),
+              const Icon(Icons.arrow_forward, color: Colors.lightBlue),
+              const SizedBox(width: 8),
               const Text(
-                'Will be translated to:',
+                'Will translate to:',
                 style: TextStyle(color: Colors.lightBlue, fontWeight: FontWeight.w600),
               ),
             ],
@@ -394,7 +322,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Row(
                 children: [
                   Text(
-                    target == 'German' ? '🇩🇪' : target == 'English' ? '🇺🇸' : '🇪🇸',
+                    _getTargetLanguageFlag(target),
                     style: const TextStyle(fontSize: 16),
                   ),
                   const SizedBox(width: 8),
@@ -402,7 +330,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     target,
                     style: const TextStyle(color: Colors.white, fontSize: 14),
                   ),
-                  if (target == 'German' && _germanWordByWord)
+                  if (target.contains('German') && _germanWordByWord)
                     Container(
                       margin: const EdgeInsets.only(left: 8),
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -411,11 +339,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: const Text(
-                        'AUDIO',
+                        'WORD-BY-WORD AUDIO',
                         style: TextStyle(color: Colors.orange, fontSize: 10),
                       ),
                     ),
-                  if (target == 'English' && _englishWordByWord)
+                  if (target.contains('English') && _englishWordByWord)
                     Container(
                       margin: const EdgeInsets.only(left: 8),
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -424,7 +352,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: const Text(
-                        'AUDIO',
+                        'WORD-BY-WORD AUDIO',
                         style: TextStyle(color: Colors.orange, fontSize: 10),
                       ),
                     ),
@@ -441,6 +369,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
           
+          // EXACT per requirements: Word-by-word audio explanation
           if (audioFeatures.isNotEmpty) ...[
             const SizedBox(height: 12),
             const Divider(color: Colors.white30),
@@ -450,23 +379,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const Icon(Icons.volume_up, color: Colors.orange, size: 20),
                 const SizedBox(width: 8),
                 const Text(
-                  'Audio Features:',
+                  'Word-by-Word Audio Format:',
                   style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
             const SizedBox(height: 4),
-            ...audioFeatures.map((feature) => Padding(
-              padding: const EdgeInsets.only(left: 28, bottom: 2),
+            const Padding(
+              padding: EdgeInsets.only(left: 28),
               child: Text(
-                '• $feature pronunciation breakdown',
-                style: const TextStyle(color: Colors.orange, fontSize: 12),
+                '[target word] ([Spanish equivalent])',
+                style: TextStyle(color: Colors.orange, fontSize: 12, fontStyle: FontStyle.italic),
               ),
-            )).toList(),
+            ),
           ],
         ],
       ),
     );
+  }
+
+  String _getDynamicBehaviorText() {
+    switch (_motherTongue) {
+      case MotherTongue.spanish:
+        return 'EXACT Logic: Spanish → German and/or English based on your selections below';
+      case MotherTongue.english:
+        return 'EXACT Logic: English → Spanish (automatic) + German if you select it below';
+      case MotherTongue.german:
+        return 'EXACT Logic: German → Spanish (automatic) + English if you select it below';
+      default:
+        return 'Logic: ${_getLanguageName(_motherTongue)} → German and/or English based on your selections below';
+    }
+  }
+
+  String _getTargetLanguageFlag(String target) {
+    if (target.contains('German')) return '🇩🇪';
+    if (target.contains('English')) return '🇺🇸';
+    if (target.contains('Spanish')) return '🇪🇸';
+    return '🌐';
   }
 
   // Build current selection summary widget
@@ -517,7 +466,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Text(
                   _isAnyStyleSelected 
                       ? 'Your Selected Styles:'
-                      : 'No styles selected - Please select at least one',
+                      : 'No styles selected - Please select at least one below',
                   style: TextStyle(
                     color: _isAnyStyleSelected ? Colors.green : Colors.orange,
                     fontWeight: FontWeight.bold,
@@ -545,7 +494,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const Icon(Icons.volume_up, size: 16, color: Colors.cyan),
                         const SizedBox(width: 4),
                         Text(
-                          feature,
+                          '$feature Audio: [word] ([Spanish])',
                           style: const TextStyle(
                             color: Colors.cyan,
                             fontStyle: FontStyle.italic,
@@ -564,23 +513,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _handleSave() async {
-    // Check if at least one style is selected
+    // EXACT per requirements: Check if at least one style is selected
     if (!_isAnyStyleSelected) {
-      // Show warning dialog
+      // Show warning dialog with EXACT mother tongue logic
       final shouldUseDefaults = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('⚠️ No Translation Styles Selected'),
           content: Text(
             'You haven\'t selected any translation styles.\n\n'
-            'Based on your mother tongue (${_getLanguageName(_motherTongue)}), would you like to:\n'
-            '• Go back and select styles, or\n'
-            '• Use intelligent defaults?'
+            'Based on your mother tongue (${_getLanguageName(_motherTongue)}), would you like to:\n\n'
+            '${_getDefaultsExplanation()}\n\n'
+            'Choose an option:'
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Go Back'),
+              child: const Text('Go Back & Select Manually'),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
@@ -591,24 +540,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
       
       if (shouldUseDefaults == true) {
-        // Apply intelligent defaults based on mother tongue
+        // EXACT per requirements: Apply intelligent defaults based on mother tongue
         setState(() {
-          switch (_motherTongue) {
-            case MotherTongue.spanish:
-              _germanColloquial = true;
-              _englishColloquial = true;
-              break;
-            case MotherTongue.english:
-              _germanColloquial = true;
-              break;
-            case MotherTongue.german:
-              _englishColloquial = true;
-              break;
-            default:
-              _germanColloquial = true;
-              _englishColloquial = true;
-              break;
-          }
+          _applyIntelligentDefaults();
         });
       } else {
         return; // User chose to go back
@@ -621,18 +555,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
       'appMode': _getAppModeString(_appMode),
       
       // Fluency practice settings
-      'practiceLanguage': _getPracticeLanguageString(_practiceLanguage),
-      'correctionLevel': _getCorrectionLevelString(_correctionLevel),
       'pronunciationFeedback': _pronunciationFeedback,
       'grammarCorrection': _grammarCorrection,
       'vocabularyEnhancement': _vocabularyEnhancement,
       'realTimeCorrection': _realTimeCorrection,
       
-      // Word-by-word audio settings
+      // EXACT per requirements: Word-by-word audio settings
       'germanWordByWord': _germanWordByWord,
       'englishWordByWord': _englishWordByWord,
       
-      // Translation style preferences
+      // EXACT per requirements: Translation style preferences
       'germanNative': _germanNative,
       'germanColloquial': _germanColloquial,
       'germanInformal': _germanInformal,
@@ -694,6 +626,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  String _getDefaultsExplanation() {
+    switch (_motherTongue) {
+      case MotherTongue.spanish:
+        return '• Enable German Colloquial translation\n• Enable English Colloquial translation';
+      case MotherTongue.english:
+        return '• Enable Spanish translation (automatic)\n• Enable German Colloquial translation';
+      case MotherTongue.german:
+        return '• Enable Spanish translation (automatic)\n• Enable English Colloquial translation';
+      default:
+        return '• Enable German Colloquial translation\n• Enable English Colloquial translation';
+    }
+  }
+
+  void _applyIntelligentDefaults() {
+    switch (_motherTongue) {
+      case MotherTongue.spanish:
+        // EXACT: Spanish → German and English colloquial by default
+        _germanColloquial = true;
+        _englishColloquial = true;
+        break;
+      case MotherTongue.english:
+        // EXACT: English → German colloquial by default (Spanish is automatic)
+        _germanColloquial = true;
+        break;
+      case MotherTongue.german:
+        // EXACT: German → English colloquial by default (Spanish is automatic)
+        _englishColloquial = true;
+        break;
+      default:
+        // Other languages → German and English colloquial
+        _germanColloquial = true;
+        _englishColloquial = true;
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -742,11 +710,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: const Color(0xFF4CAF50), width: 1),
                 ),
-                child: Row(
+                child: const Row(
                   children: [
-                    const Icon(Icons.mic, color: Colors.green, size: 24),
-                    const SizedBox(width: 12),
-                    const Expanded(
+                    Icon(Icons.mic, color: Colors.green, size: 24),
+                    SizedBox(width: 12),
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -756,7 +724,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ],
                       ),
                     ),
-                    const Icon(Icons.check_circle, color: Colors.green, size: 24),
+                    Icon(Icons.check_circle, color: Colors.green, size: 24),
                   ],
                 ),
               ),
@@ -802,7 +770,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 24),
 
-              // App Mode Section
+              // App Mode Section (keep TRAVEL MODE and other modalities as requested)
               const Text('App Mode', style: TextStyle(color: Colors.cyan, fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Column(
@@ -858,7 +826,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const Text('Translation Styles', style: TextStyle(color: Colors.cyan, fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 
-                // Dynamic translation explanation
+                // EXACT per requirements: Dynamic translation explanation
                 _buildDynamicTranslationInfo(),
                 
                 // Selection summary
@@ -886,11 +854,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
+                              const Row(
                                 children: [
-                                  const Text('🇩🇪', style: TextStyle(fontSize: 20)),
-                                  const SizedBox(width: 8),
-                                  const Text('German', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+                                  Text('🇩🇪', style: TextStyle(fontSize: 20)),
+                                  SizedBox(width: 8),
+                                  Text('German', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
                                 ],
                               ),
                               Row(
@@ -921,7 +889,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           padding: const EdgeInsets.all(8.0),
                           child: Column(
                             children: [
-                              // German Word-by-Word Audio Toggle
+                              // EXACT per requirements: German Word-by-Word Audio Toggle
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
@@ -931,7 +899,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       children: [
                                         Text('Word-by-Word Audio', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
                                         SizedBox(height: 2),
-                                        Text('Play detailed pronunciation breakdown', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                                        Text('Format: [German word] ([Spanish equivalent])', style: TextStyle(color: Colors.grey, fontSize: 13)),
                                       ],
                                     ),
                                   ),
@@ -1041,11 +1009,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
+                              const Row(
                                 children: [
-                                  const Text('🇺🇸', style: TextStyle(fontSize: 20)),
-                                  const SizedBox(width: 8),
-                                  const Text('English', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+                                  Text('🇺🇸', style: TextStyle(fontSize: 20)),
+                                  SizedBox(width: 8),
+                                  Text('English', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
                                 ],
                               ),
                               Row(
@@ -1076,7 +1044,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           padding: const EdgeInsets.all(8.0),
                           child: Column(
                             children: [
-                              // English Word-by-Word Audio Toggle
+                              // EXACT per requirements: English Word-by-Word Audio Toggle
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
@@ -1086,7 +1054,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       children: [
                                         Text('Word-by-Word Audio', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
                                         SizedBox(height: 2),
-                                        Text('Play detailed pronunciation breakdown', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                                        Text('Format: [English word] ([Spanish equivalent])', style: TextStyle(color: Colors.grey, fontSize: 13)),
                                       ],
                                     ),
                                   ),

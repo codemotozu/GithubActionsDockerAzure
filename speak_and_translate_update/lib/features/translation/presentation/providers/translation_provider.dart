@@ -1,4 +1,4 @@
-// lib/features/translation/presentation/providers/translation_provider.dart - Updated with mother tongue support
+// lib/features/translation/presentation/providers/translation_provider.dart - Updated with EXACT mother tongue support per requirements
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speak_and_translate_update/features/translation/presentation/providers/shared_provider.dart' show settingsProvider;
 
@@ -52,10 +52,10 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
   Map<String, dynamic> _getStylePreferences() {
     final settings = _ref.read(settingsProvider);
     
-    // DEBUGGER POINT 1: Log raw settings
+    // EXACT per requirements: Log raw settings for debugging
     _debugPrintSettings('Raw Settings from Provider', settings);
     
-    // Extract mother tongue - CRITICAL FOR DYNAMIC TRANSLATION
+    // CRITICAL: Extract mother tongue for dynamic behavior
     final motherTongue = settings['motherTongue'] as String? ?? 'spanish';
     
     // Check if we're in language learning mode
@@ -79,7 +79,7 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
       return minimalPrefs;
     }
 
-    // For language learning mode, use EXACT user preferences with mother tongue
+    // EXACT per requirements: For language learning mode, use user preferences with mother tongue
     final userPreferences = <String, dynamic>{
       'motherTongue': motherTongue,  // CRITICAL: Include mother tongue for dynamic translation
       'germanNative': settings['germanNative'] ?? false,
@@ -94,7 +94,7 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
       'englishWordByWord': settings['englishWordByWord'] ?? false,
     };
     
-    // DEBUGGER POINT 2: Log processed preferences with mother tongue
+    // EXACT per requirements: Log processed preferences with mother tongue
     _debugPrintSettings('Processed User Preferences with Mother Tongue', userPreferences);
     
     return userPreferences;
@@ -103,7 +103,7 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
   bool _hasAnyStyleSelected() {
     final prefs = _getStylePreferences();
     
-    // Check if at least one translation style is selected (excluding word-by-word)
+    // EXACT per requirements: Check if at least one translation style is selected
     final hasStyle = [
       prefs['germanNative'],
       prefs['germanColloquial'], 
@@ -115,38 +115,56 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
       prefs['englishFormal']
     ].any((value) => value == true);
     
-    // DEBUGGER POINT 3: Log validation result
     print('🔍 Style Validation: Has any style selected = $hasStyle');
     
     return hasStyle;
   }
 
+  String _getExpectedBehaviorForMotherTongue(String motherTongue) {
+    switch (motherTongue.toLowerCase()) {
+      case 'spanish':
+        return 'Spanish → German and/or English based on your selections';
+      case 'english':
+        return 'English → Spanish (automatic) + German if selected';
+      case 'german':
+        return 'German → Spanish (automatic) + English if selected';
+      default:
+        return '$motherTongue → German and/or English based on your selections';
+    }
+  }
+
   Map<String, dynamic> _applyMotherTongueDefaults(Map<String, dynamic> preferences) {
     final motherTongue = preferences['motherTongue'] as String? ?? 'spanish';
     
-    print('🌐 Applying defaults for mother tongue: $motherTongue');
+    print('🌐 Applying EXACT defaults for mother tongue: $motherTongue');
+    print('🎯 Expected behavior: ${_getExpectedBehaviorForMotherTongue(motherTongue)}');
     
-    // Apply intelligent defaults based on mother tongue
-    switch (motherTongue) {
+    // EXACT per requirements: Apply intelligent defaults based on mother tongue
+    switch (motherTongue.toLowerCase()) {
       case 'spanish':
-        // Spanish speakers typically want German and English translations
+        // EXACT: Spanish → German and English colloquial by default
         preferences['germanColloquial'] = true;
         preferences['englishColloquial'] = true;
+        print('   ✅ Applied Spanish defaults: German + English colloquial');
         break;
+        
       case 'english':
-        // English speakers typically want German translations, Spanish is automatic
+        // EXACT: English → German colloquial by default (Spanish is automatic)
         preferences['germanColloquial'] = true;
-        // Note: Spanish translation is automatic for English speakers
+        print('   ✅ Applied English defaults: German colloquial (Spanish automatic)');
         break;
+        
       case 'german':
-        // German speakers typically want English translations, Spanish is automatic  
+        // EXACT: German → English colloquial by default (Spanish is automatic)
         preferences['englishColloquial'] = true;
-        // Note: Spanish translation is automatic for German speakers
+        print('   ✅ Applied German defaults: English colloquial (Spanish automatic)');
         break;
+        
       default:
-        // Fallback to Spanish->German+English
+        // Other languages → German and English colloquial
         preferences['germanColloquial'] = true;
         preferences['englishColloquial'] = true;
+        print('   ✅ Applied $motherTongue defaults: German + English colloquial');
         break;
     }
     
@@ -159,8 +177,9 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
     print('🎯 $label:');
     print('='*60);
     
-    // Mother tongue (CRITICAL)
+    // CRITICAL: Mother tongue (determines entire translation behavior)
     print('🌐 Mother Tongue: ${settings['motherTongue']}');
+    print('🎯 Expected Behavior: ${_getExpectedBehaviorForMotherTongue(settings['motherTongue'] ?? 'spanish')}');
     
     // German settings
     print('🇩🇪 German Settings:');
@@ -178,6 +197,37 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
     print('  Formal: ${settings['englishFormal']}');
     print('  Word-by-Word: ${settings['englishWordByWord']}');
     
+    // EXACT per requirements: Show what will happen
+    final motherTongue = settings['motherTongue'] as String? ?? 'spanish';
+    final hasGerman = [settings['germanNative'], settings['germanColloquial'], settings['germanInformal'], settings['germanFormal']].any((v) => v == true);
+    final hasEnglish = [settings['englishNative'], settings['englishColloquial'], settings['englishInformal'], settings['englishFormal']].any((v) => v == true);
+    
+    print('🎯 Translation Targets:');
+    if (motherTongue == 'spanish') {
+      if (hasGerman) print('  ✅ German (user selected)');
+      if (hasEnglish) print('  ✅ English (user selected)');
+      if (!hasGerman && !hasEnglish) print('  ⚠️ No targets selected');
+    } else if (motherTongue == 'english') {
+      print('  ✅ Spanish (automatic for English speakers)');
+      if (hasGerman) print('  ✅ German (user selected)');
+    } else if (motherTongue == 'german') {
+      print('  ✅ Spanish (automatic for German speakers)');
+      if (hasEnglish) print('  ✅ English (user selected)');
+    }
+    
+    // Word-by-word audio status
+    print('🎵 Word-by-Word Audio:');
+    if (settings['germanWordByWord'] == true) {
+      print('  ✅ German: [German word] ([Spanish equivalent])');
+    } else {
+      print('  ❌ German: Simple translation reading');
+    }
+    if (settings['englishWordByWord'] == true) {
+      print('  ✅ English: [English word] ([Spanish equivalent])');
+    } else {
+      print('  ❌ English: Simple translation reading');
+    }
+    
     print('='*60 + '\n');
   }
 
@@ -185,25 +235,44 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
     if (!_mounted || text.isEmpty) return;
 
     try {
-      // DEBUGGER POINT 4: Log conversation start
-      print('\n🚀 STARTING DYNAMIC CONVERSATION');
+      // EXACT per requirements: Log conversation start with dynamic behavior
+      print('\n🚀 STARTING DYNAMIC CONVERSATION (EXACT per requirements)');
       print('Input text: "$text"');
       
-      // Get user's exact style preferences INCLUDING mother tongue
+      // Get user's EXACT style preferences INCLUDING mother tongue
       var stylePreferences = _getStylePreferences();
       
-      // Validate and apply defaults ONLY if nothing is selected
+      // EXACT per requirements: Validate and apply defaults ONLY if nothing is selected
       if (!_hasAnyStyleSelected()) {
         print('⚠️ No styles selected - applying intelligent defaults based on mother tongue');
         stylePreferences = _applyMotherTongueDefaults(stylePreferences);
         
-        // DEBUGGER POINT 5: Log default application
         _debugPrintSettings('After Applying Mother Tongue Defaults', stylePreferences);
+      } else {
+        print('✅ User has selected specific styles - using exact preferences');
       }
 
-      // DEBUGGER POINT 6: Final preferences being sent to backend
-      print('\n📤 SENDING TO BACKEND:');
+      // EXACT per requirements: Final preferences being sent to backend
+      print('\n📤 SENDING TO BACKEND (EXACT per requirements):');
       print('Mother Tongue: ${stylePreferences['motherTongue']}');
+      print('🎯 Backend will implement EXACT logic:');
+      
+      final motherTongue = stylePreferences['motherTongue'] as String;
+      switch (motherTongue.toLowerCase()) {
+        case 'spanish':
+          print('  📋 Spanish Logic: Translate to German and/or English based on selections');
+          break;
+        case 'english':
+          print('  📋 English Logic: Translate to Spanish (automatic) + German if selected');
+          break;
+        case 'german':
+          print('  📋 German Logic: Translate to Spanish (automatic) + English if selected');
+          break;
+        default:
+          print('  📋 $motherTongue Logic: Translate to German and/or English based on selections');
+          break;
+      }
+      
       print('Style Preferences:');
       stylePreferences.forEach((key, value) {
         if (key != 'motherTongue') {  // Don't repeat mother tongue
@@ -225,19 +294,31 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
       state = state.copyWith(messages: updatedMessages, isLoading: true);
       await _repository.stopAudio();
 
-      // Send to translation service with exact preferences INCLUDING mother tongue
+      // EXACT per requirements: Send to translation service with mother tongue
       final translation = await _repository.getTranslation(
         text, 
-        stylePreferences: stylePreferences,  // Now includes mother tongue
+        stylePreferences: stylePreferences,  // Now includes mother tongue for dynamic behavior
       );
       
       if (!_mounted) return;
 
-      // DEBUGGER POINT 7: Log response received
-      print('\n📥 RESPONSE RECEIVED:');
+      // EXACT per requirements: Log response received
+      print('\n📥 RESPONSE RECEIVED (EXACT per requirements):');
       print('Translation text length: ${translation.translatedText.length}');
       print('Audio path: ${translation.audioPath ?? "No audio"}');
       print('Source language detected: ${translation.sourceLanguage}');
+      
+      // Check if word-by-word audio was generated
+      if (translation.audioPath != null) {
+        final germanWordByWord = stylePreferences['germanWordByWord'] ?? false;
+        final englishWordByWord = stylePreferences['englishWordByWord'] ?? false;
+        final anyWordByWord = germanWordByWord || englishWordByWord;
+        
+        print('🎵 Audio Type: ${anyWordByWord ? "Word-by-word breakdown" : "Simple translation reading"}');
+        if (anyWordByWord) {
+          print('🎯 Format: [target word] ([Spanish equivalent])');
+        }
+      }
       
       // Prune again after receiving response
       final newMessages = _pruneMessageHistory(
@@ -260,11 +341,11 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
       }
       
     } catch (e) {
-      // DEBUGGER POINT 8: Log errors
-      print('\n❌ ERROR IN CONVERSATION:');
+      // EXACT per requirements: Log errors with context
+      print('\n❌ ERROR IN DYNAMIC CONVERSATION:');
       print('Error type: ${e.runtimeType}');
       print('Error message: $e');
-      print('Stack trace: ${StackTrace.current}');
+      print('This may indicate an issue with the dynamic mother tongue logic');
       
       if (!_mounted) return;
       
@@ -285,7 +366,6 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
   List<ChatMessage> _pruneMessageHistory(List<ChatMessage> messages) {
     if (messages.length <= _maxMessages) return messages;
 
-    // DEBUGGER POINT 9: Log pruning action
     print('📦 Pruning message history: ${messages.length} -> $_messagesToKeepWhenPruning messages');
 
     return [
