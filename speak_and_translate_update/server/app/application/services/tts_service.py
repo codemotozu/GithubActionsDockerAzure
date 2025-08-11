@@ -1,4 +1,4 @@
-# tts_service.py - Updated with dynamic mother tongue audio generation
+# tts_service.py - Updated with enhanced audio generation for translation styles
 
 from azure.cognitiveservices.speech import (
     SpeechConfig,
@@ -438,6 +438,7 @@ Spanish translation:"""
     ) -> Optional[str]:
         """
         Enhanced version with dynamic mother tongue support and intelligent phrase handling.
+        Now supports both word-by-word and simple translation audio generation.
         """
         try:
             if not output_path:
@@ -449,82 +450,76 @@ Spanish translation:"""
             logger.info(f"🌐 Generating audio for source language: {source_lang}")
             
             # Debug word-by-word settings
+            german_word_by_word = False
+            english_word_by_word = False
+            
             if style_preferences:
-                logger.info(f"🎵 TTS Audio Settings:")
-                logger.info(f"   German word-by-word: {getattr(style_preferences, 'german_word_by_word', False)}")
-                logger.info(f"   English word-by-word: {getattr(style_preferences, 'english_word_by_word', False)}")
-            
-            # Check if any style has word pairs or if word-by-word is requested
-            has_word_pairs = any(
-                len(style_info.get('word_pairs', [])) > 0 
-                for style_info in translations_data.get('style_data', [])
-            )
-            
-            word_by_word_requested = False
-            if style_preferences:
-                word_by_word_requested = (
-                    getattr(style_preferences, 'german_word_by_word', False) or 
-                    getattr(style_preferences, 'english_word_by_word', False)
-                )
-            
-            logger.info(f"🔍 Audio generation analysis:")
-            logger.info(f"   Style data entries: {len(translations_data.get('style_data', []))}")
-            logger.info(f"   Has word pairs: {has_word_pairs}")
-            logger.info(f"   Word-by-word requested: {word_by_word_requested}")
-            
-            # Log each style data entry
-            for i, style_info in enumerate(translations_data.get('style_data', [])):
-                logger.info(f"   Style {i+1}: {style_info.get('style_name', 'unknown')} - {len(style_info.get('word_pairs', []))} pairs")
-            
-            # Generate SSML even if no word pairs (the TTS will handle it)
-            if translations_data.get('translations') and word_by_word_requested:
-                logger.info("🎵 Proceeding with audio generation (word-by-word requested)")
+                german_word_by_word = getattr(style_preferences, 'german_word_by_word', False)
+                english_word_by_word = getattr(style_preferences, 'english_word_by_word', False)
                 
-                # Generate SSML with dynamic mother tongue support
-                ssml = self._generate_dynamic_mother_tongue_ssml(
+                logger.info(f"🎵 TTS Audio Settings:")
+                logger.info(f"   German word-by-word: {german_word_by_word}")
+                logger.info(f"   English word-by-word: {english_word_by_word}")
+            
+            # Check if we have any translations to work with
+            if not translations_data.get('translations'):
+                logger.info("🔇 No audio generated - no translations available")
+                return None
+            
+            # ENHANCED: Determine audio generation mode
+            any_word_by_word_requested = german_word_by_word or english_word_by_word
+            
+            logger.info(f"🔍 Audio generation mode analysis:")
+            logger.info(f"   Style data entries: {len(translations_data.get('style_data', []))}")
+            logger.info(f"   Any word-by-word requested: {any_word_by_word_requested}")
+            
+            if any_word_by_word_requested:
+                logger.info("🎵 Generating DETAILED word-by-word breakdown audio")
+                ssml = self._generate_detailed_word_by_word_ssml(
                     translations_data=translations_data,
                     source_lang=source_lang,
                     style_preferences=style_preferences,
                 )
-                
-                # Log the generated SSML for debugging
-                logger.info(f"\n📄 Generated SSML preview:")
-                print("Generated SSML preview (first 500 chars):")
-                print(ssml[:500] + "..." if len(ssml) > 500 else ssml)
-
-                # Create audio config and synthesizer
-                audio_config = AudioOutputConfig(filename=output_path)
-                speech_config = SpeechConfig(
-                    subscription=self.subscription_key, region=self.region
-                )
-                speech_config.set_speech_synthesis_output_format(
-                    SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3
-                )
-
-                synthesizer = SpeechSynthesizer(
-                    speech_config=speech_config, audio_config=audio_config
-                )
-
-                # Synthesize speech
-                result = await asyncio.get_event_loop().run_in_executor(
-                    None, lambda: synthesizer.speak_ssml_async(ssml).get()
-                )
-
-                if result.reason == ResultReason.SynthesizingAudioCompleted:
-                    logger.info(f"\n✅ Successfully generated audio: {os.path.basename(output_path)}")
-                    return os.path.basename(output_path)
-
-                if result.reason == ResultReason.Canceled:
-                    cancellation_details = result.cancellation_details
-                    logger.error(f"❌ Synthesis canceled: {cancellation_details.reason}")
-                    if cancellation_details.reason == CancellationReason.Error:
-                        logger.error(f"❌ Error details: {cancellation_details.error_details}")
             else:
-                logger.info("🔇 Skipping audio generation:")
-                if not translations_data.get('translations'):
-                    logger.info("   - No translations available")
-                if not word_by_word_requested:
-                    logger.info("   - Word-by-word not requested")
+                logger.info("🎵 Generating SIMPLE translation reading audio")
+                ssml = self._generate_simple_translation_ssml(
+                    translations_data=translations_data,
+                    source_lang=source_lang,
+                    style_preferences=style_preferences,
+                )
+            
+            # Log the generated SSML for debugging
+            logger.info(f"\n📄 Generated SSML preview:")
+            print("Generated SSML preview (first 500 chars):")
+            print(ssml[:500] + "..." if len(ssml) > 500 else ssml)
+
+            # Create audio config and synthesizer
+            audio_config = AudioOutputConfig(filename=output_path)
+            speech_config = SpeechConfig(
+                subscription=self.subscription_key, region=self.region
+            )
+            speech_config.set_speech_synthesis_output_format(
+                SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3
+            )
+
+            synthesizer = SpeechSynthesizer(
+                speech_config=speech_config, audio_config=audio_config
+            )
+
+            # Synthesize speech
+            result = await asyncio.get_event_loop().run_in_executor(
+                None, lambda: synthesizer.speak_ssml_async(ssml).get()
+            )
+
+            if result.reason == ResultReason.SynthesizingAudioCompleted:
+                logger.info(f"\n✅ Successfully generated audio: {os.path.basename(output_path)}")
+                return os.path.basename(output_path)
+
+            if result.reason == ResultReason.Canceled:
+                cancellation_details = result.cancellation_details
+                logger.error(f"❌ Synthesis canceled: {cancellation_details.reason}")
+                if cancellation_details.reason == CancellationReason.Error:
+                    logger.error(f"❌ Error details: {cancellation_details.error_details}")
 
             return None
 
@@ -532,22 +527,69 @@ Spanish translation:"""
             logger.error(f"❌ Error in text_to_speech_word_pairs_v2: {str(e)}")
             return None
 
-    def _generate_dynamic_mother_tongue_ssml(
+    def _generate_simple_translation_ssml(
         self,
         translations_data: Dict,
         source_lang: str,
         style_preferences=None,
     ) -> str:
         """
-        Generate SSML with dynamic mother tongue support and AI-powered translation.
-        Enhanced with fallback mechanisms for missing word pairs.
+        Generate simple SSML that just reads the translations without word-by-word breakdown.
+        This is used when word-by-word is disabled but audio is still requested.
+        """
+        ssml = """<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">"""
+        
+        logger.info("\n🎤 TTS SIMPLE TRANSLATION AUDIO GENERATION")
+        logger.info("="*60)
+        logger.info(f"🌐 Source Language: {source_lang}")
+        logger.info("📖 Reading translations without detailed breakdown")
+        
+        # Process each style and read the translation
+        for i, style_info in enumerate(translations_data.get('style_data', [])):
+            translation = style_info['translation']
+            is_german = style_info['is_german']
+            style_name = style_info['style_name']
+            
+            # Escape XML special characters
+            translation = translation.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            
+            # Get voice configuration for the target language
+            voice_config = self._get_voice_config('german' if is_german else 'english')
+            voice = voice_config['voice']
+            lang = voice_config['language']
+            
+            logger.info(f"📖 Reading {style_name}: \"{translation}\"")
+            
+            # Add a simple reading of the translation
+            ssml += f"""
+        <voice name="{voice}">
+            <prosody rate="1.0">
+                <lang xml:lang="{lang}">{translation}</lang>
+                <break time="1500ms"/>
+            </prosody>
+        </voice>"""
+        
+        ssml += "</speak>"
+        
+        logger.info(f"✅ Generated simple translation SSML for {len(translations_data.get('style_data', []))} translations!")
+        return ssml
+
+    def _generate_detailed_word_by_word_ssml(
+        self,
+        translations_data: Dict,
+        source_lang: str,
+        style_preferences=None,
+    ) -> str:
+        """
+        Generate SSML with detailed word-by-word breakdown.
+        This is the original logic used when word-by-word is enabled.
         """
         # Define punctuation to exclude from detailed logging
         PUNCTUATION = set('!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~')
         
         ssml = """<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">"""
         
-        logger.info("\n🎤 TTS DYNAMIC MOTHER TONGUE AUDIO GENERATION")
+        logger.info("\n🎤 TTS DETAILED WORD-BY-WORD AUDIO GENERATION")
         logger.info("="*60)
         logger.info(f"🌐 Source Language: {source_lang}")
         logger.info("🤖 Building translations on-demand with AI")
@@ -583,7 +625,22 @@ Spanish translation:"""
             
             # Skip if word-by-word is not requested for this language
             if not should_do_word_by_word:
-                logger.info(f"   ⏭️ Skipping {style_name} - word-by-word not requested")
+                logger.info(f"   ⏭️ Skipping detailed breakdown for {style_name} - word-by-word not requested")
+                # But still read the translation simply
+                voice_config = self._get_voice_config('german' if is_german else 'english')
+                voice = voice_config['voice']
+                lang = voice_config['language']
+                
+                # Escape XML special characters
+                clean_translation = translation.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                
+                ssml += f"""
+        <voice name="{voice}">
+            <prosody rate="1.0">
+                <lang xml:lang="{lang}">{clean_translation}</lang>
+                <break time="1000ms"/>
+            </prosody>
+        </voice>"""
                 continue
             
             # Escape XML special characters
@@ -681,7 +738,7 @@ Spanish translation:"""
             ai_percentage = (ai_translations_used / total_translations) * 100
             logger.info(f"   🤖 AI coverage: {ai_percentage:.1f}%")
         
-        logger.info(f"\n✅ Generated dynamic mother tongue SSML!")
+        logger.info(f"\n✅ Generated detailed word-by-word SSML!")
         return ssml
 
     # Keep other existing methods unchanged...

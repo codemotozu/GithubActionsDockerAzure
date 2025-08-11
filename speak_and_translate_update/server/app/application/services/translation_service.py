@@ -1,4 +1,4 @@
-# translation_service.py - Updated with dynamic mother tongue support
+# translation_service.py - Updated with enhanced audio generation logic
 
 from google.generativeai import GenerativeModel
 import google.generativeai as genai
@@ -186,6 +186,44 @@ Required translations:"""
 
         return "\n".join(prompt_parts)
 
+    def _should_generate_audio(self, translations_data: Dict, style_preferences) -> bool:
+        """
+        Determine if audio should be generated based on available translations and user preferences.
+        Enhanced logic: Generate audio if translations are available, regardless of word-by-word settings.
+        """
+        # Check if we have any translations
+        has_translations = len(translations_data.get('translations', [])) > 0
+        
+        # Check if any translation styles are enabled (indicates user wants audio)
+        has_enabled_styles = False
+        if style_preferences:
+            style_checks = [
+                style_preferences.german_native,
+                style_preferences.german_colloquial,
+                style_preferences.german_informal,
+                style_preferences.german_formal,
+                style_preferences.english_native,
+                style_preferences.english_colloquial,
+                style_preferences.english_informal,
+                style_preferences.english_formal
+            ]
+            has_enabled_styles = any(style_checks)
+        
+        # Audio generation logic:
+        # Generate audio if we have translations AND at least one style is enabled
+        should_generate = has_translations and has_enabled_styles
+        
+        print(f"🎵 Enhanced Audio Generation Check:")
+        print(f"   Translations available: {has_translations}")
+        print(f"   Translation styles enabled: {has_enabled_styles}")
+        print(f"   Should generate audio: {should_generate}")
+        
+        if style_preferences:
+            print(f"   German word-by-word: {getattr(style_preferences, 'german_word_by_word', False)} (controls audio type)")
+            print(f"   English word-by-word: {getattr(style_preferences, 'english_word_by_word', False)} (controls audio type)")
+        
+        return should_generate
+
     async def process_prompt(
         self, text: str, source_lang: str, target_lang: str, style_preferences=None, mother_tongue: str = None
     ) -> Translation:
@@ -206,8 +244,6 @@ Required translations:"""
             print(f"🎯 Processing translation:")
             print(f"   Input text: '{text}'")
             print(f"   Detected mother tongue: {detected_mother_tongue}")
-            print(f"   German word-by-word: {getattr(style_preferences, 'german_word_by_word', False)}")
-            print(f"   English word-by-word: {getattr(style_preferences, 'english_word_by_word', False)}")
 
             # Create dynamic prompt based on mother tongue
             dynamic_prompt = self._create_dynamic_mother_tongue_prompt(
@@ -234,23 +270,12 @@ Required translations:"""
 
             audio_filename = None
 
-            # Check if word-by-word audio is requested (check preferences directly)
-            word_by_word_requested = False
-            if style_preferences:
-                word_by_word_requested = (
-                    style_preferences.german_word_by_word or 
-                    style_preferences.english_word_by_word
-                )
+            # ENHANCED: Check if audio should be generated (new logic)
+            should_generate_audio = self._should_generate_audio(translations_data, style_preferences)
             
-            print(f"🎵 Audio generation check:")
-            print(f"   Translations available: {len(translations_data['translations']) > 0}")
-            print(f"   German word-by-word requested: {getattr(style_preferences, 'german_word_by_word', False)}")
-            print(f"   English word-by-word requested: {getattr(style_preferences, 'english_word_by_word', False)}")
-            print(f"   Overall word-by-word requested: {word_by_word_requested}")
-            
-            # Generate audio if word-by-word is requested and we have translations
-            if translations_data['translations'] and word_by_word_requested:
-                print("🎵 Generating audio with word-by-word breakdown...")
+            # Generate audio if conditions are met
+            if should_generate_audio:
+                print("🎵 Generating audio based on available translations and enabled styles...")
                 audio_filename = await self.tts_service.text_to_speech_word_pairs_v2(
                     translations_data=translations_data,
                     source_lang=detected_mother_tongue,
@@ -258,10 +283,10 @@ Required translations:"""
                     style_preferences=style_preferences,
                 )
             else:
-                if not word_by_word_requested:
-                    print("🔇 No audio generated - word-by-word not requested")
-                else:
+                if not translations_data.get('translations'):
                     print("🔇 No audio generated - no translations available")
+                else:
+                    print("🔇 No audio generated - no translation styles enabled")
 
             if audio_filename:
                 print(f"✅ Successfully generated audio: {audio_filename}")
