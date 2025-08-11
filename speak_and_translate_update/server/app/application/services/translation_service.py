@@ -1,4 +1,4 @@
-# translation_service.py - Updated with enhanced audio generation logic
+# translation_service.py - Updated with enhanced dynamic mother tongue logic
 
 from google.generativeai import GenerativeModel
 import google.generativeai as genai
@@ -85,43 +85,62 @@ class TranslationService:
     def _create_dynamic_mother_tongue_prompt(self, input_text: str, mother_tongue: str, style_preferences) -> str:
         """
         Create a dynamic prompt based on detected mother tongue and user preferences.
-        Implements the exact logic from the requirements.
+        Implements the EXACT logic from the requirements.
         """
         
-        # Define the target languages based on mother tongue
+        # Define the target languages based on mother tongue - EXACT implementation of requirements
         target_languages = []
+        
         if mother_tongue == 'spanish':
-            # Spanish input -> German and/or English
+            # 1. Spanish mother tongue -> German and/or English based on selections
+            print(f"🇪🇸 Spanish mother tongue detected - checking German and English selections")
+            
             if any([style_preferences.german_native, style_preferences.german_colloquial, 
                    style_preferences.german_informal, style_preferences.german_formal]):
                 target_languages.append('german')
+                print(f"   ✅ German translation enabled")
+            
             if any([style_preferences.english_native, style_preferences.english_colloquial,
                    style_preferences.english_informal, style_preferences.english_formal]):
                 target_languages.append('english')
+                print(f"   ✅ English translation enabled")
+                
         elif mother_tongue == 'english':
-            # English input -> German and/or Spanish
+            # 2. English mother tongue -> German if selected, Spanish automatically
+            print(f"🇺🇸 English mother tongue detected - checking German selection + automatic Spanish")
+            
+            # Spanish is ALWAYS included for English mother tongue
+            target_languages.append('spanish')
+            print(f"   ✅ Spanish translation enabled (automatic)")
+            
             if any([style_preferences.german_native, style_preferences.german_colloquial,
                    style_preferences.german_informal, style_preferences.german_formal]):
                 target_languages.append('german')
-            # For English mother tongue, we translate to Spanish (not back to English)
-            target_languages.append('spanish')
+                print(f"   ✅ German translation enabled")
+                
         elif mother_tongue == 'german':
-            # German input -> English and/or Spanish
+            # 3. German mother tongue -> English if selected, Spanish automatically
+            print(f"🇩🇪 German mother tongue detected - checking English selection + automatic Spanish")
+            
+            # Spanish is ALWAYS included for German mother tongue
+            target_languages.append('spanish')
+            print(f"   ✅ Spanish translation enabled (automatic)")
+            
             if any([style_preferences.english_native, style_preferences.english_colloquial,
                    style_preferences.english_informal, style_preferences.english_formal]):
                 target_languages.append('english')
-            target_languages.append('spanish')
+                print(f"   ✅ English translation enabled")
 
-        print(f"🎯 Mother tongue: {mother_tongue} -> Target languages: {target_languages}")
+        print(f"🎯 Final target languages: {target_languages}")
 
-        # Build the dynamic prompt
+        # Build the dynamic prompt - EXACT format from requirements
         prompt_parts = [
             f"""You are an expert multilingual translator. The user's mother tongue is {mother_tongue.upper()}.
 
-CRITICAL TRANSLATION RULES:
+CRITICAL TRANSLATION RULES FOR MOTHER TONGUE {mother_tongue.upper()}:
 - Input text is in {mother_tongue.upper()}
-- Translate to the requested target languages
-- For word-by-word breakdowns, EVERY word must have a Spanish equivalent
+- Translate to the requested target languages ONLY
+- For word-by-word breakdowns, format as: [target word/phrase] ([Spanish equivalent])
 - Group phrasal verbs, separable verbs, and compound expressions as single units
 - Maintain grammatical accuracy and natural flow
 
@@ -130,7 +149,7 @@ Text to translate: "{input_text}"
 Required translations:"""
         ]
 
-        # Add German translations if requested
+        # Add German translations if requested - EXACT format
         if 'german' in target_languages:
             prompt_parts.append("\nGerman Translation:")
             
@@ -154,7 +173,7 @@ Required translations:"""
                 if style_preferences.german_word_by_word:
                     prompt_parts.append('* word by word Conversational-formal German-Spanish:\n"[German word/phrase] ([Spanish translation]) [next word/phrase] ([Spanish translation]) ..."')
 
-        # Add English translations if requested
+        # Add English translations if requested - EXACT format
         if 'english' in target_languages:
             prompt_parts.append("\nEnglish Translation:")
             
@@ -178,23 +197,26 @@ Required translations:"""
                 if style_preferences.english_word_by_word:
                     prompt_parts.append('* word by word Conversational-formal English-Spanish:\n"[English word/phrase] ([Spanish translation]) [next word/phrase] ([Spanish translation]) ..."')
 
-        # Add Spanish translations if requested (for English/German mother tongue)
+        # Add Spanish translations if requested (for English/German mother tongue) - EXACT format
         if 'spanish' in target_languages:
             prompt_parts.append("\nSpanish Translation:")
             prompt_parts.append('* Conversational-colloquial:\n"[Natural Spanish translation]"')
-            # Note: Spanish is always the reference language, so no word-by-word needed
+            # NOTE: Spanish doesn't need word-by-word since it's the reference language
 
         return "\n".join(prompt_parts)
 
     def _should_generate_audio(self, translations_data: Dict, style_preferences) -> bool:
         """
         Determine if audio should be generated based on available translations and user preferences.
-        Enhanced logic: Generate audio if translations are available, regardless of word-by-word settings.
+        Audio is generated if:
+        1. We have translations available 
+        2. At least one translation style is enabled
+        3. User has requested word-by-word audio OR we have regular translations
         """
         # Check if we have any translations
         has_translations = len(translations_data.get('translations', [])) > 0
         
-        # Check if any translation styles are enabled (indicates user wants audio)
+        # Check if any translation styles are enabled
         has_enabled_styles = False
         if style_preferences:
             style_checks = [
@@ -209,18 +231,23 @@ Required translations:"""
             ]
             has_enabled_styles = any(style_checks)
         
-        # Audio generation logic:
-        # Generate audio if we have translations AND at least one style is enabled
+        # Check if word-by-word audio is requested
+        word_by_word_requested = False
+        if style_preferences:
+            word_by_word_requested = (
+                style_preferences.german_word_by_word or 
+                style_preferences.english_word_by_word
+            )
+        
+        # UPDATED LOGIC: Generate audio if we have translations AND styles enabled
+        # Word-by-word setting controls the TYPE of audio, not whether to generate audio
         should_generate = has_translations and has_enabled_styles
         
-        print(f"🎵 Enhanced Audio Generation Check:")
+        print(f"🎵 Audio Generation Decision:")
         print(f"   Translations available: {has_translations}")
         print(f"   Translation styles enabled: {has_enabled_styles}")
-        print(f"   Should generate audio: {should_generate}")
-        
-        if style_preferences:
-            print(f"   German word-by-word: {getattr(style_preferences, 'german_word_by_word', False)} (controls audio type)")
-            print(f"   English word-by-word: {getattr(style_preferences, 'english_word_by_word', False)} (controls audio type)")
+        print(f"   Word-by-word requested: {word_by_word_requested}")
+        print(f"   🎯 Generate audio: {should_generate}")
         
         return should_generate
 
@@ -241,16 +268,16 @@ Required translations:"""
             # Detect the actual input language (can override source_lang)
             detected_mother_tongue = self._detect_input_language(text, mother_tongue)
             
-            print(f"🎯 Processing translation:")
+            print(f"🎯 Processing DYNAMIC translation:")
             print(f"   Input text: '{text}'")
             print(f"   Detected mother tongue: {detected_mother_tongue}")
 
-            # Create dynamic prompt based on mother tongue
+            # Create dynamic prompt based on mother tongue - EXACT implementation
             dynamic_prompt = self._create_dynamic_mother_tongue_prompt(
                 text, detected_mother_tongue, style_preferences
             )
             
-            print(f"📝 Generated prompt preview: {dynamic_prompt[:200]}...")
+            print(f"📝 Generated dynamic prompt for {detected_mother_tongue} mother tongue")
 
             # Create a new chat session with the dynamic prompt
             chat_session = self.model.start_chat(
@@ -263,14 +290,14 @@ Required translations:"""
             response = chat_session.send_message(text)
             generated_text = response.text
 
-            print(f"🤖 Gemini response preview: {generated_text[:200]}...")
+            print(f"🤖 Gemini response received ({len(generated_text)} characters)")
 
             # Extract translations and word pairs
             translations_data = self._extract_text_and_pairs_v2(generated_text, style_preferences)
 
             audio_filename = None
 
-            # ENHANCED: Check if audio should be generated (new logic)
+            # Check if audio should be generated based on new logic
             should_generate_audio = self._should_generate_audio(translations_data, style_preferences)
             
             # Generate audio if conditions are met
@@ -315,6 +342,7 @@ Required translations:"""
     ) -> Dict:
         """
         Extract texts and word pairs with proper multi-language support.
+        Updated to handle the EXACT output format from requirements.
         """
         result = {
             'translations': [],
@@ -334,7 +362,14 @@ Required translations:"""
             if has_english:
                 parts = generated_text.split("English Translation:")
                 sections['german'] = parts[0]
-                sections['english'] = "English Translation:" + parts[1] if len(parts) > 1 else ""
+                if len(parts) > 1:
+                    if has_spanish:
+                        english_spanish_parts = parts[1].split("Spanish Translation:")
+                        sections['english'] = "English Translation:" + english_spanish_parts[0]
+                        if len(english_spanish_parts) > 1:
+                            sections['spanish'] = "Spanish Translation:" + english_spanish_parts[1]
+                    else:
+                        sections['english'] = "English Translation:" + parts[1]
             elif has_spanish:
                 parts = generated_text.split("Spanish Translation:")
                 sections['german'] = parts[0]
@@ -345,15 +380,14 @@ Required translations:"""
         if has_english and 'english' not in sections:
             if has_spanish:
                 parts = generated_text.split("Spanish Translation:")
-                if "English Translation:" in generated_text:
-                    english_start = generated_text.find("English Translation:")
-                    spanish_start = generated_text.find("Spanish Translation:")
-                    if english_start < spanish_start:
-                        sections['english'] = generated_text[english_start:spanish_start]
-                        sections['spanish'] = generated_text[spanish_start:]
-                    else:
-                        sections['spanish'] = generated_text[spanish_start:english_start]
-                        sections['english'] = generated_text[english_start:]
+                english_start = generated_text.find("English Translation:")
+                spanish_start = generated_text.find("Spanish Translation:")
+                if english_start < spanish_start:
+                    sections['english'] = generated_text[english_start:spanish_start]
+                    sections['spanish'] = generated_text[spanish_start:]
+                else:
+                    sections['spanish'] = generated_text[spanish_start:english_start]
+                    sections['english'] = generated_text[english_start:]
             else:
                 sections['english'] = generated_text
 
@@ -395,7 +429,7 @@ Required translations:"""
         return result
 
     def _process_language_section(self, section: str, language: str, style_preferences, result: Dict):
-        """Process a specific language section (German or English)"""
+        """Process a specific language section (German or English) with EXACT format matching"""
         is_german = (language == 'german')
         
         styles_to_check = ['native', 'colloquial', 'informal', 'formal']
@@ -428,7 +462,7 @@ Required translations:"""
         style_name: str,
         word_by_word_enabled: bool
     ) -> Optional[Dict]:
-        """Extract translation and word pairs for a single style with improved parsing"""
+        """Extract translation and word pairs for a single style - EXACT format matching"""
         
         # Extract main translation
         text_match = re.search(text_pattern, text_section, re.IGNORECASE | re.DOTALL)
@@ -439,19 +473,17 @@ Required translations:"""
         translation_text = text_match.group(1).strip()
         print(f"   ✅ Found translation for {style_name}: '{translation_text[:50]}...'")
         
-        # Extract word pairs if enabled
+        # Extract word pairs if enabled - EXACT format from requirements
         word_pairs = []
         if word_by_word_enabled:
             print(f"   🔍 Looking for word pairs for {style_name}...")
             
-            # Try multiple pattern variations for word pairs
+            # Enhanced pattern to match EXACT format: [word] ([translation])
             pairs_patterns = [
                 pairs_pattern,
-                pairs_pattern.replace('"([^"]+)"', r'"?([^"\n]+)"?'),  # Optional quotes
-                pairs_pattern.replace('German-Spanish', '(?:German-Spanish|German|Alemán-Español)'),
-                pairs_pattern.replace('English-Spanish', '(?:English-Spanish|English|Inglés-Español)'),
-                # More flexible pattern
-                rf'\*\s*word by word.*?{style_name.split("_")[1]}.*?:\s*"?([^"\n]+)"?',
+                # More flexible patterns to handle variations
+                rf'\*\s*word by word.*?{style_name.split("_")[1]}.*?:\s*"([^"\n]+)"',
+                rf'\*\s*word by word.*?{style_name.split("_")[0].title()}.*?:\s*"([^"\n]+)"',
             ]
             
             pairs_text = None
@@ -467,12 +499,11 @@ Required translations:"""
                     continue
             
             if pairs_text:
-                # Enhanced regex patterns to capture word-translation pairs
+                # EXACT format parsing: [word/phrase] ([translation])
                 pair_patterns = [
-                    r'([^()]+?)\s*\(([^)]+?)\)',  # Standard: word (translation)
+                    r'\[([^\]]+)\]\s*\(([^)]+)\)',  # [word] (translation)
+                    r'([^()]+?)\s*\(([^)]+?)\)',    # word (translation)
                     r'(\S+(?:\s+\S+)?)\s*\(([^)]+?)\)',  # One or two words (translation)
-                    r'"([^"]+)"\s*\(([^)]+?)\)',  # "word" (translation)
-                    r'([^,()]+?)\s*\(([^)]+?)\)',  # Anything except comma/parens (translation)
                 ]
                 
                 for pair_pattern in pair_patterns:
@@ -481,7 +512,7 @@ Required translations:"""
                         if pair_matches:
                             for source, target in pair_matches:
                                 # Clean up the extracted pairs
-                                source = source.strip().strip('"\'').rstrip('.,!?;:')
+                                source = source.strip().strip('"\'[]').rstrip('.,!?;:')
                                 target = target.strip().strip('"\'')
                                 
                                 # Skip empty pairs or overly long ones
@@ -496,20 +527,6 @@ Required translations:"""
                     except Exception as e:
                         print(f"   ⚠️ Pair extraction failed: {e}")
                         continue
-                
-                # If still no pairs found, try a simpler approach
-                if not word_pairs:
-                    print(f"   🔄 Trying simple extraction for {style_name}...")
-                    # Split by common separators and look for parentheses
-                    segments = re.split(r'[,;]\s*', pairs_text)
-                    for segment in segments:
-                        match = re.search(r'(.+?)\s*\(([^)]+)\)', segment)
-                        if match:
-                            source = match.group(1).strip().strip('"\'')
-                            target = match.group(2).strip().strip('"\'')
-                            if source and target:
-                                word_pairs.append((source, target))
-                                print(f"      ✅ Simple extraction: '{source}' -> '{target}'")
                                 
         print(f"   📊 {style_name}: Found translation + {len(word_pairs)} word pairs")
         

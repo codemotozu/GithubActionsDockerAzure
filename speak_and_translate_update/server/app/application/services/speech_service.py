@@ -1,4 +1,4 @@
-# speech_service.py - Updated with dynamic mother tongue recognition
+# speech_service.py - Updated with enhanced dynamic mother tongue support
 
 from ...domain.entities.translation import Translation
 from ..services.translation_service import TranslationService
@@ -23,43 +23,49 @@ class SpeechService:
         if not self.speech_key or not self.speech_region:
             raise ValueError("Azure Speech credentials not found")
             
-        # Dynamic language configuration for mother tongue support
+        # Enhanced language configuration for dynamic mother tongue support
         self.language_configs = {
             'spanish': {
                 'azure_code': 'es-ES',
                 'google_code': 'es-ES',
                 'display_name': 'Spanish (Spain)',
-                'fallback_codes': ['es-MX', 'es-AR', 'es-CO']
+                'fallback_codes': ['es-MX', 'es-AR', 'es-CO', 'es-US'],
+                'wake_words': ['abrir', 'parar', 'comenzar', 'terminar', 'empezar', 'detener']
             },
             'english': {
                 'azure_code': 'en-US',
                 'google_code': 'en-US',
                 'display_name': 'English (US)',
-                'fallback_codes': ['en-GB', 'en-AU', 'en-CA']
+                'fallback_codes': ['en-GB', 'en-AU', 'en-CA'],
+                'wake_words': ['open', 'stop', 'start', 'begin', 'end', 'close']
             },
             'german': {
                 'azure_code': 'de-DE',
                 'google_code': 'de-DE',
                 'display_name': 'German (Germany)',
-                'fallback_codes': ['de-AT', 'de-CH']
+                'fallback_codes': ['de-AT', 'de-CH'],
+                'wake_words': ['öffnen', 'stopp', 'anfangen', 'beenden', 'starten', 'schließen']
             },
             'french': {
                 'azure_code': 'fr-FR',
                 'google_code': 'fr-FR',
                 'display_name': 'French (France)',
-                'fallback_codes': ['fr-CA', 'fr-BE']
+                'fallback_codes': ['fr-CA', 'fr-BE'],
+                'wake_words': ['ouvrir', 'arrêter', 'commencer', 'finir', 'démarrer', 'fermer']
             },
             'italian': {
                 'azure_code': 'it-IT',
                 'google_code': 'it-IT',
                 'display_name': 'Italian (Italy)',
-                'fallback_codes': []
+                'fallback_codes': [],
+                'wake_words': ['aprire', 'fermare', 'iniziare', 'finire', 'cominciare', 'chiudere']
             },
             'portuguese': {
                 'azure_code': 'pt-PT',
                 'google_code': 'pt-PT',
                 'display_name': 'Portuguese (Portugal)',
-                'fallback_codes': ['pt-BR']
+                'fallback_codes': ['pt-BR'],
+                'wake_words': ['abrir', 'parar', 'começar', 'terminar', 'iniciar', 'fechar']
             },
         }
         
@@ -75,20 +81,52 @@ class SpeechService:
         self.recognizer.energy_threshold = 300
         self.recognizer.dynamic_energy_threshold = True
         
-        # Define wake words/commands
+        # Enhanced wake words/commands with multi-language support
         self.WAKE_WORDS = {
+            # English
             "open": "START_RECORDING",
             "stop": "STOP_RECORDING",
-            # Spanish wake words
+            "start": "START_RECORDING",
+            "begin": "START_RECORDING",
+            "end": "STOP_RECORDING",
+            "close": "STOP_RECORDING",
+            
+            # Spanish 
             "abrir": "START_RECORDING",
             "parar": "STOP_RECORDING",
             "comenzar": "START_RECORDING",
             "terminar": "STOP_RECORDING",
-            # German wake words
+            "empezar": "START_RECORDING",
+            "detener": "STOP_RECORDING",
+            
+            # German
             "öffnen": "START_RECORDING",
             "stopp": "STOP_RECORDING",
             "anfangen": "START_RECORDING",
             "beenden": "STOP_RECORDING",
+            "starten": "START_RECORDING",
+            "schließen": "STOP_RECORDING",
+            
+            # French
+            "ouvrir": "START_RECORDING",
+            "arrêter": "STOP_RECORDING",
+            "commencer": "START_RECORDING",
+            "finir": "STOP_RECORDING",
+            "démarrer": "START_RECORDING",
+            "fermer": "STOP_RECORDING",
+            
+            # Italian
+            "aprire": "START_RECORDING",
+            "fermare": "STOP_RECORDING",
+            "iniziare": "START_RECORDING",
+            "finire": "STOP_RECORDING",
+            "cominciare": "START_RECORDING",
+            "chiudere": "STOP_RECORDING",
+            
+            # Portuguese
+            "começar": "START_RECORDING",
+            "iniciar": "START_RECORDING",
+            "fechar": "STOP_RECORDING",
         }
         
         # Audio format configuration
@@ -108,10 +146,51 @@ class SpeechService:
         """Update Azure Speech Config for the specified mother tongue"""
         lang_config = self._get_language_config(mother_tongue)
         self.speech_config.speech_recognition_language = lang_config['azure_code']
-        logger.info(f"🌐 Updated speech recognition language to: {lang_config['display_name']} ({lang_config['azure_code']})")
+        logger.info(f"🌐 Speech recognition updated to: {lang_config['display_name']} ({lang_config['azure_code']})")
+
+    def _detect_mother_tongue_from_text(self, text: str) -> str:
+        """
+        Detect mother tongue from recognized text using keyword analysis.
+        This helps when mother_tongue parameter is not provided.
+        """
+        text_lower = text.lower()
+        scores = {}
+        
+        for lang, config in self.language_configs.items():
+            score = 0
+            # Check wake words for this language
+            for wake_word in config['wake_words']:
+                if wake_word in text_lower:
+                    score += 5  # High weight for wake words
+            
+            # Check for language-specific patterns
+            if lang == 'spanish':
+                spanish_patterns = ['ñ', 'á', 'é', 'í', 'ó', 'ú', 'para', 'con', 'de', 'en', 'la', 'el']
+                for pattern in spanish_patterns:
+                    if pattern in text_lower:
+                        score += 1
+                        
+            elif lang == 'german':
+                german_patterns = ['ü', 'ö', 'ä', 'ß', 'der', 'die', 'das', 'und', 'ich', 'du']
+                for pattern in german_patterns:
+                    if pattern in text_lower:
+                        score += 1
+                        
+            elif lang == 'french':
+                french_patterns = ['ç', 'è', 'é', 'à', 'ù', 'le', 'la', 'et', 'ou', 'je', 'tu']
+                for pattern in french_patterns:
+                    if pattern in text_lower:
+                        score += 1
+            
+            scores[lang] = score
+        
+        # Return the language with highest score, default to spanish
+        detected = max(scores, key=scores.get) if max(scores.values()) > 0 else 'spanish'
+        logger.info(f"🔍 Mother tongue detection scores: {scores} -> Detected: {detected}")
+        return detected
 
     async def process_command(self, audio_path: str, mother_tongue: str = 'spanish') -> str:
-        """Process audio for wake word detection using Azure Speech Services with dynamic language support"""
+        """Process audio for wake word detection with dynamic mother tongue support"""
         working_path = audio_path
         converted_path = None
         
@@ -161,11 +240,17 @@ class SpeechService:
             
             speech_recognizer.stop_continuous_recognition()
 
-            logger.info(f"🎤 Recognized command in {mother_tongue}: '{recognized_text}'")
+            logger.info(f"🎤 Command recognized in {mother_tongue}: '{recognized_text}'")
 
             # Check if recognized text matches any wake words (multi-language)
             if recognized_text in self.WAKE_WORDS:
                 return recognized_text
+            
+            # Also check for partial matches with wake words
+            for wake_word in self.WAKE_WORDS:
+                if wake_word in recognized_text:
+                    logger.info(f"🎯 Found wake word '{wake_word}' in '{recognized_text}'")
+                    return wake_word
             
             return "UNKNOWN_COMMAND"
 
@@ -248,6 +333,17 @@ class SpeechService:
                 recognized_text = await self._process_with_azure(working_path, mother_tongue)
                 if recognized_text and len(recognized_text.strip()) > 0:
                     logger.info(f"✅ Azure recognition successful: '{recognized_text[:50]}...'")
+                    
+                    # If mother_tongue was not explicitly provided, try to detect it
+                    if mother_tongue == 'spanish':  # Default value
+                        detected_tongue = self._detect_mother_tongue_from_text(recognized_text)
+                        if detected_tongue != mother_tongue:
+                            logger.info(f"🔄 Re-processing with detected mother tongue: {detected_tongue}")
+                            # Re-process with detected language for better accuracy
+                            reprocessed_text = await self._process_with_azure(working_path, detected_tongue)
+                            if reprocessed_text and len(reprocessed_text.strip()) > len(recognized_text.strip()):
+                                recognized_text = reprocessed_text
+                    
                     return recognized_text
             except Exception as azure_error:
                 logger.warning(f"⚠️ Azure recognition failed: {azure_error}")
@@ -274,7 +370,7 @@ class SpeechService:
             await self._cleanup_temp_files(converted_path)
 
     async def _process_with_azure(self, audio_path: str, mother_tongue: str) -> str:
-        """Process audio using Azure Speech Services"""
+        """Process audio using Azure Speech Services with dynamic language support"""
         lang_config = self._get_language_config(mother_tongue)
         
         # Create a new speech config for this specific request
@@ -309,7 +405,7 @@ class SpeechService:
             raise Exception("Azure recognition failed with unknown reason")
 
     async def _process_with_google(self, audio_path: str, mother_tongue: str) -> str:
-        """Process audio using Google Speech Recognition as fallback"""
+        """Process audio using Google Speech Recognition as fallback with dynamic language support"""
         lang_config = self._get_language_config(mother_tongue)
         
         # Speech recognition with primary language
@@ -357,17 +453,16 @@ class SpeechService:
             lang: {
                 'display_name': config['display_name'],
                 'azure_code': config['azure_code'],
-                'google_code': config['google_code']
+                'google_code': config['google_code'],
+                'wake_words': config['wake_words']
             }
             for lang, config in self.language_configs.items()
         }
 
     async def detect_language_from_audio(self, audio_path: str) -> str:
         """
-        Attempt to detect the language of spoken audio.
-        This is a basic implementation - more sophisticated detection could be added.
+        Attempt to detect the language of spoken audio by trying multiple languages.
         """
-        # Try recognition with each supported language and see which gives best confidence
         best_language = 'spanish'  # Default
         best_confidence = 0
         
