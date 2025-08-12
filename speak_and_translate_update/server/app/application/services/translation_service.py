@@ -1,4 +1,4 @@
-# translation_service.py - Enhanced to provide structured word-by-word data for UI visualization
+# translation_service.py - Enhanced to provide structured word-by-word data for UI visualization........................
 
 from google.generativeai import GenerativeModel
 import google.generativeai as genai
