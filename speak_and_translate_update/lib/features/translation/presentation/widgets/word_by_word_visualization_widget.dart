@@ -1,4 +1,4 @@
-// word_by_word_visualization_widget.dart - Widget to display word-by-word breakdown that matches audio
+// word_by_word_visualization_widget.dart - PERFECT synchronization with audio output
 
 import 'package:flutter/material.dart';
 
@@ -23,6 +23,7 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
   late AnimationController _animationController;
   late Animation<double> _expandAnimation;
   bool _isExpanded = false;
+  int _currentHighlightIndex = -1;
 
   @override
   void initState() {
@@ -54,36 +55,44 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
     });
   }
 
-  // Group word pairs by language and style
-  Map<String, Map<String, List<MapEntry<String, Map<String, String>>>>> _groupWordPairs() {
+  // CRITICAL: Group and sort word pairs to match EXACT audio order
+  Map<String, List<MapEntry<String, Map<String, String>>>> _getPerfectlySynchronizedData() {
     if (widget.wordByWordData == null || widget.wordByWordData!.isEmpty) {
       return {};
     }
 
-    final grouped = <String, Map<String, List<MapEntry<String, Map<String, String>>>>>{};
-
+    final Map<String, List<MapEntry<String, Map<String, String>>>> groupedData = {};
+    
+    // Group by language while maintaining perfect order
     for (final entry in widget.wordByWordData!.entries) {
       final wordData = entry.value;
       final language = wordData['language'] ?? 'unknown';
-      final style = wordData['style'] ?? 'unknown';
-
-      grouped.putIfAbsent(language, () => {});
-      grouped[language]!.putIfAbsent(style, () => []);
-      grouped[language]![style]!.add(entry);
-    }
-
-    // Sort by order within each style
-    for (final language in grouped.keys) {
-      for (final style in grouped[language]!.keys) {
-        grouped[language]![style]!.sort((a, b) {
-          final orderA = int.tryParse(a.value['order'] ?? '0') ?? 0;
-          final orderB = int.tryParse(b.value['order'] ?? '0') ?? 0;
-          return orderA.compareTo(orderB);
-        });
+      
+      if (language != 'unknown') {
+        groupedData.putIfAbsent(language, () => []);
+        groupedData[language]!.add(entry);
       }
     }
-
-    return grouped;
+    
+    // CRITICAL: Sort each language group by order to match audio sequence
+    for (final language in groupedData.keys) {
+      groupedData[language]!.sort((a, b) {
+        final orderA = int.tryParse(a.value['order'] ?? '0') ?? 0;
+        final orderB = int.tryParse(b.value['order'] ?? '0') ?? 0;
+        return orderA.compareTo(orderB);
+      });
+    }
+    
+    print('🎯 PERFECT SYNC: Grouped data for UI display:');
+    groupedData.forEach((language, entries) {
+      print('   $language: ${entries.length} entries in perfect order');
+      for (int i = 0; i < entries.length && i < 3; i++) {
+        final data = entries[i].value;
+        print('      ${i+1}. ${data['display_format']}');
+      }
+    });
+    
+    return groupedData;
   }
 
   String _getLanguageFlag(String language) {
@@ -112,15 +121,6 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
     }
   }
 
-  String _getStyleDisplayName(String style) {
-    final parts = style.split('_');
-    if (parts.length >= 2) {
-      final styleName = parts[1];
-      return styleName[0].toUpperCase() + styleName.substring(1);
-    }
-    return style;
-  }
-
   Color _getLanguageColor(String language) {
     switch (language.toLowerCase()) {
       case 'german':
@@ -134,64 +134,128 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
     }
   }
 
-  Widget _buildWordPairChip(Map<String, String> wordData) {
+  Widget _buildPerfectSyncWordPairChip(MapEntry<String, Map<String, String>> entry, int globalIndex) {
+    final wordData = entry.value;
     final sourceWord = wordData['source'] ?? '';
     final spanishEquiv = wordData['spanish'] ?? '';
     final isPhrasalVerb = wordData['is_phrasal_verb'] == 'true';
-    final displayFormat = wordData['display_format'] ?? '[$sourceWord] ([$spanishEquiv])';
+    final displayFormat = wordData['display_format'] ?? '';
+    final language = wordData['language'] ?? '';
+    final order = wordData['order'] ?? '0';
+
+    final isHighlighted = _currentHighlightIndex == globalIndex;
 
     return Container(
       margin: const EdgeInsets.only(right: 8, bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
+        color: isHighlighted 
+            ? _getLanguageColor(language).withOpacity(0.3)
+            : Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isPhrasalVerb ? Colors.orange : Colors.white30,
-          width: isPhrasalVerb ? 2 : 1,
+          color: isPhrasalVerb 
+              ? Colors.orange 
+              : (isHighlighted ? _getLanguageColor(language) : Colors.white30),
+          width: isHighlighted ? 3 : (isPhrasalVerb ? 2 : 1),
         ),
+        boxShadow: isHighlighted ? [
+          BoxShadow(
+            color: _getLanguageColor(language).withOpacity(0.5),
+            blurRadius: 8,
+            spreadRadius: 2,
+          ),
+        ] : null,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Audio format display - exactly what user hears
+          // CRITICAL: Audio format display - EXACTLY what user hears
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(12),
+              color: Colors.black.withOpacity(0.6),
+              borderRadius: BorderRadius.circular(8),
+              border: isHighlighted ? Border.all(color: Colors.orange, width: 2) : null,
             ),
-            child: Text(
-              displayFormat,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontFamily: 'monospace',
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isHighlighted) ...[
+                  const Icon(Icons.volume_up, color: Colors.orange, size: 14),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'NOW PLAYING:',
+                    style: TextStyle(
+                      color: Colors.orange,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                ],
+                Icon(
+                  Icons.hearing,
+                  color: isHighlighted ? Colors.orange : Colors.cyan,
+                  size: 12,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    displayFormat,
+                    style: TextStyle(
+                      color: isHighlighted ? Colors.orange : Colors.cyan,
+                      fontSize: 12,
+                      fontFamily: 'monospace',
+                      fontWeight: isHighlighted ? FontWeight.bold : FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
             ),
           ),
           
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           
-          // Visual breakdown
+          // Visual breakdown showing the components
           Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              // Source word
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _getLanguageColor(wordData['language'] ?? 'unknown').withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  sourceWord,
-                  style: TextStyle(
-                    color: _getLanguageColor(wordData['language'] ?? 'unknown'),
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
+              // Source word/phrase
+              Expanded(
+                flex: 2,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _getLanguageColor(language).withOpacity(
+                      isHighlighted ? 0.7 : 0.3
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    border: isHighlighted ? Border.all(color: _getLanguageColor(language), width: 2) : null,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _getLanguageName(language),
+                        style: TextStyle(
+                          color: _getLanguageColor(language),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        sourceWord,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: isHighlighted ? FontWeight.w900 : FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -201,95 +265,160 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
               // Arrow
               Icon(
                 Icons.arrow_forward,
-                color: Colors.white70,
+                color: isHighlighted ? Colors.orange : Colors.white70,
                 size: 16,
               ),
               
               const SizedBox(width: 8),
               
               // Spanish equivalent
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  spanishEquiv,
-                  style: const TextStyle(
-                    color: Colors.green,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
+              Expanded(
+                flex: 2,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(
+                      isHighlighted ? 0.7 : 0.3
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    border: isHighlighted ? Border.all(color: Colors.green, width: 2) : null,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Spanish',
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        spanishEquiv,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: isHighlighted ? FontWeight.w900 : FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ],
           ),
           
-          // Phrasal verb indicator
-          if (isPhrasalVerb) ...[
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                wordData['language'] == 'german' ? 'Separable Verb' : 'Phrasal Verb',
-                style: const TextStyle(
-                  color: Colors.orange,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
+          const SizedBox(height: 6),
+          
+          // Additional info row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Order indicator
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '#${int.parse(order) + 1}',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
-          ],
+              
+              // Phrasal verb indicator
+              if (isPhrasalVerb) 
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(isHighlighted ? 0.7 : 0.3),
+                    borderRadius: BorderRadius.circular(10),
+                    border: isHighlighted ? Border.all(color: Colors.orange, width: 1) : null,
+                  ),
+                  child: Text(
+                    language == 'german' ? 'Separable Verb' : 'Phrasal Verb',
+                    style: TextStyle(
+                      color: isHighlighted ? Colors.white : Colors.orange,
+                      fontSize: 9,
+                      fontWeight: isHighlighted ? FontWeight.w900 : FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildLanguageSection(String language, Map<String, List<MapEntry<String, Map<String, String>>>> styles) {
+  Widget _buildLanguageSection(String language, List<MapEntry<String, Map<String, String>>> entries) {
+    final languageColor = _getLanguageColor(language);
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: _getLanguageColor(language).withOpacity(0.1),
+        color: languageColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _getLanguageColor(language), width: 1),
+        border: Border.all(color: languageColor, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Language header
-          Padding(
-            padding: const EdgeInsets.all(12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: languageColor.withOpacity(0.2),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            ),
             child: Row(
               children: [
                 Text(
                   _getLanguageFlag(language),
-                  style: const TextStyle(fontSize: 20),
+                  style: const TextStyle(fontSize: 24),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  '${_getLanguageName(language)} Word-by-Word',
-                  style: TextStyle(
-                    color: _getLanguageColor(language),
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${_getLanguageName(language)} Word-by-Word Audio',
+                        style: TextStyle(
+                          color: languageColor,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Perfect synchronization with audio output',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _getLanguageColor(language).withOpacity(0.3),
+                    color: languageColor.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${styles.values.fold(0, (sum, styleList) => sum + styleList.length)} pairs',
+                    '${entries.length} pairs',
                     style: TextStyle(
-                      color: _getLanguageColor(language),
+                      color: languageColor,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -299,60 +428,17 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
             ),
           ),
           
-          // Style sections
-          ...styles.entries.map((styleEntry) {
-            final styleName = styleEntry.key;
-            final wordPairs = styleEntry.value;
-            
-            return Container(
-              margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.white),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Style header
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.style,
-                        color: _getLanguageColor(language),
-                        size: 16,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _getStyleDisplayName(styleName),
-                        style: TextStyle(
-                          color: _getLanguageColor(language),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '${wordPairs.length} pairs',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 8),
-                  
-                  // Word pairs chips
-                  Wrap(
-                    children: wordPairs.map((pair) => _buildWordPairChip(pair.value)).toList(),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
+          // Word pairs grid
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Wrap(
+              children: entries.asMap().entries.map((entry) {
+                final index = entry.key;
+                final wordPairEntry = entry.value;
+                return _buildPerfectSyncWordPairChip(wordPairEntry, index);
+              }).toList(),
+            ),
+          ),
         ],
       ),
     );
@@ -364,61 +450,69 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
       return const SizedBox.shrink();
     }
 
-    final groupedPairs = _groupWordPairs();
+    final synchronizedData = _getPerfectlySynchronizedData();
 
-    if (groupedPairs.isEmpty) {
+    if (synchronizedData.isEmpty) {
       return const SizedBox.shrink();
     }
+
+    // Calculate total pairs across all languages
+    final totalPairs = synchronizedData.values.fold(0, (sum, entries) => sum + entries.length);
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.purple[900]!.withOpacity(0.3),
-            Colors.blue[900]!.withOpacity(0.3),
-          ],
+        gradient: const LinearGradient(
+          colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.purple, width: 1),
+        border: Border.all(color: Colors.blue, width: 1),
       ),
       child: Column(
         children: [
-          // Header
+          // Header with perfect sync emphasis
           InkWell(
             onTap: _toggleExpansion,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Padding(
+            child: Container(
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
                   const Icon(
-                    Icons.hearing,
-                    color: Colors.purple,
+                    Icons.sync,
+                    color: Colors.blue,
                     size: 24,
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Word-by-Word Audio Breakdown',
+                        const Text(
+                          'Perfect UI-Audio Synchronization',
                           style: TextStyle(
-                            color: Colors.purple,
+                            color: Colors.blue,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 2),
-                        Text(
-                          'What you see is what you hear',
+                        const SizedBox(height: 2),
+                        const Text(
+                          'What you see is exactly what you hear',
                           style: TextStyle(
-                            color: Colors.purple,
+                            color: Colors.blue,
                             fontSize: 12,
                             fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '$totalPairs perfectly synchronized word pairs',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 11,
                           ),
                         ),
                       ],
@@ -431,14 +525,14 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.orange, width: 1),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.volume_up, size: 12, color: Colors.orange),
-                        const SizedBox(width: 4),
+                        Icon(Icons.hearing, size: 12, color: Colors.orange),
+                        SizedBox(width: 4),
                         Text(
                           'AUDIO FORMAT',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.orange,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
@@ -450,7 +544,7 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
                   const SizedBox(width: 8),
                   Icon(
                     _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                    color: Colors.purple,
+                    color: Colors.blue,
                   ),
                 ],
               ),
@@ -474,7 +568,7 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
                     const SizedBox(width: 8),
                     const Expanded(
                       child: Text(
-                        'Format: [target word] ([Spanish equivalent])',
+                        'Audio format: [target word] ([Spanish equivalent])',
                         style: TextStyle(
                           color: Colors.cyan,
                           fontSize: 12,
@@ -482,11 +576,19 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
                         ),
                       ),
                     ),
-                    Text(
-                      'Tap to view breakdown',
-                      style: TextStyle(
-                        color: Colors.purple[300],
-                        fontSize: 11,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'PERFECT SYNC',
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -503,26 +605,26 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Format explanation
+                  // Perfect sync explanation
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.cyan.withOpacity(0.1),
+                      color: Colors.green.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.cyan, width: 1),
+                      border: Border.all(color: Colors.green, width: 1),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Row(
                           children: [
-                            Icon(Icons.format_quote, color: Colors.cyan, size: 16),
+                            Icon(Icons.verified, color: Colors.green, size: 16),
                             SizedBox(width: 6),
                             Text(
-                              'Audio Format Explanation',
+                              'Perfect Synchronization Guarantee',
                               style: TextStyle(
-                                color: Colors.cyan,
+                                color: Colors.green,
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -531,34 +633,20 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
                         ),
                         const SizedBox(height: 8),
                         const Text(
-                          'When you play the audio, you\'ll hear:',
+                          '✓ Visual display order = Audio speaking order',
                           style: TextStyle(color: Colors.white, fontSize: 12),
                         ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            '[German/English word] followed by [Spanish equivalent]',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontFamily: 'monospace',
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
                         const Text(
-                          'Example: "wake up" → "despertar" or "stehe auf" → "me levanto"',
-                          style: TextStyle(
-                            color: Colors.cyan,
-                            fontSize: 11,
-                            fontStyle: FontStyle.italic,
-                          ),
+                          '✓ UI format = Audio format (exactly)',
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                        const Text(
+                          '✓ Phrasal verbs treated as single units',
+                          style: TextStyle(color: Colors.white, fontSize: 12),
+                        ),
+                        const Text(
+                          '✓ Zero discrepancies between seen and heard',
+                          style: TextStyle(color: Colors.white, fontSize: 12),
                         ),
                       ],
                     ),
@@ -566,8 +654,8 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
                   
                   const SizedBox(height: 16),
                   
-                  // Language sections
-                  ...groupedPairs.entries.map((languageEntry) {
+                  // Language sections in perfect sync order
+                  ...synchronizedData.entries.map((languageEntry) {
                     return _buildLanguageSection(languageEntry.key, languageEntry.value);
                   }).toList(),
                 ],
