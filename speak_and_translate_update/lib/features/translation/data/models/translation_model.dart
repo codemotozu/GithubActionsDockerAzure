@@ -1,3 +1,4 @@
+// Updated translation_model.dart to handle enhanced word-by-word UI data
 
 class Translation {
   final String originalText;
@@ -6,8 +7,8 @@ class Translation {
   final String targetLanguage;
   final String? audioPath;
   final Map<String, String>? translations;
-  final Map<String, Map<String, String>>? wordByWord;
-  final Map<String, Map<String, String>>? grammarExplanations; // Changed from Map<String,String>?
+  final Map<String, Map<String, String>>? wordByWord; // Enhanced for UI visualization
+  final Map<String, Map<String, String>>? grammarExplanations;
 
   Translation({
     required this.originalText,
@@ -16,7 +17,7 @@ class Translation {
     required this.targetLanguage,
     this.audioPath,
     this.translations,
-    this.wordByWord,
+    this.wordByWord, // Now contains structured UI data
     this.grammarExplanations,
   });
 
@@ -51,5 +52,97 @@ class Translation {
             )
           : null,
     );
+  }
+
+  // Helper method to check if word-by-word data is available
+  bool get hasWordByWordData => wordByWord != null && wordByWord!.isNotEmpty;
+
+  // Helper method to get word pairs for a specific language
+  List<MapEntry<String, Map<String, String>>> getWordPairsForLanguage(String language) {
+    if (!hasWordByWordData) return [];
+    
+    return wordByWord!.entries
+        .where((entry) => entry.value['language'] == language)
+        .toList();
+  }
+
+  // Helper method to get all available languages in word-by-word data
+  Set<String> getAvailableLanguages() {
+    if (!hasWordByWordData) return {};
+    
+    return wordByWord!.values
+        .map((data) => data['language'] ?? 'unknown')
+        .toSet();
+  }
+
+  // Helper method to check if a specific language has word-by-word data
+  bool hasWordByWordForLanguage(String language) {
+    return getWordPairsForLanguage(language).isNotEmpty;
+  }
+
+  // Helper method to get the display format for debugging
+  Map<String, List<String>> getDisplayFormats() {
+    if (!hasWordByWordData) return {};
+    
+    final formats = <String, List<String>>{};
+    
+    for (final entry in wordByWord!.entries) {
+      final language = entry.value['language'] ?? 'unknown';
+      final displayFormat = entry.value['display_format'] ?? 'No format';
+      
+      formats.putIfAbsent(language, () => []);
+      formats[language]!.add(displayFormat);
+    }
+    
+    return formats;
+  }
+
+  // Helper method to count word pairs by language
+  Map<String, int> getWordPairCounts() {
+    if (!hasWordByWordData) return {};
+    
+    final counts = <String, int>{};
+    
+    for (final entry in wordByWord!.entries) {
+      final language = entry.value['language'] ?? 'unknown';
+      counts[language] = (counts[language] ?? 0) + 1;
+    }
+    
+    return counts;
+  }
+
+  // Debug method to print word-by-word structure
+  void debugPrintWordByWordStructure() {
+    if (!hasWordByWordData) {
+      print('📝 No word-by-word data available');
+      return;
+    }
+
+    print('\n📝 WORD-BY-WORD DATA STRUCTURE:');
+    print('='*50);
+    
+    final languages = getAvailableLanguages();
+    print('Available languages: ${languages.join(', ')}');
+    
+    final counts = getWordPairCounts();
+    print('Word pair counts: $counts');
+    
+    print('\nDetailed breakdown:');
+    for (final entry in wordByWord!.entries) {
+      final key = entry.key;
+      final data = entry.value;
+      
+      print('Key: $key');
+      print('  Source: ${data['source']}');
+      print('  Spanish: ${data['spanish']}');
+      print('  Language: ${data['language']}');
+      print('  Style: ${data['style']}');
+      print('  Order: ${data['order']}');
+      print('  Is Phrasal Verb: ${data['is_phrasal_verb']}');
+      print('  Display Format: ${data['display_format']}');
+      print('');
+    }
+    
+    print('='*50);
   }
 }

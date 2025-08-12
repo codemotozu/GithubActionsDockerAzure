@@ -1,4 +1,4 @@
-# server/app/infrastructure/api/routes.py - Updated with EXACT dynamic mother tongue logic per requirements
+# server/app/infrastructure/api/routes.py - Enhanced with word-by-word debugging and validation
 
 import logging
 import tempfile
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup logic
-    logger.info("🚀 Starting Dynamic Mother Tongue Translation API")
+    logger.info("🚀 Starting Dynamic Mother Tongue Translation API with Enhanced UI Visualization")
     logger.info("📋 EXACT Implementation per Requirements:")
     logger.info("   1. Spanish mother tongue → German and/or English based on selections")
     logger.info("   2. English mother tongue → Spanish (automatic) + German if selected")
@@ -37,6 +37,7 @@ async def lifespan(app: FastAPI):
     logger.info("   5. Format: [target word] ([Spanish equivalent])")
     logger.info("   6. Dynamic behavior - no static code")
     logger.info("   7. AI-powered translations - no huge dictionaries")
+    logger.info("   8. 📱 ENHANCED: UI visualization matches audio exactly")
     
     yield  # App runs here
     
@@ -44,8 +45,8 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down Dynamic Mother Tongue Translation API")
 
 app = FastAPI(
-    title="Dynamic Mother Tongue Translation API",
-    description="EXACT implementation per requirements: Dynamic translation based on user's mother tongue with intelligent target language selection",
+    title="Enhanced Dynamic Mother Tongue Translation API",
+    description="EXACT implementation per requirements: Dynamic translation with UI visualization that matches audio exactly",
     root_path="",
     openapi_url="/openapi.json"
 )
@@ -207,8 +208,10 @@ def _log_dynamic_translation_setup(text: str, style_preferences: TranslationStyl
     
     if style_preferences.german_word_by_word or style_preferences.english_word_by_word:
         logger.info(f"   🎯 Audio format: [target word] ([Spanish equivalent])")
+        logger.info(f"   📱 UI Visualization: Visual breakdown will match audio exactly")
     else:
         logger.info(f"   🎯 Audio format: Simple translation reading")
+        logger.info(f"   📱 UI Visualization: No word-by-word breakdown shown")
     
     # Log style selections
     logger.info(f"🇩🇪 German Styles:")
@@ -261,6 +264,45 @@ def _validate_dynamic_setup(style_preferences: TranslationStylePreferences) -> b
         # Other languages need at least one target
         return has_german or has_english
 
+def _log_word_by_word_debug_info(translation: Translation):
+    """Log detailed debug information about word-by-word structure"""
+    logger.info("\n📱 WORD-BY-WORD UI VISUALIZATION DEBUG:")
+    logger.info("="*60)
+    
+    if not translation.word_by_word:
+        logger.info("   📝 No word-by-word data available for UI")
+        return
+    
+    # Log summary
+    languages = translation.get_available_languages()
+    counts = translation.count_word_pairs_by_language()
+    
+    logger.info(f"   📊 Available languages: {', '.join(languages)}")
+    logger.info(f"   📊 Word pair counts: {counts}")
+    
+    # Log phrasal verbs
+    for language in languages:
+        phrasal_verbs = translation.get_phrasal_verbs_by_language(language)
+        if phrasal_verbs:
+            logger.info(f"   🔗 {language.title()} phrasal/separable verbs: {len(phrasal_verbs)}")
+            for verb in phrasal_verbs[:3]:  # Show first 3 examples
+                logger.info(f"      - {verb['display_format']}")
+    
+    # Log detailed structure
+    logger.info("   📝 Detailed word-by-word structure:")
+    for key, data in list(translation.word_by_word.items())[:5]:  # Show first 5 entries
+        logger.info(f"      Key: {key}")
+        logger.info(f"         Source: {data.get('source')}")
+        logger.info(f"         Spanish: {data.get('spanish')}")
+        logger.info(f"         Display: {data.get('display_format')}")
+        logger.info(f"         Language: {data.get('language')}")
+        logger.info(f"         Phrasal: {data.get('is_phrasal_verb')}")
+    
+    if len(translation.word_by_word) > 5:
+        logger.info(f"      ... and {len(translation.word_by_word) - 5} more entries")
+    
+    logger.info("="*60)
+
 # Health check endpoint
 @app.get("/health")
 async def health_check():
@@ -284,8 +326,8 @@ async def health_check():
 
     return {
         "status": "healthy",
-        "service": "Dynamic Mother Tongue Translation API",
-        "version": "2.0 - EXACT Requirements Implementation",
+        "service": "Enhanced Dynamic Mother Tongue Translation API",
+        "version": "2.1 - UI Visualization Enhancement",
         "timestamp": datetime.utcnow().isoformat(),
         "requirements_implementation": {
             "spanish_mother_tongue": "German and/or English based on selections",
@@ -293,6 +335,9 @@ async def health_check():
             "german_mother_tongue": "Spanish (automatic) + English if selected",
             "word_by_word_audio": "Only if user selects 'word by word audio'",
             "audio_format": "[target word] ([Spanish equivalent])",
+            "ui_visualization": "Visual display matches audio exactly",
+            "phrasal_verbs": "Treated as single units: [wake up] ([despertar])",
+            "separable_verbs": "Treated as single units: [stehe auf] ([me levanto])",
             "ai_powered": "No huge dictionaries - rely on AI",
             "dynamic_behavior": "No static code - based on user preferences"
         },
@@ -306,24 +351,35 @@ async def health_check():
 async def root():
     return {
         "status": "ok", 
-        "service": "Dynamic Mother Tongue Translation API",
-        "description": "EXACT implementation per requirements: Dynamic translation based on user's mother tongue",
-        "version": "2.0",
+        "service": "Enhanced Dynamic Mother Tongue Translation API",
+        "description": "EXACT implementation per requirements: Dynamic translation with UI visualization matching audio",
+        "version": "2.1",
         "requirements": {
             "1": "Spanish mother tongue → German and/or English based on selections",
             "2": "English mother tongue → Spanish (automatic) + German if selected", 
             "3": "German mother tongue → Spanish (automatic) + English if selected",
             "4": "Word-by-word audio ONLY if user selects 'word by word audio'",
+            "4.1": "UI visualization matches audio exactly - what you see is what you hear",
             "5": "Format: [target word] ([Spanish equivalent])",
             "6": "Dynamic behavior - no static code",
-            "7": "AI-powered translations - no huge dictionaries"
+            "7": "AI-powered translations - no huge dictionaries",
+            "8": "Phrasal verbs: [wake up] ([despertar]) - single units",
+            "9": "German separable verbs: [stehe auf] ([me levanto]) - single units"
+        },
+        "ui_features": {
+            "word_by_word_visualization": "Shows exactly what is heard in audio",
+            "phrasal_verb_detection": "Identifies and highlights phrasal/separable verbs",
+            "language_grouping": "Groups word pairs by language and style",
+            "audio_format_display": "Shows the exact [word] ([spanish]) format",
+            "expandable_interface": "Collapsible sections for better UX"
         },
         "endpoints": {
-            "/api/conversation": "Main dynamic translation endpoint",
+            "/api/conversation": "Main dynamic translation endpoint with enhanced UI data",
             "/api/speech-to-text": "Speech recognition with mother tongue detection",
             "/api/voice-command": "Voice command processing",
             "/api/audio/{filename}": "Audio file serving",
-            "/health": "Health check with requirements status"
+            "/health": "Health check with requirements status",
+            "/debug/word-by-word": "Debug endpoint for word-by-word structure"
         }
     }
 
@@ -331,6 +387,7 @@ async def root():
 async def start_conversation(prompt: PromptRequest):
     """
     Main conversation endpoint with EXACT dynamic mother tongue translation per requirements.
+    Enhanced with detailed UI visualization data.
     """
     try:
         # Set up default style preferences if none provided
@@ -369,7 +426,7 @@ async def start_conversation(prompt: PromptRequest):
             mother_tongue=mother_tongue
         )
         
-        # Log the successful completion
+        # Log the successful completion with UI debug info
         logger.info(f"✅ Dynamic translation completed successfully")
         logger.info(f"   Input ('{response.source_language}'): {response.original_text}")
         logger.info(f"   Output length: {len(response.translated_text)} characters")
@@ -383,6 +440,9 @@ async def start_conversation(prompt: PromptRequest):
             )
             logger.info(f"   Audio type: {'Word-by-word breakdown' if word_by_word_requested else 'Simple translation reading'}")
         
+        # ENHANCED: Log word-by-word debug information for UI
+        _log_word_by_word_debug_info(response)
+        
         return response
         
     except HTTPException as he:
@@ -392,6 +452,78 @@ async def start_conversation(prompt: PromptRequest):
         logger.error(f"❌ Dynamic translation error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Dynamic translation failed: {str(e)}")
 
+@app.get("/debug/word-by-word")
+async def debug_word_by_word_structure():
+    """
+    Debug endpoint to show word-by-word data structure.
+    Useful for frontend developers to understand the data format.
+    """
+    try:
+        # Create a sample translation with word-by-word data
+        sample_translation = Translation(
+            original_text="I want to wake up early and go out",
+            translated_text="Sample translation with word-by-word data",
+            source_language="english",
+            target_language="multi"
+        )
+        
+        # Add sample word-by-word entries
+        sample_translation.add_word_by_word_entry(
+            key="english_colloquial_0_wake_up",
+            source="wake up",
+            spanish="despertar",
+            language="english",
+            style="english_colloquial",
+            order=0,
+            is_phrasal_verb=True
+        )
+        
+        sample_translation.add_word_by_word_entry(
+            key="english_colloquial_1_go_out",
+            source="go out",
+            spanish="salir",
+            language="english",
+            style="english_colloquial",
+            order=1,
+            is_phrasal_verb=True
+        )
+        
+        sample_translation.add_word_by_word_entry(
+            key="english_colloquial_2_early",
+            source="early",
+            spanish="temprano",
+            language="english",
+            style="english_colloquial",
+            order=2,
+            is_phrasal_verb=False
+        )
+        
+        # Generate debug information
+        debug_info = sample_translation.debug_word_by_word_structure()
+        
+        return {
+            "debug_info": debug_info,
+            "sample_data": sample_translation.word_by_word,
+            "available_languages": sample_translation.get_available_languages(),
+            "word_pair_counts": sample_translation.count_word_pairs_by_language(),
+            "phrasal_verbs": {
+                lang: sample_translation.get_phrasal_verbs_by_language(lang)
+                for lang in sample_translation.get_available_languages()
+            },
+            "ui_format_explanation": {
+                "description": "Each entry contains all data needed for UI visualization",
+                "key_format": "language_style_order_sourceword",
+                "display_format": "Exactly what user hears: [source] ([spanish])",
+                "is_phrasal_verb": "Boolean flag for special highlighting",
+                "order": "Sequence number for audio playback order"
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Debug endpoint error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Debug endpoint failed: {str(e)}")
+
+# Keep all other existing endpoints unchanged...
 @app.post("/api/speech-to-text")
 async def speech_to_text(file: UploadFile = File(...), mother_tongue: Optional[str] = "auto"):
     """
@@ -550,6 +682,7 @@ async def get_supported_languages():
             },
             "word_by_word_audio": "Only generated if user selects 'word by word audio' for specific languages",
             "audio_format": "[target word] ([Spanish equivalent])",
+            "ui_visualization": "Visual display matches audio exactly",
             "description": "EXACT implementation per requirements - completely dynamic based on user preferences"
         }
     except Exception as e:
