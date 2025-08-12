@@ -94,7 +94,7 @@ class EnhancedTTSService:
             self.translation_model = genai.GenerativeModel(
                 model_name="gemini-2.0-flash",
                 generation_config={
-                    "temperature": 0.2,  # Lower temperature for more consistent translations-----
+                    "temperature": 0.2,  # Lower temperature for more consistent translations
                     "top_p": 0.8,
                     "max_output_tokens": 150,
                 }

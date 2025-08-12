@@ -1,4 +1,4 @@
-// Updated conversation_screen.dart with word-by-word visualization matching audio
+// Updated conversation_screen.dart with EXACT dynamic mother tongue display per requirements
 
 import 'dart:async';
 
@@ -11,7 +11,6 @@ import '../../data/models/chat_message_model.dart';
 import '../../domain/repositories/translation_repository.dart';
 import '../providers/speech_provider.dart';
 import '../providers/translation_provider.dart';
-import '../widgets/word_by_word_visualization_widget.dart';
 
 class ConversationScreen extends ConsumerStatefulWidget {
   final String prompt;
@@ -581,13 +580,6 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                   ),
                 ),
                 
-                // CRITICAL: Word-by-Word Visualization Widget
-                // This shows exactly what the user hears in the audio
-                WordByWordVisualizationWidget(
-                  wordByWordData: translation.wordByWord,
-                  isVisible: translation.wordByWord != null && translation.wordByWord!.isNotEmpty,
-                ),
-                
                 // EXACT per requirements: Show audio format information
                 if (translation.audioPath != null) ...[
                   const SizedBox(height: 8),
@@ -643,30 +635,6 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                                   '• English word-by-word breakdown included',
                                   style: TextStyle(color: Colors.cyan, fontSize: 10),
                                 ),
-                              const SizedBox(height: 6),
-                              Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: Colors.purple.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(color: Colors.purple, width: 1),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.visibility, color: Colors.purple, size: 12),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'Visual breakdown above matches audio exactly',
-                                      style: TextStyle(
-                                        color: Colors.purple,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
                             ] else ...[
                               const SizedBox(height: 4),
                               const Text(

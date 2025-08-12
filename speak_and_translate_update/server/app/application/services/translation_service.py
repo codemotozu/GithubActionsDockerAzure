@@ -1,4 +1,4 @@
-# translation_service.py - Enhanced to provide structured word-by-word data for UI visualization........................
+# translation_service.py - Enhanced with resilient audio handling for Azure Speech 429 errors
 
 from google.generativeai import GenerativeModel
 import google.generativeai as genai
@@ -90,10 +90,15 @@ class TranslationService:
     def _create_dynamic_mother_tongue_prompt(self, input_text: str, mother_tongue: str, style_preferences) -> str:
         """
         Create a dynamic prompt based on detected mother tongue and user preferences.
-        EXACT implementation of the requirements from paste.txt - Enhanced for UI visualization
+        EXACT implementation of the requirements from paste.txt
         """
         
         print(f"🎯 Creating prompt for mother tongue: {mother_tongue.upper()}")
+        
+        # EXACT LOGIC FROM REQUIREMENTS:
+        # 1. Spanish mother tongue -> German and/or English based on selections
+        # 2. English mother tongue -> Spanish (automatic) + German if selected
+        # 3. German mother tongue -> Spanish (automatic) + English if selected
         
         target_languages = []
         audio_instructions = []
@@ -182,7 +187,7 @@ class TranslationService:
         print(f"🎯 Final target languages: {target_languages}")
         print(f"🎵 Audio instructions: {audio_instructions}")
 
-        # Build the dynamic prompt - EXACT format from requirements with enhanced UI visualization
+        # Build the dynamic prompt - EXACT format from requirements
         prompt_parts = [
             f"""You are an expert multilingual translator. The user's mother tongue is {mother_tongue.upper()}.
 
@@ -192,20 +197,13 @@ CRITICAL DYNAMIC TRANSLATION RULES:
 - For word-by-word breakdowns: [target word/phrase] ([Spanish equivalent])
 - Group phrasal verbs, separable verbs, and compound expressions as single units
 - ONLY generate word-by-word if specifically requested for that language
-- Make word-by-word pairs clear and structured for UI display
-
-IMPORTANT FOR UI VISUALIZATION:
-- For phrasal verbs like "wake up", treat as one unit: [wake up] ([despertar])
-- For German separable verbs like "stehe auf", treat as one unit: [stehe auf] ([me levanto])
-- Keep Spanish equivalents concise (1-3 words maximum)
-- Ensure word pairs are clearly formatted and easy to parse
 
 Text to translate: "{input_text}"
 
 REQUIRED TRANSLATIONS:"""
         ]
 
-        # Add translations based on mother tongue and selections
+        # EXACT IMPLEMENTATION: Add translations based on mother tongue and selections
         if 'german' in target_languages:
             prompt_parts.append(f"\n{'='*50}")
             prompt_parts.append("GERMAN TRANSLATIONS:")
@@ -214,22 +212,22 @@ REQUIRED TRANSLATIONS:"""
             if style_preferences.german_native:
                 prompt_parts.append('* German Native Style:\n"[Natural German translation]"')
                 if style_preferences.german_word_by_word:
-                    prompt_parts.append('* German Native Word-by-Word German-Spanish (for UI display):\n"[German word/phrase] ([Spanish translation]) [next German word/phrase] ([Spanish translation]) ..."')
+                    prompt_parts.append('* German Native Word-by-Word German-Spanish:\n"[German word/phrase] ([Spanish translation]) [next German word/phrase] ([Spanish translation]) ..."')
                     
             if style_preferences.german_colloquial:
                 prompt_parts.append('* German Colloquial Style:\n"[Colloquial German translation]"')
                 if style_preferences.german_word_by_word:
-                    prompt_parts.append('* German Colloquial Word-by-Word German-Spanish (for UI display):\n"[German word/phrase] ([Spanish translation]) [next German word/phrase] ([Spanish translation]) ..."')
+                    prompt_parts.append('* German Colloquial Word-by-Word German-Spanish:\n"[German word/phrase] ([Spanish translation]) [next German word/phrase] ([Spanish translation]) ..."')
                     
             if style_preferences.german_informal:
                 prompt_parts.append('* German Informal Style:\n"[Informal German translation]"')
                 if style_preferences.german_word_by_word:
-                    prompt_parts.append('* German Informal Word-by-Word German-Spanish (for UI display):\n"[German word/phrase] ([Spanish translation]) [next German word/phrase] ([Spanish translation]) ..."')
+                    prompt_parts.append('* German Informal Word-by-Word German-Spanish:\n"[German word/phrase] ([Spanish translation]) [next German word/phrase] ([Spanish translation]) ..."')
                     
             if style_preferences.german_formal:
                 prompt_parts.append('* German Formal Style:\n"[Formal German translation]"')
                 if style_preferences.german_word_by_word:
-                    prompt_parts.append('* German Formal Word-by-Word German-Spanish (for UI display):\n"[German word/phrase] ([Spanish translation]) [next German word/phrase] ([Spanish translation]) ..."')
+                    prompt_parts.append('* German Formal Word-by-Word German-Spanish:\n"[German word/phrase] ([Spanish translation]) [next German word/phrase] ([Spanish translation]) ..."')
 
         if 'english' in target_languages:
             prompt_parts.append(f"\n{'='*50}")
@@ -239,41 +237,39 @@ REQUIRED TRANSLATIONS:"""
             if style_preferences.english_native:
                 prompt_parts.append('* English Native Style:\n"[Natural English translation]"')
                 if style_preferences.english_word_by_word:
-                    prompt_parts.append('* English Native Word-by-Word English-Spanish (for UI display):\n"[English word/phrase] ([Spanish translation]) [next English word/phrase] ([Spanish translation]) ..."')
+                    prompt_parts.append('* English Native Word-by-Word English-Spanish:\n"[English word/phrase] ([Spanish translation]) [next English word/phrase] ([Spanish translation]) ..."')
                     
             if style_preferences.english_colloquial:
                 prompt_parts.append('* English Colloquial Style:\n"[Colloquial English translation]"')
                 if style_preferences.english_word_by_word:
-                    prompt_parts.append('* English Colloquial Word-by-Word English-Spanish (for UI display):\n"[English word/phrase] ([Spanish translation]) [next English word/phrase] ([Spanish translation]) ..."')
+                    prompt_parts.append('* English Colloquial Word-by-Word English-Spanish:\n"[English word/phrase] ([Spanish translation]) [next English word/phrase] ([Spanish translation]) ..."')
                     
             if style_preferences.english_informal:
                 prompt_parts.append('* English Informal Style:\n"[Informal English translation]"')
                 if style_preferences.english_word_by_word:
-                    prompt_parts.append('* English Informal Word-by-Word English-Spanish (for UI display):\n"[English word/phrase] ([Spanish translation]) [next English word/phrase] ([Spanish translation]) ..."')
+                    prompt_parts.append('* English Informal Word-by-Word English-Spanish:\n"[English word/phrase] ([Spanish translation]) [next English word/phrase] ([Spanish translation]) ..."')
                     
             if style_preferences.english_formal:
                 prompt_parts.append('* English Formal Style:\n"[Formal English translation]"')
                 if style_preferences.english_word_by_word:
-                    prompt_parts.append('* English Formal Word-by-Word English-Spanish (for UI display):\n"[English word/phrase] ([Spanish translation]) [next English word/phrase] ([Spanish translation]) ..."')
+                    prompt_parts.append('* English Formal Word-by-Word English-Spanish:\n"[English word/phrase] ([Spanish translation]) [next English word/phrase] ([Spanish translation]) ..."')
 
         if 'spanish' in target_languages:
             prompt_parts.append(f"\n{'='*50}")
             prompt_parts.append("SPANISH TRANSLATIONS:")
             prompt_parts.append(f"{'='*50}")
             prompt_parts.append('* Spanish Colloquial Style:\n"[Natural Spanish translation]"')
+            # Note: Spanish doesn't need word-by-word since it's the reference language
 
         # Add specific instructions for word-by-word format
         if audio_instructions:
             prompt_parts.append(f"\n{'='*50}")
-            prompt_parts.append("WORD-BY-WORD FORMAT REQUIREMENTS FOR UI VISUALIZATION:")
+            prompt_parts.append("WORD-BY-WORD FORMAT REQUIREMENTS:")
             prompt_parts.append(f"{'='*50}")
             prompt_parts.append("- Use EXACT format: [target word/phrase] ([Spanish equivalent])")
             prompt_parts.append("- Group phrasal verbs as single units: [wake up] ([despertar])")
             prompt_parts.append("- Group separable verbs as single units: [stehe auf] ([me levanto])")
-            prompt_parts.append("- Group compound expressions as units: [came up with] ([inventó])")
             prompt_parts.append("- Use Spanish as the reference language for ALL word-by-word breakdowns")
-            prompt_parts.append("- Make pairs clearly parseable for UI display")
-            prompt_parts.append("- Keep Spanish equivalents concise (1-3 words)")
 
         final_prompt = "\n".join(prompt_parts)
         print(f"📝 Generated dynamic prompt ({len(final_prompt)} characters)")
@@ -410,7 +406,7 @@ REQUIRED TRANSLATIONS:"""
 
             print(f"📥 Gemini response received ({len(generated_text)} characters)")
 
-            # Extract translations and word pairs with enhanced UI visualization data
+            # Extract translations and word pairs
             translations_data = self._extract_text_and_pairs_v2(generated_text, style_preferences)
 
             audio_filename = None
@@ -436,9 +432,6 @@ REQUIRED TRANSLATIONS:"""
                 else:
                     print("🔇 No audio generated - no translation styles enabled")
 
-            # Create enhanced word-by-word data for UI visualization
-            ui_word_by_word = self._create_ui_word_by_word_data(translations_data, style_preferences)
-
             # Always return the translation, even if audio failed
             return Translation(
                 original_text=text,
@@ -449,7 +442,7 @@ REQUIRED TRANSLATIONS:"""
                 translations={
                     "main": translations_data['translations'][0] if translations_data['translations'] else generated_text
                 },
-                word_by_word=ui_word_by_word,  # Enhanced for UI visualization
+                word_by_word=self._generate_word_by_word(text, generated_text),
                 grammar_explanations=self._generate_grammar_explanations(generated_text),
             )
 
@@ -457,60 +450,12 @@ REQUIRED TRANSLATIONS:"""
             print(f"❌ Error in process_prompt: {str(e)}")
             raise Exception(f"Translation processing failed: {str(e)}")
 
-    def _create_ui_word_by_word_data(self, translations_data: Dict, style_preferences) -> Dict[str, Dict[str, str]]:
-        """
-        Create structured word-by-word data specifically for UI visualization.
-        This ensures what's shown matches exactly what's heard.
-        """
-        ui_data = {}
-        
-        print("📱 Creating UI word-by-word visualization data...")
-        
-        for style_info in translations_data.get('style_data', []):
-            style_name = style_info['style_name']
-            word_pairs = style_info.get('word_pairs', [])
-            is_german = style_info.get('is_german', False)
-            is_spanish = style_info.get('is_spanish', False)
-            
-            # Check if word-by-word is enabled for this language
-            should_include = False
-            if is_german and getattr(style_preferences, 'german_word_by_word', False):
-                should_include = True
-            elif not is_german and not is_spanish and getattr(style_preferences, 'english_word_by_word', False):
-                should_include = True
-            
-            if should_include and word_pairs:
-                print(f"   📝 Processing {len(word_pairs)} word pairs for {style_name}")
-                
-                for i, (source_word, spanish_equiv) in enumerate(word_pairs):
-                    # Clean the words for UI display
-                    source_clean = source_word.strip().strip('"\'[]')
-                    spanish_clean = spanish_equiv.strip().strip('"\'[]')
-                    
-                    # Create a unique key for each word pair
-                    key = f"{style_name}_{i}_{source_clean.replace(' ', '_')}"
-                    
-                    ui_data[key] = {
-                        "source": source_clean,
-                        "spanish": spanish_clean,
-                        "language": "german" if is_german else "english",
-                        "style": style_name,
-                        "order": i,
-                        "is_phrasal_verb": " " in source_clean,  # Detect phrasal/separable verbs
-                        "display_format": f"[{source_clean}] ([{spanish_clean}])"  # Exact audio format
-                    }
-                    
-                    print(f"      {i+1}. [{source_clean}] ([{spanish_clean}])")
-        
-        print(f"✅ Created UI data for {len(ui_data)} word pairs")
-        return ui_data
-
     def _extract_text_and_pairs_v2(
         self, generated_text: str, style_preferences
     ) -> Dict:
         """
         Extract texts and word pairs with proper multi-language support.
-        Enhanced for UI visualization requirements.
+        EXACT implementation per requirements.
         """
         result = {
             'translations': [],
@@ -650,7 +595,7 @@ REQUIRED TRANSLATIONS:"""
         style_name: str,
         word_by_word_enabled: bool
     ) -> Optional[Dict]:
-        """Extract translation and word pairs for a single style - Enhanced for UI visualization"""
+        """Extract translation and word pairs for a single style - EXACT format matching"""
         
         # Extract main translation
         text_match = re.search(text_pattern, text_section, re.IGNORECASE | re.DOTALL)
@@ -686,7 +631,7 @@ REQUIRED TRANSLATIONS:"""
                     continue
             
             if pairs_text:
-                # Enhanced format parsing for UI visualization: [word/phrase] ([translation])
+                # EXACT format parsing: [word/phrase] ([translation])
                 pair_patterns = [
                     r'\[([^\]]+)\]\s*\(([^)]+)\)',  # [word] (translation)
                     r'([^()]+?)\s*\(([^)]+?)\)',    # word (translation)
@@ -697,19 +642,14 @@ REQUIRED TRANSLATIONS:"""
                         pair_matches = re.findall(pair_pattern, pairs_text)
                         if pair_matches:
                             for source, target in pair_matches:
-                                # Clean up the extracted pairs for UI display
+                                # Clean up the extracted pairs
                                 source = source.strip().strip('"\'[]').rstrip('.,!?;:')
                                 target = target.strip().strip('"\'')
                                 
                                 # Skip empty pairs or overly long ones
                                 if not source or not target or len(source.split()) > 8:
                                     continue
-                                
-                                # Special handling for phrasal verbs and separable verbs
-                                if " " in source and len(source.split()) <= 3:
-                                    # This is likely a phrasal verb (English) or separable verb (German)
-                                    print(f"      🔗 Phrasal/Separable verb: '{source}' -> '{target}'")
-                                
+                                    
                                 word_pairs.append((source, target))
                                 print(f"      ✅ Extracted pair: '{source}' -> '{target}'")
                             
