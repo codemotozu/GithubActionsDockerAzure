@@ -85,7 +85,7 @@ class TranslationStylePreferences {
 
 class TranslationRepositoryImpl implements TranslationRepository {
   // final String baseUrl = 'http://10.0.2.2:8000'; // here you can hear the translaion in my local machine dont forget to update main.py
-  final String baseUrl = 'http://192.168.0.2:8000'; // android cellphone ..........
+  final String baseUrl = 'http://192.168.0.2:8000'; // android cellphone 
   // final String baseUrl = 'https://speak-translate-docker-and-azure.thankfulisland-32dcba80.francecentral.azurecontainerapps.io';
   static const timeoutDuration = Duration(seconds: 240);
   late AudioPlayer _audioPlayer = AudioPlayer();

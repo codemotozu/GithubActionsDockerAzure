@@ -1,4 +1,4 @@
-// word_by_word_visualization_widget.dart - Enhanced for MULTIPLE translation styles
+// word_by_word_visualization_widget.dart - PERFECT synchronization with audio output
 
 import 'package:flutter/material.dart';
 
@@ -55,45 +55,41 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
     });
   }
 
-  // ENHANCED: Group and sort word pairs for MULTIPLE STYLES
-  Map<String, Map<String, List<MapEntry<String, Map<String, String>>>>> _getMultipleStylesSynchronizedData() {
+  // CRITICAL: Group and sort word pairs to match EXACT audio order
+  Map<String, List<MapEntry<String, Map<String, String>>>> _getPerfectlySynchronizedData() {
     if (widget.wordByWordData == null || widget.wordByWordData!.isEmpty) {
       return {};
     }
 
-    final Map<String, Map<String, List<MapEntry<String, Map<String, String>>>>> groupedData = {};
+    final Map<String, List<MapEntry<String, Map<String, String>>>> groupedData = {};
     
-    // Group by language and then by style
+    // Group by language while maintaining perfect order
     for (final entry in widget.wordByWordData!.entries) {
       final wordData = entry.value;
       final language = wordData['language'] ?? 'unknown';
-      final style = wordData['style'] ?? 'unknown';
-      final displayStyle = wordData['display_style'] ?? style;
       
-      if (language != 'unknown' && style != 'unknown') {
-        groupedData.putIfAbsent(language, () => {});
-        groupedData[language]!.putIfAbsent(displayStyle, () => []);
-        groupedData[language]![displayStyle]!.add(entry);
+      if (language != 'unknown') {
+        groupedData.putIfAbsent(language, () => []);
+        groupedData[language]!.add(entry);
       }
     }
     
-    // ENHANCED: Sort each style group by order to match audio sequence
+    // CRITICAL: Sort each language group by order to match audio sequence
     for (final language in groupedData.keys) {
-      for (final style in groupedData[language]!.keys) {
-        groupedData[language]![style]!.sort((a, b) {
-          final orderA = int.tryParse(a.value['order'] ?? '0') ?? 0;
-          final orderB = int.tryParse(b.value['order'] ?? '0') ?? 0;
-          return orderA.compareTo(orderB);
-        });
-      }
+      groupedData[language]!.sort((a, b) {
+        final orderA = int.tryParse(a.value['order'] ?? '0') ?? 0;
+        final orderB = int.tryParse(b.value['order'] ?? '0') ?? 0;
+        return orderA.compareTo(orderB);
+      });
     }
     
-    print('🎯 MULTIPLE STYLES SYNC: Grouped data for UI display:');
-    groupedData.forEach((language, styles) {
-      print('   $language: ${styles.length} styles');
-      styles.forEach((styleName, entries) {
-        print('      $styleName: ${entries.length} entries in perfect order');
-      });
+    print('🎯 PERFECT SYNC: Grouped data for UI display:');
+    groupedData.forEach((language, entries) {
+      print('   $language: ${entries.length} entries in perfect order');
+      for (int i = 0; i < entries.length && i < 3; i++) {
+        final data = entries[i].value;
+        print('      ${i+1}. ${data['display_format']}');
+      }
     });
     
     return groupedData;
@@ -138,21 +134,7 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
     }
   }
 
-  Color _getStyleColor(String styleName) {
-    if (styleName.toLowerCase().contains('native')) {
-      return Colors.purple;
-    } else if (styleName.toLowerCase().contains('colloquial')) {
-      return Colors.orange;
-    } else if (styleName.toLowerCase().contains('informal')) {
-      return Colors.cyan;
-    } else if (styleName.toLowerCase().contains('formal')) {
-      return Colors.indigo;
-    } else {
-      return Colors.grey;
-    }
-  }
-
-  Widget _buildMultipleStylesWordPairChip(MapEntry<String, Map<String, String>> entry, int globalIndex, String styleName) {
+  Widget _buildPerfectSyncWordPairChip(MapEntry<String, Map<String, String>> entry, int globalIndex) {
     final wordData = entry.value;
     final sourceWord = wordData['source'] ?? '';
     final spanishEquiv = wordData['spanish'] ?? '';
@@ -160,28 +142,26 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
     final displayFormat = wordData['display_format'] ?? '';
     final language = wordData['language'] ?? '';
     final order = wordData['order'] ?? '0';
-    final displayStyle = wordData['display_style'] ?? styleName;
 
     final isHighlighted = _currentHighlightIndex == globalIndex;
-    final styleColor = _getStyleColor(styleName);
 
     return Container(
       margin: const EdgeInsets.only(right: 8, bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: isHighlighted 
-            ? styleColor.withOpacity(0.3)
+            ? _getLanguageColor(language).withOpacity(0.3)
             : Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isPhrasalVerb 
               ? Colors.orange 
-              : (isHighlighted ? styleColor : Colors.white30),
+              : (isHighlighted ? _getLanguageColor(language) : Colors.white30),
           width: isHighlighted ? 3 : (isPhrasalVerb ? 2 : 1),
         ),
         boxShadow: isHighlighted ? [
           BoxShadow(
-            color: styleColor.withOpacity(0.5),
+            color: _getLanguageColor(language).withOpacity(0.5),
             blurRadius: 8,
             spreadRadius: 2,
           ),
@@ -191,27 +171,7 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ENHANCED: Style indicator
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: styleColor.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: styleColor, width: 1),
-            ),
-            child: Text(
-              displayStyle,
-              style: TextStyle(
-                color: styleColor,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          
-          const SizedBox(height: 6),
-          
-          // ENHANCED: Audio format display - EXACTLY what user hears for this style
+          // CRITICAL: Audio format display - EXACTLY what user hears
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -398,9 +358,8 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
     );
   }
 
-  Widget _buildMultipleStylesLanguageSection(String language, Map<String, List<MapEntry<String, Map<String, String>>>> styleGroups) {
+  Widget _buildLanguageSection(String language, List<MapEntry<String, Map<String, String>>> entries) {
     final languageColor = _getLanguageColor(language);
-    final totalEntries = styleGroups.values.fold(0, (sum, entries) => sum + entries.length);
     
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -412,7 +371,7 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ENHANCED: Language header with multiple styles info
+          // Language header
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -431,7 +390,7 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${_getLanguageName(language)} Multiple Styles',
+                        '${_getLanguageName(language)} Word-by-Word Audio',
                         style: TextStyle(
                           color: languageColor,
                           fontSize: 16,
@@ -439,9 +398,9 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        'Perfect synchronization across ${styleGroups.length} translation styles',
-                        style: const TextStyle(
+                      const Text(
+                        'Perfect synchronization with audio output',
+                        style: TextStyle(
                           color: Colors.white70,
                           fontSize: 12,
                           fontStyle: FontStyle.italic,
@@ -457,7 +416,7 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${styleGroups.length} styles, $totalEntries pairs',
+                    '${entries.length} pairs',
                     style: TextStyle(
                       color: languageColor,
                       fontSize: 12,
@@ -469,81 +428,17 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
             ),
           ),
           
-          // ENHANCED: Style sections
-          ...styleGroups.entries.map((styleEntry) {
-            final styleName = styleEntry.key;
-            final entries = styleEntry.value;
-            final styleColor = _getStyleColor(styleName);
-            
-            return Container(
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: styleColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: styleColor, width: 1),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Style header
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: styleColor.withOpacity(0.2),
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.style,
-                          color: styleColor,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            styleName,
-                            style: TextStyle(
-                              color: styleColor,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: styleColor.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '${entries.length} pairs',
-                            style: TextStyle(
-                              color: styleColor,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  // Word pairs for this style
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Wrap(
-                      children: entries.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final wordPairEntry = entry.value;
-                        return _buildMultipleStylesWordPairChip(wordPairEntry, index, styleName);
-                      }).toList(),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
+          // Word pairs grid
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Wrap(
+              children: entries.asMap().entries.map((entry) {
+                final index = entry.key;
+                final wordPairEntry = entry.value;
+                return _buildPerfectSyncWordPairChip(wordPairEntry, index);
+              }).toList(),
+            ),
+          ),
         ],
       ),
     );
@@ -555,16 +450,14 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
       return const SizedBox.shrink();
     }
 
-    final synchronizedData = _getMultipleStylesSynchronizedData();
+    final synchronizedData = _getPerfectlySynchronizedData();
 
     if (synchronizedData.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    // Calculate total pairs across all languages and styles
-    final totalPairs = synchronizedData.values.fold(0, (sum, styles) => 
-        sum + styles.values.fold(0, (styleSum, entries) => styleSum + entries.length));
-    final totalStyles = synchronizedData.values.fold(0, (sum, styles) => sum + styles.length);
+    // Calculate total pairs across all languages
+    final totalPairs = synchronizedData.values.fold(0, (sum, entries) => sum + entries.length);
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -579,7 +472,7 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
       ),
       child: Column(
         children: [
-          // ENHANCED: Header with multiple styles emphasis
+          // Header with perfect sync emphasis
           InkWell(
             onTap: _toggleExpansion,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
@@ -598,7 +491,7 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'Perfect Multiple Styles UI-Audio Sync',
+                          'Perfect UI-Audio Synchronization',
                           style: TextStyle(
                             color: Colors.blue,
                             fontSize: 16,
@@ -607,7 +500,7 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
                         ),
                         const SizedBox(height: 2),
                         const Text(
-                          'Each style has its own complete sentence + word breakdown',
+                          'What you see is exactly what you hear',
                           style: TextStyle(
                             color: Colors.blue,
                             fontSize: 12,
@@ -616,7 +509,7 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '$totalPairs perfectly synchronized word pairs across $totalStyles translation styles',
+                          '$totalPairs perfectly synchronized word pairs',
                           style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 11,
@@ -638,7 +531,7 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
                         Icon(Icons.hearing, size: 12, color: Colors.orange),
                         SizedBox(width: 4),
                         Text(
-                          'MULTIPLE STYLES',
+                          'AUDIO FORMAT',
                           style: TextStyle(
                             color: Colors.orange,
                             fontSize: 10,
@@ -675,7 +568,7 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
                     const SizedBox(width: 8),
                     const Expanded(
                       child: Text(
-                        'Audio: Complete sentences for each style + [target word] ([Spanish])',
+                        'Audio format: [target word] ([Spanish equivalent])',
                         style: TextStyle(
                           color: Colors.cyan,
                           fontSize: 12,
@@ -689,9 +582,9 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
                         color: Colors.green.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(
-                        '$totalStyles STYLES',
-                        style: const TextStyle(
+                      child: const Text(
+                        'PERFECT SYNC',
+                        style: TextStyle(
                           color: Colors.green,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -712,7 +605,7 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ENHANCED: Multiple styles synchronization explanation
+                  // Perfect sync explanation
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
@@ -729,7 +622,7 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
                             Icon(Icons.verified, color: Colors.green, size: 16),
                             SizedBox(width: 6),
                             Text(
-                              'Multiple Styles Perfect Synchronization',
+                              'Perfect Synchronization Guarantee',
                               style: TextStyle(
                                 color: Colors.green,
                                 fontSize: 14,
@@ -740,24 +633,20 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
                         ),
                         const SizedBox(height: 8),
                         const Text(
-                          '✓ Each style has complete sentence + word breakdown',
+                          '✓ Visual display order = Audio speaking order',
                           style: TextStyle(color: Colors.white, fontSize: 12),
                         ),
                         const Text(
-                          '✓ Visual display order = Audio speaking order (per style)',
+                          '✓ UI format = Audio format (exactly)',
                           style: TextStyle(color: Colors.white, fontSize: 12),
                         ),
                         const Text(
-                          '✓ UI format = Audio format (exactly, per style)',
+                          '✓ Phrasal verbs treated as single units',
                           style: TextStyle(color: Colors.white, fontSize: 12),
                         ),
                         const Text(
-                          '✓ Phrasal verbs treated as single units across all styles',
+                          '✓ Zero discrepancies between seen and heard',
                           style: TextStyle(color: Colors.white, fontSize: 12),
-                        ),
-                        Text(
-                          '✓ Zero discrepancies across $totalStyles translation styles',
-                          style: const TextStyle(color: Colors.white, fontSize: 12),
                         ),
                       ],
                     ),
@@ -765,9 +654,9 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
                   
                   const SizedBox(height: 16),
                   
-                  // ENHANCED: Language sections with multiple styles
+                  // Language sections in perfect sync order
                   ...synchronizedData.entries.map((languageEntry) {
-                    return _buildMultipleStylesLanguageSection(languageEntry.key, languageEntry.value);
+                    return _buildLanguageSection(languageEntry.key, languageEntry.value);
                   }).toList(),
                 ],
               ),
