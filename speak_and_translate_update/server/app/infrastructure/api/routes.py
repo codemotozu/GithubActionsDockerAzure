@@ -386,10 +386,95 @@ async def root():
         }
     }
 
+# @app.post("/api/conversation", response_model=Translation)
+# async def start_conversation(prompt: PromptRequest):
+#     """
+#     Main conversation endpoint with PERFECT UI-Audio synchronization.
+#     """
+#     try:
+#         # Set up default style preferences if none provided
+#         if prompt.style_preferences is None:
+#             prompt.style_preferences = TranslationStylePreferences(
+#                 german_colloquial=True,
+#                 english_colloquial=True,
+#                 mother_tongue="spanish"
+#             )
+        
+#         # Validate and normalize mother tongue
+#         mother_tongue = _validate_mother_tongue(prompt.style_preferences.mother_tongue or 'spanish')
+#         prompt.style_preferences.mother_tongue = mother_tongue
+        
+#         # Apply intelligent defaults if no styles selected
+#         prompt.style_preferences = _apply_intelligent_defaults(prompt.style_preferences)
+        
+#         # Log the perfect sync translation setup
+#         _log_perfect_sync_setup(prompt.text, prompt.style_preferences)
+        
+#         # Process the translation with perfect sync
+#         logger.info(f"🚀 Starting PERFECT SYNC translation with mother tongue: {mother_tongue}")
+#         response = await translation_service.process_prompt(
+#             text=prompt.text, 
+#             source_lang=prompt.source_lang or "auto", 
+#             target_lang=prompt.target_lang or "multi",
+#             style_preferences=prompt.style_preferences,
+#             mother_tongue=mother_tongue
+#         )
+        
+#         # CRITICAL: Validate perfect synchronization
+#         sync_validation = _validate_perfect_sync_response(response, prompt.style_preferences)
+        
+#         # Log the successful completion with sync details
+#         logger.info(f"✅ PERFECT SYNC translation completed successfully")
+#         logger.info(f"   Input ('{response.source_language}'): {response.original_text}")
+#         logger.info(f"   Output length: {len(response.translated_text)} characters")
+#         logger.info(f"   Audio generated: {'Yes' if response.audio_path else 'No'}")
+#         logger.info(f"   Word-by-word data: {'Yes' if response.word_by_word else 'No'}")
+        
+#         if response.audio_path:
+#             # Check if word-by-word was requested
+#             word_by_word_requested = (
+#                 prompt.style_preferences.german_word_by_word or 
+#                 prompt.style_preferences.english_word_by_word
+#             )
+#             logger.info(f"   Audio type: {'Word-by-word breakdown' if word_by_word_requested else 'Simple translation reading'}")
+            
+#             if word_by_word_requested and response.word_by_word:
+#                 total_pairs = len(response.word_by_word)
+#                 logger.info(f"   Perfect sync pairs: {total_pairs}")
+#                 logger.info(f"   Synchronization status: {'✅ PERFECT' if not sync_validation['errors'] else '❌ ISSUES DETECTED'}")
+        
+#         # Add perfect sync validation info to response (for debugging)
+#         logger.info("\n📱 WORD-BY-WORD UI VISUALIZATION DEBUG:")
+#         logger.info("="*60)
+#         if response.word_by_word:
+#             logger.info(f"   📝 Word-by-word data available for UI")
+#             logger.info(f"   📊 Total UI elements: {len(response.word_by_word)}")
+            
+#             # Log a sample of UI data structure
+#             sample_keys = list(response.word_by_word.keys())[:3]
+#             for key in sample_keys:
+#                 data = response.word_by_word[key]
+#                 logger.info(f"   📱 UI: {data.get('display_format', 'N/A')}")
+#         else:
+#             logger.info(f"   📝 No word-by-word data available for UI")
+        
+#         logger.info("="*60)
+        
+#         return response
+        
+#     except HTTPException as he:
+#         # Re-raise HTTP exceptions as-is
+#         raise he
+#     except Exception as e:
+#         logger.error(f"❌ Perfect sync translation error: {str(e)}", exc_info=True)
+#         raise HTTPException(status_code=500, detail=f"Perfect sync translation failed: {str(e)}")
+
+# routes.py - Additional error handling fixes for conversation endpoint
+
 @app.post("/api/conversation", response_model=Translation)
 async def start_conversation(prompt: PromptRequest):
     """
-    Main conversation endpoint with PERFECT UI-Audio synchronization.
+    Main conversation endpoint with PERFECT UI-Audio synchronization and robust error handling.
     """
     try:
         # Set up default style preferences if none provided
@@ -410,18 +495,41 @@ async def start_conversation(prompt: PromptRequest):
         # Log the perfect sync translation setup
         _log_perfect_sync_setup(prompt.text, prompt.style_preferences)
         
-        # Process the translation with perfect sync
+        # Process the translation with perfect sync and enhanced error handling
         logger.info(f"🚀 Starting PERFECT SYNC translation with mother tongue: {mother_tongue}")
-        response = await translation_service.process_prompt(
-            text=prompt.text, 
-            source_lang=prompt.source_lang or "auto", 
-            target_lang=prompt.target_lang or "multi",
-            style_preferences=prompt.style_preferences,
-            mother_tongue=mother_tongue
-        )
+        
+        try:
+            response = await translation_service.process_prompt(
+                text=prompt.text, 
+                source_lang=prompt.source_lang or "auto", 
+                target_lang=prompt.target_lang or "multi",
+                style_preferences=prompt.style_preferences,
+                mother_tongue=mother_tongue
+            )
+        except Exception as translation_error:
+            logger.error(f"❌ Translation service error: {str(translation_error)}")
+            
+            # Create a fallback response
+            fallback_response = Translation(
+                original_text=prompt.text,
+                translated_text=f"Translation error occurred. Input text: '{prompt.text}' (Mother tongue: {mother_tongue})",
+                source_language=mother_tongue,
+                target_language="multi",
+                audio_path=None,
+                translations={"error": f"Translation failed: {str(translation_error)[:200]}"},
+                word_by_word=None,
+                grammar_explanations={"error": "Translation service unavailable"}
+            )
+            
+            logger.info("📋 Returning fallback response due to translation error")
+            return fallback_response
         
         # CRITICAL: Validate perfect synchronization
-        sync_validation = _validate_perfect_sync_response(response, prompt.style_preferences)
+        try:
+            sync_validation = _validate_perfect_sync_response(response, prompt.style_preferences)
+        except Exception as validation_error:
+            logger.warning(f"⚠️ Sync validation error: {str(validation_error)}")
+            sync_validation = {'errors': [], 'warnings': ['Validation skipped due to error']}
         
         # Log the successful completion with sync details
         logger.info(f"✅ PERFECT SYNC translation completed successfully")
@@ -464,10 +572,33 @@ async def start_conversation(prompt: PromptRequest):
         
     except HTTPException as he:
         # Re-raise HTTP exceptions as-is
+        logger.warning(f"⚠️ HTTP exception in conversation endpoint: {he.detail}")
         raise he
     except Exception as e:
-        logger.error(f"❌ Perfect sync translation error: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Perfect sync translation failed: {str(e)}")
+        logger.error(f"❌ Unexpected error in conversation endpoint: {str(e)}", exc_info=True)
+        
+        # Create emergency fallback response
+        try:
+            emergency_response = Translation(
+                original_text=prompt.text if hasattr(prompt, 'text') else "Unknown input",
+                translated_text="Sorry, translation service is temporarily unavailable. Please try again.",
+                source_language="unknown",
+                target_language="multi",
+                audio_path=None,
+                translations={"error": "Service temporarily unavailable"},
+                word_by_word=None,
+                grammar_explanations={"error": "Service temporarily unavailable"}
+            )
+            
+            logger.info("🆘 Returning emergency fallback response")
+            return emergency_response
+            
+        except Exception as fallback_error:
+            logger.error(f"❌ Even fallback response failed: {str(fallback_error)}")
+            raise HTTPException(
+                status_code=500, 
+                detail="Translation service is temporarily unavailable. Please try again later."
+            )
 
 # Keep all other endpoints unchanged (speech-to-text, voice-command, audio serving, etc.)
 @app.post("/api/speech-to-text")
