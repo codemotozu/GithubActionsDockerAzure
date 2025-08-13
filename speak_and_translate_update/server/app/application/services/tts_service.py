@@ -1,4 +1,4 @@
-# tts_service.py - Enhanced for MULTIPLE translation styles support
+# tts_service.py - FIXED SSML generation for Azure Speech Services
 
 from azure.cognitiveservices.speech import (
     SpeechConfig,
@@ -122,6 +122,24 @@ class EnhancedTTSService:
         os.makedirs(temp_dir, exist_ok=True)
         return temp_dir
 
+    def _clean_text_for_ssml(self, text: str) -> str:
+        """Clean text for SSML compliance"""
+        # Replace problematic characters
+        text = text.replace("&", "&amp;")
+        text = text.replace("<", "&lt;")
+        text = text.replace(">", "&gt;")
+        text = text.replace('"', "&quot;")
+        text = text.replace("'", "&apos;")
+        
+        # Remove any existing SSML tags to prevent conflicts
+        text = re.sub(r'<[^>]+>', '', text)
+        
+        # Ensure text is not empty
+        if not text.strip():
+            text = "Translation content"
+            
+        return text.strip()
+
     async def _synthesize_with_retry(self, ssml: str, output_path: str, max_retries: int = 3) -> bool:
         """Synthesize speech with retry logic and exponential backoff"""
         for attempt in range(max_retries):
@@ -177,6 +195,10 @@ class EnhancedTTSService:
                             logger.info(f"🔄 Connection issue, retrying in {delay:.2f}s...")
                             await asyncio.sleep(delay)
                             continue
+                        elif "1007" in error_details or "should not contain" in error_details:
+                            # SSML validation error - don't retry
+                            logger.error(f"❌ SSML validation error: {error_details}")
+                            return False
                         else:
                             # Other errors - don't retry
                             logger.error(f"❌ Non-retryable error: {error_details}")
@@ -231,10 +253,15 @@ class EnhancedTTSService:
             logger.info(f"   Style data available: {len(translations_data.get('style_data', []))}")
             
             # Generate comprehensive SSML for all styles
-            ssml = self._generate_multiple_styles_ssml(translations_data, style_preferences)
+            ssml = self._generate_multiple_styles_ssml_fixed(translations_data, style_preferences)
             
             if not ssml or len(ssml.strip()) < 50:
                 logger.warning("⚠️ Generated SSML is too short or empty")
+                return None
+            
+            # Validate SSML structure before sending
+            if not self._validate_ssml_structure(ssml):
+                logger.error("❌ SSML validation failed - structure issues detected")
                 return None
             
             # Log SSML for debugging
@@ -257,11 +284,49 @@ class EnhancedTTSService:
             traceback.print_exc()
             return None
 
-    def _generate_multiple_styles_ssml(self, translations_data: Dict, style_preferences=None) -> str:
-        """Generate SSML for MULTIPLE translation styles with complete sentences and word-by-word"""
-        ssml = """<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">"""
+    def _validate_ssml_structure(self, ssml: str) -> bool:
+        """Validate SSML structure to prevent Azure Speech errors"""
+        try:
+            # Check for breaks outside voice elements
+            lines = ssml.split('\n')
+            inside_speak = False
+            inside_voice = False
+            
+            for line in lines:
+                line = line.strip()
+                
+                if '<speak' in line:
+                    inside_speak = True
+                elif '</speak>' in line:
+                    inside_speak = False
+                elif '<voice' in line:
+                    inside_voice = True
+                elif '</voice>' in line:
+                    inside_voice = False
+                elif '<break' in line:
+                    if inside_speak and not inside_voice:
+                        logger.error(f"❌ SSML Validation Error: Break element outside voice: {line}")
+                        return False
+            
+            # Check for required elements
+            if '<speak' not in ssml:
+                logger.error("❌ SSML Validation Error: Missing speak element")
+                return False
+                
+            if '<voice' not in ssml:
+                logger.error("❌ SSML Validation Error: Missing voice element")
+                return False
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ SSML validation error: {str(e)}")
+            return False
+
+    def _generate_multiple_styles_ssml_fixed(self, translations_data: Dict, style_preferences=None) -> str:
+        """Generate FIXED SSML for MULTIPLE translation styles - Azure Speech compliant"""
         
-        logger.info("🎤 GENERATING MULTIPLE STYLES AUDIO")
+        logger.info("🎤 GENERATING MULTIPLE STYLES AUDIO (FIXED SSML)")
         logger.info("="*60)
         
         # Group translations by language
@@ -296,13 +361,16 @@ class EnhancedTTSService:
                         'word_pairs': word_pairs
                     })
         
-        # Add introduction
-        ssml += f"""
+        # Start SSML with proper structure - NO breaks outside voice elements
+        ssml = '<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">'
+        
+        # Add initial pause inside first voice element
+        ssml += '''
         <voice name="en-US-JennyMultilingualNeural">
             <prosody rate="0.9">
                 <break time="500ms"/>
             </prosody>
-        </voice>"""
+        </voice>'''
         
         # Process German translations
         if german_translations:
@@ -316,10 +384,10 @@ class EnhancedTTSService:
                 logger.info(f"   📖 {display_name}: {text[:50]}...")
                 
                 # Clean text for SSML
-                clean_text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                clean_text = self._clean_text_for_ssml(text)
                 
-                # Add style introduction and complete sentence
-                ssml += f"""
+                # Add style introduction and complete sentence - ALL breaks inside voice elements
+                ssml += f'''
         <voice name="en-US-JennyMultilingualNeural">
             <prosody rate="0.9">
                 <break time="300ms"/>
@@ -330,29 +398,38 @@ class EnhancedTTSService:
                 <lang xml:lang="de-DE">{clean_text}</lang>
                 <break time="800ms"/>
             </prosody>
-        </voice>"""
+        </voice>'''
                 
                 # Add word-by-word breakdown if requested and available
                 if getattr(style_preferences, 'german_word_by_word', False) and word_pairs:
                     logger.info(f"   🎵 Adding word-by-word for {display_name}: {len(word_pairs)} pairs")
                     
-                    ssml += f"""
+                    # Pre-process word pairs to ensure they're clean
+                    clean_pairs = []
+                    for source, spanish in word_pairs:
+                        clean_source = self._clean_text_for_ssml(str(source))
+                        clean_spanish = self._clean_text_for_ssml(str(spanish))
+                        if clean_source and clean_spanish:
+                            clean_pairs.append((clean_source, clean_spanish))
+                    
+                    if clean_pairs:
+                        ssml += '''
         <voice name="en-US-JennyMultilingualNeural">
             <prosody rate="0.9">
                 <break time="400ms"/>
             </prosody>
-        </voice>"""
-                    
-                    for source, spanish in word_pairs:
-                        ssml += f"""
+        </voice>'''
+                        
+                        for clean_source, clean_spanish in clean_pairs:
+                            ssml += f'''
         <voice name="en-US-JennyMultilingualNeural">
             <prosody rate="0.8">
-                <lang xml:lang="de-DE">{source}</lang>
+                <lang xml:lang="de-DE">{clean_source}</lang>
                 <break time="200ms"/>
-                <lang xml:lang="es-ES">{spanish}</lang>
+                <lang xml:lang="es-ES">{clean_spanish}</lang>
                 <break time="400ms"/>
             </prosody>
-        </voice>"""
+        </voice>'''
         
         # Process English translations
         if english_translations:
@@ -366,10 +443,10 @@ class EnhancedTTSService:
                 logger.info(f"   📖 {display_name}: {text[:50]}...")
                 
                 # Clean text for SSML
-                clean_text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                clean_text = self._clean_text_for_ssml(text)
                 
                 # Add style introduction and complete sentence
-                ssml += f"""
+                ssml += f'''
         <voice name="en-US-JennyMultilingualNeural">
             <prosody rate="0.9">
                 <break time="300ms"/>
@@ -380,29 +457,38 @@ class EnhancedTTSService:
                 <lang xml:lang="en-US">{clean_text}</lang>
                 <break time="800ms"/>
             </prosody>
-        </voice>"""
+        </voice>'''
                 
                 # Add word-by-word breakdown if requested and available
                 if getattr(style_preferences, 'english_word_by_word', False) and word_pairs:
                     logger.info(f"   🎵 Adding word-by-word for {display_name}: {len(word_pairs)} pairs")
                     
-                    ssml += f"""
+                    # Pre-process word pairs to ensure they're clean
+                    clean_pairs = []
+                    for source, spanish in word_pairs:
+                        clean_source = self._clean_text_for_ssml(str(source))
+                        clean_spanish = self._clean_text_for_ssml(str(spanish))
+                        if clean_source and clean_spanish:
+                            clean_pairs.append((clean_source, clean_spanish))
+                    
+                    if clean_pairs:
+                        ssml += '''
         <voice name="en-US-JennyMultilingualNeural">
             <prosody rate="0.9">
                 <break time="400ms"/>
             </prosody>
-        </voice>"""
-                    
-                    for source, spanish in word_pairs:
-                        ssml += f"""
+        </voice>'''
+                        
+                        for clean_source, clean_spanish in clean_pairs:
+                            ssml += f'''
         <voice name="en-US-JennyMultilingualNeural">
             <prosody rate="0.8">
-                <lang xml:lang="en-US">{source}</lang>
+                <lang xml:lang="en-US">{clean_source}</lang>
                 <break time="200ms"/>
-                <lang xml:lang="es-ES">{spanish}</lang>
+                <lang xml:lang="es-ES">{clean_spanish}</lang>
                 <break time="400ms"/>
             </prosody>
-        </voice>"""
+        </voice>'''
         
         # Process Spanish translations (if any)
         if spanish_translations:
@@ -415,22 +501,27 @@ class EnhancedTTSService:
                 logger.info(f"   📖 {display_name}: {text[:50]}...")
                 
                 # Clean text for SSML
-                clean_text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                clean_text = self._clean_text_for_ssml(text)
                 
-                ssml += f"""
+                ssml += f'''
         <voice name="es-ES-ArabellaMultilingualNeural">
             <prosody rate="1.0">
                 <lang xml:lang="es-ES">{clean_text}</lang>
                 <break time="800ms"/>
             </prosody>
-        </voice>"""
+        </voice>'''
         
-        ssml += """
-        <break time="500ms"/>
-        </speak>"""
+        # Final pause inside voice element, then close
+        ssml += '''
+        <voice name="en-US-JennyMultilingualNeural">
+            <prosody rate="0.9">
+                <break time="500ms"/>
+            </prosody>
+        </voice>
+        </speak>'''
         
         total_translations = len(german_translations) + len(english_translations) + len(spanish_translations)
-        logger.info(f"✅ Generated MULTIPLE STYLES SSML for {total_translations} translation styles")
+        logger.info(f"✅ Generated FIXED MULTIPLE STYLES SSML for {total_translations} translation styles")
         
         return ssml
 
@@ -475,6 +566,11 @@ class EnhancedTTSService:
                 temp_dir = self._get_temp_directory()
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 output_path = os.path.join(temp_dir, f"speech_{timestamp}.mp3")
+
+            # Validate SSML before attempting synthesis
+            if not self._validate_ssml_structure(ssml):
+                logger.error("❌ SSML validation failed")
+                return None
 
             success = await self._synthesize_with_retry(ssml, output_path)
             return os.path.basename(output_path) if success else None
