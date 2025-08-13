@@ -1,4 +1,4 @@
-// Updated settings_screen.dart with EXACT dynamic translation explanation per requirements
+// settings_screen.dart - Enhanced with MULTIPLE translation styles support
 
 import 'package:flutter/material.dart';
 import 'package:speak_and_translate_update/features/translation/data/repositories/hive_user_settings_repository.dart';
@@ -37,17 +37,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _vocabularyEnhancement = true;
   bool _realTimeCorrection = false;
   
-  // EXACT per requirements: Word-by-word audio settings - User has complete freedom
+  // ENHANCED: Word-by-word audio settings - User has complete freedom
   bool _germanWordByWord = false;
   bool _englishWordByWord = false;
   
-  // EXACT per requirements: German styles - User has complete freedom
+  // ENHANCED: German styles - User can select MULTIPLE styles
   bool _germanNative = false;
   bool _germanColloquial = false;
   bool _germanInformal = false;
   bool _germanFormal = false;
   
-  // EXACT per requirements: English styles - User has complete freedom
+  // ENHANCED: English styles - User can select MULTIPLE styles
   bool _englishNative = false;
   bool _englishColloquial = false;
   bool _englishInformal = false;
@@ -87,11 +87,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _vocabularyEnhancement = settings['vocabularyEnhancement'] as bool? ?? true;
       _realTimeCorrection = settings['realTimeCorrection'] as bool? ?? false;
       
-      // EXACT per requirements: Load word-by-word audio settings
+      // ENHANCED: Load word-by-word audio settings
       _germanWordByWord = settings['germanWordByWord'] as bool? ?? false;
       _englishWordByWord = settings['englishWordByWord'] as bool? ?? false;
       
-      // EXACT per requirements: Load translation style preferences
+      // ENHANCED: Load ALL translation style preferences (multiple selections supported)
       _germanNative = settings['germanNative'] as bool? ?? false;
       _germanColloquial = settings['germanColloquial'] as bool? ?? false;
       _germanInformal = settings['germanInformal'] as bool? ?? false;
@@ -149,52 +149,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // EXACT per requirements: Check if any styles are selected for each language
-  bool get _isGermanSelected {
-    return _germanNative || _germanColloquial || _germanInformal || _germanFormal;
+  // ENHANCED: Check how many styles are selected for each language
+  int get _germanStylesCount {
+    return [_germanNative, _germanColloquial, _germanInformal, _germanFormal]
+        .where((style) => style).length;
   }
 
-  bool get _isEnglishSelected {
-    return _englishNative || _englishColloquial || _englishInformal || _englishFormal;
+  int get _englishStylesCount {
+    return [_englishNative, _englishColloquial, _englishInformal, _englishFormal]
+        .where((style) => style).length;
   }
 
   bool get _isAnyStyleSelected {
-    return _isGermanSelected || _isEnglishSelected;
+    return _germanStylesCount > 0 || _englishStylesCount > 0;
   }
 
-  // EXACT per requirements: Get expected target languages based on mother tongue
+  // ENHANCED: Get expected target languages based on mother tongue and selections
   List<String> _getExpectedTargetLanguages() {
     switch (_motherTongue) {
       case MotherTongue.spanish:
-        // EXACT: Spanish → German and/or English based on selections
+        // ENHANCED: Spanish → Multiple German and/or English styles
         List<String> targets = [];
-        if (_isGermanSelected) targets.add('German');
-        if (_isEnglishSelected) targets.add('English');
+        if (_germanStylesCount > 0) targets.add('German ($_germanStylesCount styles)');
+        if (_englishStylesCount > 0) targets.add('English ($_englishStylesCount styles)');
         return targets;
         
       case MotherTongue.english:
-        // EXACT: English → Spanish (automatic) + German if selected
+        // ENHANCED: English → Spanish (automatic) + Multiple German styles if selected
         List<String> targets = ['Spanish (automatic)'];
-        if (_isGermanSelected) targets.add('German');
+        if (_germanStylesCount > 0) targets.add('German ($_germanStylesCount styles)');
         return targets;
         
       case MotherTongue.german:
-        // EXACT: German → Spanish (automatic) + English if selected
+        // ENHANCED: German → Spanish (automatic) + Multiple English styles if selected
         List<String> targets = ['Spanish (automatic)'];
-        if (_isEnglishSelected) targets.add('English');
+        if (_englishStylesCount > 0) targets.add('English ($_englishStylesCount styles)');
         return targets;
         
       default:
-        // Other languages → German and/or English based on selections
+        // Other languages → Multiple German and/or English styles
         List<String> targets = [];
-        if (_isGermanSelected) targets.add('German');
-        if (_isEnglishSelected) targets.add('English');
+        if (_germanStylesCount > 0) targets.add('German ($_germanStylesCount styles)');
+        if (_englishStylesCount > 0) targets.add('English ($_englishStylesCount styles)');
         return targets;
     }
   }
 
-  // EXACT per requirements: Build dynamic translation explanation widget
-  Widget _buildDynamicTranslationInfo() {
+  // ENHANCED: Build dynamic translation explanation for multiple styles
+  Widget _buildMultipleStylesTranslationInfo() {
     final expectedTargets = _getExpectedTargetLanguages();
     final audioFeatures = <String>[];
     
@@ -221,7 +223,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const Icon(Icons.translate, color: Colors.lightBlue, size: 24),
               const SizedBox(width: 12),
               const Text(
-                'Dynamic Translation Setup',
+                'Multiple Styles Translation Setup',
                 style: TextStyle(
                   color: Colors.lightBlue,
                   fontWeight: FontWeight.bold,
@@ -232,7 +234,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 16),
           
-          // EXACT per requirements: Show the dynamic logic
+          // ENHANCED: Show the dynamic logic for multiple styles
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -273,7 +275,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 
                 const SizedBox(height: 12),
                 
-                // EXACT per requirements: Show the dynamic behavior
+                // ENHANCED: Show the multiple styles behavior
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -285,13 +287,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _getDynamicBehaviorText(),
+                        _getMultipleStylesBehaviorText(),
                         style: const TextStyle(
                           color: Colors.green,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
+                      if (_germanStylesCount > 0 || _englishStylesCount > 0) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          'Selected: ${_getSelectedStylesSummary()}',
+                          style: const TextStyle(
+                            color: Colors.green,
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -301,7 +314,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           
           const SizedBox(height: 12),
           
-          // Translation directions
+          // Translation directions for multiple styles
           Row(
             children: [
               const Icon(Icons.arrow_forward, color: Colors.lightBlue),
@@ -315,7 +328,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           
           const SizedBox(height: 8),
           
-          // Target languages
+          // Target languages with style counts
           if (expectedTargets.isNotEmpty) ...[
             ...expectedTargets.map((target) => Padding(
               padding: const EdgeInsets.only(left: 32, bottom: 4),
@@ -326,36 +339,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: const TextStyle(fontSize: 16),
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    target,
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                  Expanded(
+                    child: Text(
+                      target,
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                    ),
                   ),
                   if (target.contains('German') && _germanWordByWord)
-                    Container(
-                      margin: const EdgeInsets.only(left: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'WORD-BY-WORD AUDIO',
-                        style: TextStyle(color: Colors.orange, fontSize: 10),
-                      ),
-                    ),
+                    _buildAudioBadge('WORD-BY-WORD AUDIO'),
                   if (target.contains('English') && _englishWordByWord)
-                    Container(
-                      margin: const EdgeInsets.only(left: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'WORD-BY-WORD AUDIO',
-                        style: TextStyle(color: Colors.orange, fontSize: 10),
-                      ),
-                    ),
+                    _buildAudioBadge('WORD-BY-WORD AUDIO'),
                 ],
               ),
             )).toList(),
@@ -363,13 +356,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Padding(
               padding: const EdgeInsets.only(left: 32),
               child: Text(
-                'Select translation styles below to enable translations',
+                'Select translation styles below to enable multiple translations',
                 style: TextStyle(color: Colors.yellow[300], fontStyle: FontStyle.italic),
               ),
             ),
           ],
           
-          // EXACT per requirements: Word-by-word audio explanation
+          // ENHANCED: Multiple styles audio explanation
           if (audioFeatures.isNotEmpty) ...[
             const SizedBox(height: 12),
             const Divider(color: Colors.white30),
@@ -379,7 +372,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const Icon(Icons.volume_up, color: Colors.orange, size: 20),
                 const SizedBox(width: 8),
                 const Text(
-                  'Word-by-Word Audio Format:',
+                  'Multiple Styles Audio:',
                   style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600),
                 ),
               ],
@@ -388,7 +381,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Padding(
               padding: EdgeInsets.only(left: 28),
               child: Text(
-                '[target word] ([Spanish equivalent])',
+                'Complete sentences + [target word] ([Spanish equivalent])',
                 style: TextStyle(color: Colors.orange, fontSize: 12, fontStyle: FontStyle.italic),
               ),
             ),
@@ -398,17 +391,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  String _getDynamicBehaviorText() {
+  Widget _buildAudioBadge(String text) {
+    return Container(
+      margin: const EdgeInsets.only(left: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(color: Colors.orange, fontSize: 10),
+      ),
+    );
+  }
+
+  String _getMultipleStylesBehaviorText() {
     switch (_motherTongue) {
       case MotherTongue.spanish:
-        return 'EXACT Logic: Spanish → German and/or English based on your selections below';
+        return 'ENHANCED: Spanish → Multiple German and/or English styles based on your selections';
       case MotherTongue.english:
-        return 'EXACT Logic: English → Spanish (automatic) + German if you select it below';
+        return 'ENHANCED: English → Spanish (automatic) + Multiple German styles if selected';
       case MotherTongue.german:
-        return 'EXACT Logic: German → Spanish (automatic) + English if you select it below';
+        return 'ENHANCED: German → Spanish (automatic) + Multiple English styles if selected';
       default:
-        return 'Logic: ${_getLanguageName(_motherTongue)} → German and/or English based on your selections below';
+        return 'Logic: ${_getLanguageName(_motherTongue)} → Multiple German and/or English styles';
     }
+  }
+
+  String _getSelectedStylesSummary() {
+    List<String> summary = [];
+    
+    if (_germanStylesCount > 0) {
+      List<String> germanStyles = [];
+      if (_germanNative) germanStyles.add('Native');
+      if (_germanColloquial) germanStyles.add('Colloquial');
+      if (_germanInformal) germanStyles.add('Informal');
+      if (_germanFormal) germanStyles.add('Formal');
+      summary.add('German: ${germanStyles.join(", ")}');
+    }
+    
+    if (_englishStylesCount > 0) {
+      List<String> englishStyles = [];
+      if (_englishNative) englishStyles.add('Native');
+      if (_englishColloquial) englishStyles.add('Colloquial');
+      if (_englishInformal) englishStyles.add('Informal');
+      if (_englishFormal) englishStyles.add('Formal');
+      summary.add('English: ${englishStyles.join(", ")}');
+    }
+    
+    return summary.join(' | ');
   }
 
   String _getTargetLanguageFlag(String target) {
@@ -418,18 +450,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return '🌐';
   }
 
-  // Build current selection summary widget
-  Widget _buildSelectionSummary() {
+  // Build current selection summary widget for multiple styles
+  Widget _buildMultipleStylesSelectionSummary() {
     final selectedStyles = <String>[];
     final audioFeatures = <String>[];
     
-    // Collect German styles
+    // Collect ALL selected German styles
     if (_germanNative) selectedStyles.add('German Native');
     if (_germanColloquial) selectedStyles.add('German Colloquial');
     if (_germanInformal) selectedStyles.add('German Informal');
     if (_germanFormal) selectedStyles.add('German Formal');
     
-    // Collect English styles
+    // Collect ALL selected English styles
     if (_englishNative) selectedStyles.add('English Native');
     if (_englishColloquial) selectedStyles.add('English Colloquial');
     if (_englishInformal) selectedStyles.add('English Informal');
@@ -465,7 +497,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Expanded(
                 child: Text(
                   _isAnyStyleSelected 
-                      ? 'Your Selected Styles:'
+                      ? 'Multiple Styles Selected (${selectedStyles.length} total):'
                       : 'No styles selected - Please select at least one below',
                   style: TextStyle(
                     color: _isAnyStyleSelected ? Colors.green : Colors.orange,
@@ -478,12 +510,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (_isAnyStyleSelected) ...[
             const SizedBox(height: 8),
             if (selectedStyles.isNotEmpty)
-              Text(
-                selectedStyles.join(', '),
-                style: const TextStyle(color: Colors.white70),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: selectedStyles.map((style) => Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.green, width: 1),
+                  ),
+                  child: Text(
+                    style,
+                    style: const TextStyle(color: Colors.green, fontSize: 11),
+                  ),
+                )).toList(),
               ),
             if (audioFeatures.isNotEmpty) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: audioFeatures.map((feature) {
@@ -494,10 +538,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const Icon(Icons.volume_up, size: 16, color: Colors.cyan),
                         const SizedBox(width: 4),
                         Text(
-                          '$feature Audio: [word] ([Spanish])',
+                          '$feature: Complete sentences + word breakdown',
                           style: const TextStyle(
                             color: Colors.cyan,
                             fontStyle: FontStyle.italic,
+                            fontSize: 12,
                           ),
                         ),
                       ],
@@ -513,9 +558,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _handleSave() async {
-    // EXACT per requirements: Check if at least one style is selected
+    // ENHANCED: Check if at least one style is selected for multiple styles support
     if (!_isAnyStyleSelected) {
-      // Show warning dialog with EXACT mother tongue logic
+      // Show warning dialog with ENHANCED multiple styles logic
       final shouldUseDefaults = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -523,7 +568,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           content: Text(
             'You haven\'t selected any translation styles.\n\n'
             'Based on your mother tongue (${_getLanguageName(_motherTongue)}), would you like to:\n\n'
-            '${_getDefaultsExplanation()}\n\n'
+            '${_getMultipleStylesDefaultsExplanation()}\n\n'
             'Choose an option:'
           ),
           actions: [
@@ -540,9 +585,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
       
       if (shouldUseDefaults == true) {
-        // EXACT per requirements: Apply intelligent defaults based on mother tongue
+        // ENHANCED: Apply intelligent defaults for multiple styles
         setState(() {
-          _applyIntelligentDefaults();
+          _applyIntelligentMultipleStylesDefaults();
         });
       } else {
         return; // User chose to go back
@@ -560,11 +605,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       'vocabularyEnhancement': _vocabularyEnhancement,
       'realTimeCorrection': _realTimeCorrection,
       
-      // EXACT per requirements: Word-by-word audio settings
+      // ENHANCED: Word-by-word audio settings for multiple styles
       'germanWordByWord': _germanWordByWord,
       'englishWordByWord': _englishWordByWord,
       
-      // EXACT per requirements: Translation style preferences
+      // ENHANCED: ALL translation style preferences (supports multiple selections)
       'germanNative': _germanNative,
       'germanColloquial': _germanColloquial,
       'germanInformal': _germanInformal,
@@ -596,10 +641,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Close loading dialog
       Navigator.of(context).pop();
       
-      // Show success message
+      // Show success message with multiple styles info
+      final stylesCount = _germanStylesCount + _englishStylesCount;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("✅ Settings saved successfully!"),
+        SnackBar(
+          content: Text("✅ Multiple styles settings saved! ($stylesCount styles selected)"),
           backgroundColor: Colors.green,
           duration: Duration(seconds: 2),
         ),
@@ -615,7 +661,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("❌ Error saving settings: $e"),
+          content: Text("❌ Error saving multiple styles settings: $e"),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 3),
         ),
@@ -626,38 +672,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  String _getDefaultsExplanation() {
+  String _getMultipleStylesDefaultsExplanation() {
     switch (_motherTongue) {
       case MotherTongue.spanish:
-        return '• Enable German Colloquial translation\n• Enable English Colloquial translation';
+        return '• Enable German Colloquial + German Native\n• Enable English Colloquial + English Native';
       case MotherTongue.english:
-        return '• Enable Spanish translation (automatic)\n• Enable German Colloquial translation';
+        return '• Enable Spanish translation (automatic)\n• Enable German Colloquial + German Native';
       case MotherTongue.german:
-        return '• Enable Spanish translation (automatic)\n• Enable English Colloquial translation';
+        return '• Enable Spanish translation (automatic)\n• Enable English Colloquial + English Native';
       default:
-        return '• Enable German Colloquial translation\n• Enable English Colloquial translation';
+        return '• Enable German Colloquial + German Native\n• Enable English Colloquial + English Native';
     }
   }
 
-  void _applyIntelligentDefaults() {
+  void _applyIntelligentMultipleStylesDefaults() {
     switch (_motherTongue) {
       case MotherTongue.spanish:
-        // EXACT: Spanish → German and English colloquial by default
+        // ENHANCED: Spanish → Multiple German and English styles by default
         _germanColloquial = true;
+        _germanNative = true;
         _englishColloquial = true;
+        _englishNative = true;
         break;
       case MotherTongue.english:
-        // EXACT: English → German colloquial by default (Spanish is automatic)
+        // ENHANCED: English → Multiple German styles by default (Spanish is automatic)
         _germanColloquial = true;
+        _germanNative = true;
         break;
       case MotherTongue.german:
-        // EXACT: German → English colloquial by default (Spanish is automatic)
+        // ENHANCED: German → Multiple English styles by default (Spanish is automatic)
         _englishColloquial = true;
+        _englishNative = true;
         break;
       default:
-        // Other languages → German and English colloquial
+        // Other languages → Multiple German and English styles
         _germanColloquial = true;
+        _germanNative = true;
         _englishColloquial = true;
+        _englishNative = true;
         break;
     }
   }
@@ -669,7 +721,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: Colors.black,
-        title: const Text('Settings', style: TextStyle(color: Colors.cyan)),
+        title: const Text('Multiple Styles Settings', style: TextStyle(color: Colors.cyan)),
         centerTitle: true,
         actions: [
           // Clear all button
@@ -677,7 +729,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: const Icon(Icons.clear_all, color: Colors.orange),
             onPressed: () {
               setState(() {
-                // Clear all selections
+                // Clear all style selections
                 _germanNative = false;
                 _germanColloquial = false;
                 _germanInformal = false;
@@ -690,7 +742,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _englishWordByWord = false;
               });
             },
-            tooltip: 'Clear All Selections',
+            tooltip: 'Clear All Style Selections',
           ),
         ],
       ),
@@ -700,7 +752,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Microphone Mode Information (no longer selectable)
+              // Microphone Mode Information (unchanged)
               const Text('Microphone Mode', style: TextStyle(color: Colors.cyan, fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Container(
@@ -730,7 +782,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Mother Tongue Section
+              // Mother Tongue Section (unchanged)
               const Text('Mother Tongue', style: TextStyle(color: Colors.cyan, fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Container(
@@ -770,14 +822,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 24),
 
-              // App Mode Section (keep TRAVEL MODE and other modalities as requested)
+              // App Mode Section (PRESERVED - includes Travel Mode and all other modalities)
               const Text('App Mode', style: TextStyle(color: Colors.cyan, fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Column(
                 children: [
                   ListTile(
                     title: const Text('Language Learning', style: TextStyle(color: Colors.white, fontSize: 16)),
-                    subtitle: const Text('Learn German and English with multiple styles', style: TextStyle(color: Colors.grey, fontSize: 14)),
+                    subtitle: const Text('Learn German and English with multiple translation styles', style: TextStyle(color: Colors.grey, fontSize: 14)),
                     trailing: Radio<AppMode>(
                       value: AppMode.languageLearning,
                       groupValue: _appMode,
@@ -789,6 +841,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       fillColor: MaterialStateProperty.resolveWith((states) => states.contains(MaterialState.selected) ? Colors.cyan : Colors.grey),
                     ),
                   ),
+                  // PRESERVED: Travel Mode (as requested)
                   ListTile(
                     title: const Text('Travel Mode', style: TextStyle(color: Colors.white, fontSize: 16)),
                     subtitle: const Text('Auto-detect foreign languages and translate to your mother tongue', style: TextStyle(color: Colors.grey, fontSize: 14)),
@@ -803,6 +856,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       fillColor: MaterialStateProperty.resolveWith((states) => states.contains(MaterialState.selected) ? Colors.cyan : Colors.grey),
                     ),
                   ),
+                  // PRESERVED: Fluency Practice (as requested)
                   ListTile(
                     title: const Text('Fluency Practice', style: TextStyle(color: Colors.white, fontSize: 16)),
                     subtitle: const Text('Practice speaking and get grammar/pronunciation corrections', style: TextStyle(color: Colors.grey, fontSize: 14)),
@@ -821,25 +875,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Translation Styles Section (only show in Language Learning mode)
+              // ENHANCED: Multiple Translation Styles Section (only show in Language Learning mode)
               if (_appMode == AppMode.languageLearning) ...[
-                const Text('Translation Styles', style: TextStyle(color: Colors.cyan, fontSize: 16, fontWeight: FontWeight.bold)),
+                const Text('Multiple Translation Styles', style: TextStyle(color: Colors.cyan, fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 
-                // EXACT per requirements: Dynamic translation explanation
-                _buildDynamicTranslationInfo(),
+                // ENHANCED: Multiple styles translation explanation
+                _buildMultipleStylesTranslationInfo(),
                 
-                // Selection summary
-                _buildSelectionSummary(),
+                // Multiple styles selection summary
+                _buildMultipleStylesSelectionSummary(),
                 
                 const SizedBox(height: 16),
                 
-                // German Expandable Section
+                // ENHANCED: German Multiple Styles Section
                 Container(
                   decoration: BoxDecoration(
-                    color: _isGermanSelected ? const Color(0xFF1B4D3E) : const Color(0xFF2C2C2E),
+                    color: _germanStylesCount > 0 ? const Color(0xFF1B4D3E) : const Color(0xFF2C2C2E),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: _isGermanSelected ? const Color(0xFF4CAF50) : const Color(0xFF3A3A3C), width: _isGermanSelected ? 1.0 : 0.5),
+                    border: Border.all(color: _germanStylesCount > 0 ? const Color(0xFF4CAF50) : const Color(0xFF3A3A3C), width: _germanStylesCount > 0 ? 1.0 : 0.5),
                   ),
                   child: Column(
                     children: [
@@ -858,12 +912,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 children: [
                                   Text('🇩🇪', style: TextStyle(fontSize: 20)),
                                   SizedBox(width: 8),
-                                  Text('German', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+                                  Text('German (Multiple Styles)', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
                                 ],
                               ),
                               Row(
                                 children: [
-                                  if (_isGermanSelected)
+                                  if (_germanStylesCount > 0)
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                       margin: const EdgeInsets.only(right: 8),
@@ -872,7 +926,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
-                                        '${[_germanNative, _germanColloquial, _germanInformal, _germanFormal].where((e) => e).length} selected',
+                                        '$_germanStylesCount styles',
                                         style: const TextStyle(color: Colors.white, fontSize: 12),
                                       ),
                                     ),
@@ -889,7 +943,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           padding: const EdgeInsets.all(8.0),
                           child: Column(
                             children: [
-                              // EXACT per requirements: German Word-by-Word Audio Toggle
+                              // ENHANCED: German Word-by-Word Audio Toggle
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
@@ -897,9 +951,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text('Word-by-Word Audio', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
+                                        Text('Word-by-Word Audio for ALL German Styles', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
                                         SizedBox(height: 2),
-                                        Text('Format: [German word] ([Spanish equivalent])', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                                        Text('Complete sentences + [German word] ([Spanish equivalent])', style: TextStyle(color: Colors.grey, fontSize: 13)),
                                       ],
                                     ),
                                   ),
@@ -915,11 +969,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               const SizedBox(height: 12),
                               const Divider(color: Color(0xFF3A3A3C), height: 1, thickness: 0.5),
                               const SizedBox(height: 8),
+                              
+                              // ENHANCED: Multiple German Style Checkboxes
+                              const Text(
+                                'Select multiple German styles (you can choose as many as you want):',
+                                style: TextStyle(color: Colors.amber, fontSize: 12, fontStyle: FontStyle.italic),
+                              ),
+                              const SizedBox(height: 8),
                               Row(
                                 children: [
                                   Expanded(
                                     child: CheckboxListTile(
                                       title: const Text('Native', style: TextStyle(color: Colors.white, fontSize: 14)),
+                                      subtitle: const Text('Natural German', style: TextStyle(color: Colors.grey, fontSize: 11)),
                                       value: _germanNative,
                                       onChanged: (bool? value) {
                                         setState(() {
@@ -934,6 +996,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   Expanded(
                                     child: CheckboxListTile(
                                       title: const Text('Colloquial', style: TextStyle(color: Colors.white, fontSize: 14)),
+                                      subtitle: const Text('Casual German', style: TextStyle(color: Colors.grey, fontSize: 11)),
                                       value: _germanColloquial,
                                       onChanged: (bool? value) {
                                         setState(() {
@@ -952,6 +1015,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   Expanded(
                                     child: CheckboxListTile(
                                       title: const Text('Informal', style: TextStyle(color: Colors.white, fontSize: 14)),
+                                      subtitle: const Text('Friendly German', style: TextStyle(color: Colors.grey, fontSize: 11)),
                                       value: _germanInformal,
                                       onChanged: (bool? value) {
                                         setState(() {
@@ -966,6 +1030,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   Expanded(
                                     child: CheckboxListTile(
                                       title: const Text('Formal', style: TextStyle(color: Colors.white, fontSize: 14)),
+                                      subtitle: const Text('Respectful German', style: TextStyle(color: Colors.grey, fontSize: 11)),
                                       value: _germanFormal,
                                       onChanged: (bool? value) {
                                         setState(() {
@@ -989,12 +1054,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 
                 const SizedBox(height: 12),
                 
-                // English Expandable Section
+                // ENHANCED: English Multiple Styles Section
                 Container(
                   decoration: BoxDecoration(
-                    color: _isEnglishSelected ? const Color(0xFF1B4D3E) : const Color(0xFF2C2C2E),
+                    color: _englishStylesCount > 0 ? const Color(0xFF1B4D3E) : const Color(0xFF2C2C2E),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: _isEnglishSelected ? const Color(0xFF4CAF50) : const Color(0xFF3A3A3C), width: _isEnglishSelected ? 1.0 : 0.5),
+                    border: Border.all(color: _englishStylesCount > 0 ? const Color(0xFF4CAF50) : const Color(0xFF3A3A3C), width: _englishStylesCount > 0 ? 1.0 : 0.5),
                   ),
                   child: Column(
                     children: [
@@ -1013,12 +1078,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 children: [
                                   Text('🇺🇸', style: TextStyle(fontSize: 20)),
                                   SizedBox(width: 8),
-                                  Text('English', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+                                  Text('English (Multiple Styles)', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
                                 ],
                               ),
                               Row(
                                 children: [
-                                  if (_isEnglishSelected)
+                                  if (_englishStylesCount > 0)
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                       margin: const EdgeInsets.only(right: 8),
@@ -1027,7 +1092,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
-                                        '${[_englishNative, _englishColloquial, _englishInformal, _englishFormal].where((e) => e).length} selected',
+                                        '$_englishStylesCount styles',
                                         style: const TextStyle(color: Colors.white, fontSize: 12),
                                       ),
                                     ),
@@ -1044,7 +1109,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           padding: const EdgeInsets.all(8.0),
                           child: Column(
                             children: [
-                              // EXACT per requirements: English Word-by-Word Audio Toggle
+                              // ENHANCED: English Word-by-Word Audio Toggle
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
@@ -1052,9 +1117,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text('Word-by-Word Audio', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
+                                        Text('Word-by-Word Audio for ALL English Styles', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500)),
                                         SizedBox(height: 2),
-                                        Text('Format: [English word] ([Spanish equivalent])', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                                        Text('Complete sentences + [English word] ([Spanish equivalent])', style: TextStyle(color: Colors.grey, fontSize: 13)),
                                       ],
                                     ),
                                   ),
@@ -1070,11 +1135,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               const SizedBox(height: 12),
                               const Divider(color: Color(0xFF3A3A3C), height: 1, thickness: 0.5),
                               const SizedBox(height: 8),
+                              
+                              // ENHANCED: Multiple English Style Checkboxes
+                              const Text(
+                                'Select multiple English styles (you can choose as many as you want):',
+                                style: TextStyle(color: Colors.blue, fontSize: 12, fontStyle: FontStyle.italic),
+                              ),
+                              const SizedBox(height: 8),
                               Row(
                                 children: [
                                   Expanded(
                                     child: CheckboxListTile(
                                       title: const Text('Native', style: TextStyle(color: Colors.white, fontSize: 14)),
+                                      subtitle: const Text('Natural English', style: TextStyle(color: Colors.grey, fontSize: 11)),
                                       value: _englishNative,
                                       onChanged: (bool? value) {
                                         setState(() {
@@ -1089,6 +1162,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   Expanded(
                                     child: CheckboxListTile(
                                       title: const Text('Colloquial', style: TextStyle(color: Colors.white, fontSize: 14)),
+                                      subtitle: const Text('Casual English', style: TextStyle(color: Colors.grey, fontSize: 11)),
                                       value: _englishColloquial,
                                       onChanged: (bool? value) {
                                         setState(() {
@@ -1107,6 +1181,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   Expanded(
                                     child: CheckboxListTile(
                                       title: const Text('Informal', style: TextStyle(color: Colors.white, fontSize: 14)),
+                                      subtitle: const Text('Friendly English', style: TextStyle(color: Colors.grey, fontSize: 11)),
                                       value: _englishInformal,
                                       onChanged: (bool? value) {
                                         setState(() {
@@ -1121,6 +1196,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   Expanded(
                                     child: CheckboxListTile(
                                       title: const Text('Formal', style: TextStyle(color: Colors.white, fontSize: 14)),
+                                      subtitle: const Text('Respectful English', style: TextStyle(color: Colors.grey, fontSize: 11)),
                                       value: _englishFormal,
                                       onChanged: (bool? value) {
                                         setState(() {
@@ -1154,7 +1230,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     backgroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: const Text('SAVE', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    _isAnyStyleSelected 
+                        ? 'SAVE MULTIPLE STYLES (${_germanStylesCount + _englishStylesCount} selected)' 
+                        : 'SAVE', 
+                    style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)
+                  ),
                 ),
               ),
               const SizedBox(height: 20),

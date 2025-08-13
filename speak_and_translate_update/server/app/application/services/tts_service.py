@@ -1,4 +1,4 @@
-# tts_service.py - Fixed for reliable audio generation..........
+# tts_service.py - Enhanced for MULTIPLE translation styles support
 
 from azure.cognitiveservices.speech import (
     SpeechConfig,
@@ -201,7 +201,7 @@ class EnhancedTTSService:
         logger.error(f"❌ All {max_retries} synthesis attempts failed")
         return False
 
-    async def text_to_speech_word_pairs_v2(
+    async def text_to_speech_multiple_styles_v3(
         self,
         translations_data: Dict,
         source_lang: str,
@@ -210,255 +210,227 @@ class EnhancedTTSService:
         output_path: Optional[str] = None,
     ) -> Optional[str]:
         """
-        Generate TTS with ROBUST error handling and fallback modes.
+        Generate TTS for MULTIPLE translation styles with comprehensive audio.
+        Handles both complete sentences and word-by-word breakdown based on user preferences.
         """
         try:
             if not output_path:
                 temp_dir = self._get_temp_directory()
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                output_path = os.path.join(temp_dir, f"speech_{timestamp}.mp3")
+                output_path = os.path.join(temp_dir, f"multiple_styles_speech_{timestamp}.mp3")
 
-            logger.info(f"🌐 Generating audio for source language: {source_lang}")
+            logger.info(f"🌐 Generating MULTIPLE STYLES audio for source language: {source_lang}")
             
-            # Check what audio mode to use
+            # Check what audio modes to use
             german_word_by_word = getattr(style_preferences, 'german_word_by_word', False)
             english_word_by_word = getattr(style_preferences, 'english_word_by_word', False)
-            any_word_by_word_requested = german_word_by_word or english_word_by_word
             
-            logger.info(f"🔍 Audio generation mode:")
-            logger.info(f"   German word-by-word requested: {german_word_by_word}")
-            logger.info(f"   English word-by-word requested: {english_word_by_word}")
+            logger.info(f"🔍 MULTIPLE STYLES audio generation mode:")
+            logger.info(f"   German word-by-word audio: {german_word_by_word}")
+            logger.info(f"   English word-by-word audio: {english_word_by_word}")
             logger.info(f"   Style data available: {len(translations_data.get('style_data', []))}")
             
-            # Check if we have word-by-word data
-            has_word_by_word_data = False
-            word_by_word_pairs = []
-            
-            for style_info in translations_data.get('style_data', []):
-                word_pairs = style_info.get('word_pairs', [])
-                if word_pairs and len(word_pairs) > 0:
-                    has_word_by_word_data = True
-                    word_by_word_pairs.extend(word_pairs)
-                    logger.info(f"   Found {len(word_pairs)} word pairs in {style_info.get('style_name', 'unknown')}")
-            
-            # Generate SSML based on what data we have
-            if any_word_by_word_requested and has_word_by_word_data:
-                logger.info("🎵 Generating word-by-word audio")
-                ssml = self._generate_word_by_word_ssml(translations_data, style_preferences)
-            else:
-                logger.info("🎵 Generating simple translation audio")
-                ssml = self._generate_simple_translation_ssml(translations_data, style_preferences)
+            # Generate comprehensive SSML for all styles
+            ssml = self._generate_multiple_styles_ssml(translations_data, style_preferences)
             
             if not ssml or len(ssml.strip()) < 50:
                 logger.warning("⚠️ Generated SSML is too short or empty")
                 return None
             
             # Log SSML for debugging
-            logger.info(f"📝 Generated SSML ({len(ssml)} characters):")
-            logger.info(f"   Preview: {ssml[:200]}...")
+            logger.info(f"📝 Generated MULTIPLE STYLES SSML ({len(ssml)} characters):")
+            logger.info(f"   Preview: {ssml[:300]}...")
             
             # Use retry logic for synthesis
             success = await self._synthesize_with_retry(ssml, output_path, max_retries=3)
             
             if success:
-                logger.info(f"✅ Audio generated successfully: {os.path.basename(output_path)}")
+                logger.info(f"✅ MULTIPLE STYLES audio generated successfully: {os.path.basename(output_path)}")
                 return os.path.basename(output_path)
             else:
-                logger.error("❌ Failed to generate audio after all retry attempts")
+                logger.error("❌ Failed to generate multiple styles audio after all retry attempts")
                 return None
 
         except Exception as e:
-            logger.error(f"❌ Error in text_to_speech_word_pairs_v2: {str(e)}")
+            logger.error(f"❌ Error in text_to_speech_multiple_styles_v3: {str(e)}")
             import traceback
             traceback.print_exc()
             return None
 
-    def _generate_word_by_word_ssml(self, translations_data: Dict, style_preferences=None) -> str:
-        """Generate SSML for word-by-word audio"""
+    def _generate_multiple_styles_ssml(self, translations_data: Dict, style_preferences=None) -> str:
+        """Generate SSML for MULTIPLE translation styles with complete sentences and word-by-word"""
         ssml = """<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">"""
         
-        logger.info("🎤 GENERATING WORD-BY-WORD AUDIO")
-        logger.info("="*50)
+        logger.info("🎤 GENERATING MULTIPLE STYLES AUDIO")
+        logger.info("="*60)
         
-        # Collect all word pairs from all styles
-        all_word_pairs = []
+        # Group translations by language
+        german_translations = []
+        english_translations = []
+        spanish_translations = []
         
         for style_info in translations_data.get('style_data', []):
+            translation_text = style_info.get('translation', '')
+            display_name = style_info.get('display_name', style_info.get('style_name', 'Unknown'))
             word_pairs = style_info.get('word_pairs', [])
             is_german = style_info.get('is_german', False)
             is_spanish = style_info.get('is_spanish', False)
-            style_name = style_info.get('style_name', 'unknown')
             
-            # Check if this language should be included
-            should_include = False
-            if is_german and getattr(style_preferences, 'german_word_by_word', False):
-                should_include = True
-            elif not is_german and not is_spanish and getattr(style_preferences, 'english_word_by_word', False):
-                should_include = True
-            
-            if should_include and word_pairs:
-                language = 'german' if is_german else 'english'
-                logger.info(f"📝 Including {len(word_pairs)} pairs from {style_name} ({language})")
-                
-                for i, (source, spanish) in enumerate(word_pairs):
-                    all_word_pairs.append({
-                        'source': source,
-                        'spanish': spanish,
-                        'language': language,
-                        'order': i
+            if translation_text and len(translation_text.strip()) > 5:
+                if is_german:
+                    german_translations.append({
+                        'text': translation_text,
+                        'display_name': display_name,
+                        'word_pairs': word_pairs
+                    })
+                elif is_spanish:
+                    spanish_translations.append({
+                        'text': translation_text,
+                        'display_name': display_name,
+                        'word_pairs': word_pairs
+                    })
+                else:
+                    english_translations.append({
+                        'text': translation_text,
+                        'display_name': display_name,
+                        'word_pairs': word_pairs
                     })
         
-        if not all_word_pairs:
-            logger.warning("⚠️ No word pairs found for audio generation")
-            return self._generate_fallback_ssml(translations_data)
+        # Add introduction
+        ssml += f"""
+        <voice name="en-US-JennyMultilingualNeural">
+            <prosody rate="0.9">
+                <break time="500ms"/>
+            </prosody>
+        </voice>"""
         
-        logger.info(f"🎵 Generating audio for {len(all_word_pairs)} word pairs")
-        
-        # Group by language for better audio flow
-        by_language = {}
-        for pair in all_word_pairs:
-            lang = pair['language']
-            if lang not in by_language:
-                by_language[lang] = []
-            by_language[lang].append(pair)
-        
-        # Generate SSML for each language
-        for language, pairs in by_language.items():
-            if not pairs:
-                continue
+        # Process German translations
+        if german_translations:
+            logger.info(f"🇩🇪 Processing {len(german_translations)} German translation styles")
             
-            voice_config = self._get_voice_config(language)
-            voice = voice_config['voice']
-            lang_code = voice_config['language']
-            
-            logger.info(f"🎤 {language.title()}: {len(pairs)} pairs with voice {voice}")
-            
-            # Add language section with introduction
-            ssml += f"""
+            for translation in german_translations:
+                display_name = translation['display_name']
+                text = translation['text']
+                word_pairs = translation['word_pairs']
+                
+                logger.info(f"   📖 {display_name}: {text[:50]}...")
+                
+                # Clean text for SSML
+                clean_text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                
+                # Add style introduction and complete sentence
+                ssml += f"""
         <voice name="en-US-JennyMultilingualNeural">
             <prosody rate="0.9">
                 <break time="300ms"/>
             </prosody>
+        </voice>
+        <voice name="de-DE-SeraphinaMultilingualNeural">
+            <prosody rate="1.0">
+                <lang xml:lang="de-DE">{clean_text}</lang>
+                <break time="800ms"/>
+            </prosody>
         </voice>"""
-            
-            # Add word-by-word pairs
-            ssml += f"""
+                
+                # Add word-by-word breakdown if requested and available
+                if getattr(style_preferences, 'german_word_by_word', False) and word_pairs:
+                    logger.info(f"   🎵 Adding word-by-word for {display_name}: {len(word_pairs)} pairs")
+                    
+                    ssml += f"""
         <voice name="en-US-JennyMultilingualNeural">
-            <prosody rate="0.9">"""
-            
-            for pair in pairs:
-                source = pair['source']
-                spanish = pair['spanish']
-                
-                logger.info(f"   🎵 {source} → {spanish}")
-                
-                # Speak the target language word, then Spanish equivalent
-                ssml += f"""
-            <lang xml:lang="{lang_code}">{source}</lang>
-            <break time="200ms"/>
-            <lang xml:lang="es-ES">{spanish}</lang>
-            <break time="400ms"/>"""
-            
-            ssml += """
-            <break time="600ms"/>
+            <prosody rate="0.9">
+                <break time="400ms"/>
+            </prosody>
+        </voice>"""
+                    
+                    for source, spanish in word_pairs:
+                        ssml += f"""
+        <voice name="en-US-JennyMultilingualNeural">
+            <prosody rate="0.8">
+                <lang xml:lang="de-DE">{source}</lang>
+                <break time="200ms"/>
+                <lang xml:lang="es-ES">{spanish}</lang>
+                <break time="400ms"/>
             </prosody>
         </voice>"""
         
-        ssml += "</speak>"
-        
-        logger.info(f"✅ Generated word-by-word SSML with {len(all_word_pairs)} pairs")
-        return ssml
-
-    def _generate_simple_translation_ssml(self, translations_data: Dict, style_preferences=None) -> str:
-        """Generate simple SSML that just reads translations."""
-        ssml = """<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">"""
-        
-        logger.info("🎤 GENERATING SIMPLE TRANSLATION AUDIO")
-        logger.info("="*40)
-        
-        # Get all available translations
-        translations = []
-        for style_info in translations_data.get('style_data', []):
-            translation_text = style_info.get('translation', '')
-            if translation_text and len(translation_text.strip()) > 5:
-                is_german = style_info.get('is_german', False)
-                is_spanish = style_info.get('is_spanish', False)
-                style_name = style_info.get('style_name', 'unknown')
+        # Process English translations
+        if english_translations:
+            logger.info(f"🇺🇸 Processing {len(english_translations)} English translation styles")
+            
+            for translation in english_translations:
+                display_name = translation['display_name']
+                text = translation['text']
+                word_pairs = translation['word_pairs']
                 
-                # Determine language
-                if is_german:
-                    language = 'german'
-                elif is_spanish:
-                    language = 'spanish'
-                else:
-                    language = 'english'
+                logger.info(f"   📖 {display_name}: {text[:50]}...")
                 
-                translations.append({
-                    'text': translation_text,
-                    'language': language,
-                    'style': style_name
-                })
+                # Clean text for SSML
+                clean_text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                 
-                logger.info(f"📖 {language.title()}: {translation_text[:50]}...")
-        
-        # If no translations found, try to get from main translations list
-        if not translations:
-            main_translations = translations_data.get('translations', [])
-            if main_translations:
-                for i, text in enumerate(main_translations):
-                    if text and len(text.strip()) > 5:
-                        translations.append({
-                            'text': text,
-                            'language': 'english',  # Default
-                            'style': f'translation_{i}'
-                        })
-                        logger.info(f"📖 Fallback translation: {text[:50]}...")
-        
-        if not translations:
-            logger.warning("⚠️ No translations found for audio generation")
-            return self._generate_fallback_ssml(translations_data)
-        
-        # Generate SSML for each translation
-        for i, trans in enumerate(translations):
-            text = trans['text']
-            language = trans['language']
-            
-            # Escape XML special characters
-            text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-            
-            # Get voice configuration
-            voice_config = self._get_voice_config(language)
-            voice = voice_config['voice']
-            lang_code = voice_config['language']
-            
-            logger.info(f"🎤 Reading {language} with voice {voice}")
-            
-            # Add to SSML
-            ssml += f"""
-        <voice name="{voice}">
+                # Add style introduction and complete sentence
+                ssml += f"""
+        <voice name="en-US-JennyMultilingualNeural">
+            <prosody rate="0.9">
+                <break time="300ms"/>
+            </prosody>
+        </voice>
+        <voice name="en-US-JennyMultilingualNeural">
             <prosody rate="1.0">
-                <lang xml:lang="{lang_code}">{text}</lang>
+                <lang xml:lang="en-US">{clean_text}</lang>
+                <break time="800ms"/>
+            </prosody>
+        </voice>"""
+                
+                # Add word-by-word breakdown if requested and available
+                if getattr(style_preferences, 'english_word_by_word', False) and word_pairs:
+                    logger.info(f"   🎵 Adding word-by-word for {display_name}: {len(word_pairs)} pairs")
+                    
+                    ssml += f"""
+        <voice name="en-US-JennyMultilingualNeural">
+            <prosody rate="0.9">
+                <break time="400ms"/>
+            </prosody>
+        </voice>"""
+                    
+                    for source, spanish in word_pairs:
+                        ssml += f"""
+        <voice name="en-US-JennyMultilingualNeural">
+            <prosody rate="0.8">
+                <lang xml:lang="en-US">{source}</lang>
+                <break time="200ms"/>
+                <lang xml:lang="es-ES">{spanish}</lang>
+                <break time="400ms"/>
+            </prosody>
+        </voice>"""
+        
+        # Process Spanish translations (if any)
+        if spanish_translations:
+            logger.info(f"🇪🇸 Processing {len(spanish_translations)} Spanish translation styles")
+            
+            for translation in spanish_translations:
+                display_name = translation['display_name']
+                text = translation['text']
+                
+                logger.info(f"   📖 {display_name}: {text[:50]}...")
+                
+                # Clean text for SSML
+                clean_text = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                
+                ssml += f"""
+        <voice name="es-ES-ArabellaMultilingualNeural">
+            <prosody rate="1.0">
+                <lang xml:lang="es-ES">{clean_text}</lang>
                 <break time="800ms"/>
             </prosody>
         </voice>"""
         
-        ssml += "</speak>"
-        
-        logger.info(f"✅ Generated simple SSML for {len(translations)} translations")
-        return ssml
-
-    def _generate_fallback_ssml(self, translations_data: Dict) -> str:
-        """Generate fallback SSML when normal generation fails"""
-        logger.info("🔄 Generating fallback SSML")
-        
-        ssml = """<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">
-        <voice name="en-US-JennyMultilingualNeural">
-            <prosody rate="1.0">
-                Translation completed. Please check the text for results.
-                <break time="500ms"/>
-            </prosody>
-        </voice>
+        ssml += """
+        <break time="500ms"/>
         </speak>"""
+        
+        total_translations = len(german_translations) + len(english_translations) + len(spanish_translations)
+        logger.info(f"✅ Generated MULTIPLE STYLES SSML for {total_translations} translation styles")
         
         return ssml
 
@@ -476,6 +448,23 @@ class EnhancedTTSService:
             code = language_code
             
         return self.voice_mapping.get(code, self.voice_mapping['en'])
+
+    # Keep existing methods for backwards compatibility
+    async def text_to_speech_word_pairs_v2(
+        self,
+        translations_data: Dict,
+        source_lang: str,
+        target_lang: str,
+        style_preferences=None,
+        output_path: Optional[str] = None,
+    ) -> Optional[str]:
+        """
+        Legacy method - redirects to new multiple styles method
+        """
+        logger.info("🔄 Redirecting to new multiple styles TTS method")
+        return await self.text_to_speech_multiple_styles_v3(
+            translations_data, source_lang, target_lang, style_preferences, output_path
+        )
 
     async def text_to_speech(
         self, ssml: str, output_path: Optional[str] = None
