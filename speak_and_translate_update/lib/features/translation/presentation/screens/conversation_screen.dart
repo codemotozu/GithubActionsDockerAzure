@@ -250,7 +250,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
             isWordByWordEnabled: isWordByWordEnabled,
             onPlayStyle: (styleIndex) => _playStyleAudio(styleIndex, languageStyles),
           );
-        }).toList(),
+        }),
       ],
     );
   }

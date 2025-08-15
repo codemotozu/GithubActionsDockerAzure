@@ -128,7 +128,7 @@ class _MultiStyleWordByWordWidgetState extends State<MultiStyleWordByWordWidget>
   Widget _buildStyleSelector(Map<String, List<MapEntry<String, Map<String, String>>>> groupedData) {
     final styles = groupedData.keys.toList();
     
-    return Container(
+    return SizedBox(
       height: 40,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,

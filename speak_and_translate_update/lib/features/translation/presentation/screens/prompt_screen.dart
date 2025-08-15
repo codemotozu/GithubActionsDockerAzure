@@ -30,7 +30,7 @@ class _PromptScreenState extends ConsumerState<PromptScreen> {
   Timer? _speechPauseTimer;
   Timer? _voiceStartTimer;
   Timer? _restartTimer;
-  double _soundThreshold = 0.05;
+  final double _soundThreshold = 0.05;
   
   bool _isListeningSession = false;
   int _consecutiveErrors = 0;
@@ -230,7 +230,7 @@ class _PromptScreenState extends ConsumerState<PromptScreen> {
     _consecutiveErrors++;
     
     if (error.errorMsg == 'error_no_match') {
-      debugPrint('🔄 No speech detected (${_consecutiveErrors}/${_maxConsecutiveErrors})');
+      debugPrint('🔄 No speech detected ($_consecutiveErrors/$_maxConsecutiveErrors)');
       if (_consecutiveErrors < _maxConsecutiveErrors) {
         _scheduleRestart(delay: 500);
       } else {

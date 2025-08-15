@@ -173,7 +173,7 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
 
   // Debug helper method
   void _debugPrintSettings(String label, Map<String, dynamic> settings) {
-    print('\n' + '='*60);
+    print('\n${'='*60}');
     print('🎯 $label:');
     print('='*60);
     

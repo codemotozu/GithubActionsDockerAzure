@@ -66,7 +66,7 @@ class VoiceCommandNotifier extends StateNotifier<VoiceCommandState> {
             error: e.toString(),
             isProcessing: false
           );
-          throw e; // Re-throw to be caught by outer try-catch
+          rethrow; // Re-throw to be caught by outer try-catch
         }
       } else if (commandLower == "stop") {
         if (state.isListening) {

@@ -358,7 +358,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                 ],
               ),
-            )).toList(),
+            )),
           ] else ...[
             Padding(
               padding: const EdgeInsets.only(left: 32),
@@ -786,7 +786,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           setState(() => _appMode = value);
                         }
                       },
-                      fillColor: MaterialStateProperty.resolveWith((states) => states.contains(MaterialState.selected) ? Colors.cyan : Colors.grey),
+                      fillColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.selected) ? Colors.cyan : Colors.grey),
                     ),
                   ),
                   ListTile(
@@ -800,7 +800,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           setState(() => _appMode = value);
                         }
                       },
-                      fillColor: MaterialStateProperty.resolveWith((states) => states.contains(MaterialState.selected) ? Colors.cyan : Colors.grey),
+                      fillColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.selected) ? Colors.cyan : Colors.grey),
                     ),
                   ),
                   ListTile(
@@ -814,7 +814,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           setState(() => _appMode = value);
                         }
                       },
-                      fillColor: MaterialStateProperty.resolveWith((states) => states.contains(MaterialState.selected) ? Colors.cyan : Colors.grey),
+                      fillColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.selected) ? Colors.cyan : Colors.grey),
                     ),
                   ),
                 ],

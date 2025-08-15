@@ -23,7 +23,7 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
   late AnimationController _animationController;
   late Animation<double> _expandAnimation;
   bool _isExpanded = false;
-  int _currentHighlightIndex = -1;
+  final int _currentHighlightIndex = -1;
 
   @override
   void initState() {
@@ -657,7 +657,7 @@ class _WordByWordVisualizationWidgetState extends State<WordByWordVisualizationW
                   // Language sections in perfect sync order
                   ...synchronizedData.entries.map((languageEntry) {
                     return _buildLanguageSection(languageEntry.key, languageEntry.value);
-                  }).toList(),
+                  }),
                 ],
               ),
             ),
