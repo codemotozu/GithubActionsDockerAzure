@@ -1,4 +1,4 @@
-// conversation_screen.dart - Complete Multi-Style Support with Perfect Sync
+// conversation_screen.dart - Complete Multi-Style Support with Perfect Sync..............................
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
