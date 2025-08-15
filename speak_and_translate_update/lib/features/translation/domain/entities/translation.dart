@@ -1,4 +1,4 @@
-// Updated translation.dart (Domain Entity) with enhanced word-by-word structure
+// translation.dart - Updated Domain Entity with Multi-Style Support and Perfect Sync
 
 import 'dart:ui';
 
@@ -11,6 +11,7 @@ class Translation {
   final Map<String, String>? translations;
   final Map<String, Map<String, String>>? wordByWord; // Enhanced for exact audio-visual matching
   final Map<String, String>? grammarExplanations;
+  final List<TranslationStyle>? styles; // NEW: Multiple styles support
 
   Translation({
     required this.originalText,
@@ -21,9 +22,21 @@ class Translation {
     this.translations,
     this.wordByWord,
     this.grammarExplanations,
+    this.styles,
   });
 
   factory Translation.fromJson(Map<String, dynamic> json) {
+    // Parse styles from the response
+    List<TranslationStyle>? parsedStyles;
+    if (json['styles'] != null && json['styles'] is List) {
+      parsedStyles = (json['styles'] as List)
+          .map((styleJson) => TranslationStyle.fromJson(styleJson))
+          .toList();
+    } else {
+      // Create styles from translations if styles field not present
+      parsedStyles = _createStylesFromTranslations(json);
+    }
+
     return Translation(
       originalText: json['original_text'] as String,
       translatedText: json['translated_text'] as String,
@@ -46,7 +59,58 @@ class Translation {
       grammarExplanations: json['grammar_explanations'] != null
           ? Map<String, String>.from(json['grammar_explanations'] as Map)
           : null,
+      styles: parsedStyles,
     );
+  }
+
+  // Helper method to create styles from translations data
+  static List<TranslationStyle>? _createStylesFromTranslations(Map<String, dynamic> json) {
+    final translations = json['translations'] as Map<String, dynamic>?;
+    final wordByWord = json['word_by_word'] as Map<String, dynamic>?;
+    
+    if (translations == null || translations.isEmpty) return null;
+    
+    final styles = <TranslationStyle>[];
+    
+    // Parse each translation as a potential style
+    translations.forEach((key, value) {
+      if (value is String && value.isNotEmpty) {
+        // Extract word pairs for this style if available
+        final stylePairs = <WordPair>[];
+        
+        if (wordByWord != null) {
+          wordByWord.forEach((wbwKey, wbwData) {
+            if (wbwData is Map) {
+              final style = wbwData['style'] as String?;
+              if (style == key || style?.contains(key) == true) {
+                final source = wbwData['source'] as String? ?? '';
+                final spanish = wbwData['spanish'] as String? ?? '';
+                final order = int.tryParse(wbwData['order']?.toString() ?? '0') ?? 0;
+                final isPhrasalVerb = wbwData['is_phrasal_verb'] == 'true';
+                
+                stylePairs.add(WordPair(
+                  sourceWord: source,
+                  spanishEquivalent: spanish,
+                  order: order,
+                  isPhrasalVerb: isPhrasalVerb,
+                ));
+              }
+            }
+          });
+        }
+        
+        // Sort pairs by order
+        stylePairs.sort((a, b) => a.order.compareTo(b.order));
+        
+        styles.add(TranslationStyle(
+          name: key,
+          translation: value,
+          wordPairs: stylePairs,
+        ));
+      }
+    });
+    
+    return styles.isNotEmpty ? styles : null;
   }
 
   // Convert to JSON for API communication
@@ -60,6 +124,7 @@ class Translation {
       'translations': translations,
       'word_by_word': wordByWord,
       'grammar_explanations': grammarExplanations,
+      'styles': styles?.map((s) => s.toJson()).toList(),
     };
   }
 
@@ -79,6 +144,17 @@ class Translation {
       ..sort((a, b) => a.order.compareTo(b.order));
   }
 
+  /// Get word pairs for a specific style
+  List<WordPairData> getWordPairsForStyle(String styleName) {
+    if (!hasWordByWordData) return [];
+    
+    return wordByWord!.entries
+        .where((entry) => entry.value['style']?.contains(styleName) == true)
+        .map((entry) => WordPairData.fromMap(entry.key, entry.value))
+        .toList()
+      ..sort((a, b) => a.order.compareTo(b.order));
+  }
+
   /// Get all available languages in word-by-word data
   Set<String> getAvailableLanguages() {
     if (!hasWordByWordData) return {};
@@ -89,9 +165,28 @@ class Translation {
         .toSet();
   }
 
+  /// Get all available styles in word-by-word data
+  Set<String> getAvailableStyles() {
+    if (!hasWordByWordData) return {};
+    
+    final styles = <String>{};
+    for (final data in wordByWord!.values) {
+      final style = data['style'];
+      if (style != null && style != 'unknown') {
+        styles.add(style);
+      }
+    }
+    return styles;
+  }
+
   /// Check if a specific language has word-by-word data
   bool hasWordByWordForLanguage(String language) {
     return getWordPairsForLanguage(language).isNotEmpty;
+  }
+
+  /// Check if a specific style has word-by-word data
+  bool hasWordByWordForStyle(String styleName) {
+    return getWordPairsForStyle(styleName).isNotEmpty;
   }
 
   /// Get word pair counts by language
@@ -104,6 +199,22 @@ class Translation {
       final language = entry.value['language'] ?? 'unknown';
       if (language != 'unknown') {
         counts[language] = (counts[language] ?? 0) + 1;
+      }
+    }
+    
+    return counts;
+  }
+
+  /// Get word pair counts by style
+  Map<String, int> getWordPairCountsByStyle() {
+    if (!hasWordByWordData) return {};
+    
+    final counts = <String, int>{};
+    
+    for (final entry in wordByWord!.entries) {
+      final style = entry.value['style'] ?? 'unknown';
+      if (style != 'unknown') {
+        counts[style] = (counts[style] ?? 0) + 1;
       }
     }
     
@@ -131,6 +242,43 @@ class Translation {
     return result;
   }
 
+  /// Get all styles for a specific language
+  List<TranslationStyle> getStylesForLanguage(String language) {
+    if (styles == null) return [];
+    
+    return styles!.where((style) {
+      // Determine language from style name
+      final styleName = style.name.toLowerCase();
+      final languageLower = language.toLowerCase();
+      return styleName.contains(languageLower) || 
+             (languageLower == 'english' && !styleName.contains('german') && !styleName.contains('spanish')) ||
+             (languageLower == 'spanish' && styleName.contains('spanish'));
+    }).toList();
+  }
+
+  /// Check if any style has word-by-word data
+  bool hasAnyWordByWordData() {
+    if (styles == null) return hasWordByWordData;
+    return styles!.any((style) => style.hasWordByWord) || hasWordByWordData;
+  }
+
+  /// Get total number of selected styles
+  int getTotalStyleCount() {
+    if (styles != null) return styles!.length;
+    
+    // Count from translations if styles not available
+    if (translations != null) {
+      return translations!.keys
+          .where((key) => !key.contains('error') && !key.contains('main'))
+          .length;
+    }
+    
+    return 0;
+  }
+
+  /// Check if this is a multi-style translation
+  bool get isMultiStyle => getTotalStyleCount() > 1;
+
   /// Create a copy with updated word-by-word data
   Translation copyWith({
     String? originalText,
@@ -141,6 +289,7 @@ class Translation {
     Map<String, String>? translations,
     Map<String, Map<String, String>>? wordByWord,
     Map<String, String>? grammarExplanations,
+    List<TranslationStyle>? styles,
   }) {
     return Translation(
       originalText: originalText ?? this.originalText,
@@ -151,6 +300,7 @@ class Translation {
       translations: translations ?? this.translations,
       wordByWord: wordByWord ?? this.wordByWord,
       grammarExplanations: grammarExplanations ?? this.grammarExplanations,
+      styles: styles ?? this.styles,
     );
   }
 
@@ -163,9 +313,121 @@ class Translation {
         'targetLanguage: $targetLanguage, '
         'hasAudio: ${audioPath != null}, '
         'hasWordByWord: $hasWordByWordData, '
-        'wordPairCounts: ${getWordPairCounts()}'
+        'wordPairCounts: ${getWordPairCounts()}, '
+        'styleCount: ${getTotalStyleCount()}, '
+        'isMultiStyle: $isMultiStyle'
         ')';
   }
+}
+
+/// Translation style with its specific word pairs
+class TranslationStyle {
+  final String name;
+  final String translation;
+  final List<WordPair> wordPairs;
+  final bool hasWordByWord;
+  
+  TranslationStyle({
+    required this.name,
+    required this.translation,
+    this.wordPairs = const [],
+  }) : hasWordByWord = wordPairs.isNotEmpty;
+  
+  factory TranslationStyle.fromJson(Map<String, dynamic> json) {
+    final pairs = <WordPair>[];
+    
+    if (json['word_pairs'] != null && json['word_pairs'] is List) {
+      pairs.addAll(
+        (json['word_pairs'] as List).map((pairJson) => WordPair.fromJson(pairJson))
+      );
+    }
+    
+    return TranslationStyle(
+      name: json['name'] as String,
+      translation: json['translation'] as String,
+      wordPairs: pairs,
+    );
+  }
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'translation': translation,
+      'word_pairs': wordPairs.map((p) => p.toJson()).toList(),
+      'has_word_by_word': hasWordByWord,
+    };
+  }
+  
+  /// Get the language of this style
+  String get language {
+    final nameLower = name.toLowerCase();
+    if (nameLower.contains('german')) return 'german';
+    if (nameLower.contains('english')) return 'english';
+    if (nameLower.contains('spanish')) return 'spanish';
+    return 'unknown';
+  }
+  
+  /// Get the style type (native, colloquial, informal, formal)
+  String get styleType {
+    final nameLower = name.toLowerCase();
+    if (nameLower.contains('native')) return 'native';
+    if (nameLower.contains('colloquial')) return 'colloquial';
+    if (nameLower.contains('informal')) return 'informal';
+    if (nameLower.contains('formal')) return 'formal';
+    return 'unknown';
+  }
+  
+  /// Get display color for this style
+  Color get styleColor {
+    switch (styleType) {
+      case 'native':
+        return const Color(0xFF4CAF50); // Green
+      case 'colloquial':
+        return const Color(0xFF2196F3); // Blue
+      case 'informal':
+        return const Color(0xFFFF9800); // Orange
+      case 'formal':
+        return const Color(0xFF9C27B0); // Purple
+      default:
+        return const Color(0xFF9E9E9E); // Grey
+    }
+  }
+}
+
+/// Word pair for multi-style support
+class WordPair {
+  final String sourceWord;
+  final String spanishEquivalent;
+  final int order;
+  final bool isPhrasalVerb;
+  
+  WordPair({
+    required this.sourceWord,
+    required this.spanishEquivalent,
+    this.order = 0,
+    this.isPhrasalVerb = false,
+  });
+  
+  factory WordPair.fromJson(Map<String, dynamic> json) {
+    return WordPair(
+      sourceWord: json['source'] as String,
+      spanishEquivalent: json['spanish'] as String,
+      order: json['order'] as int? ?? 0,
+      isPhrasalVerb: json['is_phrasal_verb'] as bool? ?? false,
+    );
+  }
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'source': sourceWord,
+      'spanish': spanishEquivalent,
+      'order': order,
+      'is_phrasal_verb': isPhrasalVerb,
+    };
+  }
+  
+  /// Get the display format for UI
+  String get displayFormat => '[$sourceWord] ([$spanishEquivalent])';
 }
 
 /// Data class for individual word pairs with enhanced structure
@@ -245,6 +507,15 @@ class WordPairData {
     }
   }
 
+  /// Get color for UI display based on style
+  Color get styleColor {
+    if (style.contains('native')) return const Color(0xFF4CAF50);
+    if (style.contains('colloquial')) return const Color(0xFF2196F3);
+    if (style.contains('informal')) return const Color(0xFFFF9800);
+    if (style.contains('formal')) return const Color(0xFF9C27B0);
+    return const Color(0xFF9E9E9E);
+  }
+
   @override
   String toString() {
     return 'WordPairData('
@@ -287,13 +558,17 @@ extension TranslationWordByWordExtensions on Translation {
     if (!hasWordByWordData) return 'No word-by-word data';
     
     final counts = getWordPairCounts();
+    final styleCounts = getWordPairCountsByStyle();
     final languages = getAvailableLanguages();
+    final availableStyles = getAvailableStyles();
     final phrasalVerbs = getAllPhrasalVerbs();
     
     final buffer = StringBuffer();
     buffer.writeln('Word-by-Word Summary:');
     buffer.writeln('Languages: ${languages.join(', ')}');
-    buffer.writeln('Counts: $counts');
+    buffer.writeln('Styles: ${availableStyles.join(', ')}');
+    buffer.writeln('Language Counts: $counts');
+    buffer.writeln('Style Counts: $styleCounts');
     
     if (phrasalVerbs.isNotEmpty) {
       buffer.writeln('Phrasal/Separable Verbs:');
@@ -343,5 +618,21 @@ extension TranslationWordByWordExtensions on Translation {
     }
     
     return errors;
+  }
+  
+  /// Get statistics about the translation
+  Map<String, dynamic> getStatistics() {
+    return {
+      'original_length': originalText.length,
+      'translated_length': translatedText.length,
+      'has_audio': audioPath != null,
+      'total_styles': getTotalStyleCount(),
+      'is_multi_style': isMultiStyle,
+      'languages': getAvailableLanguages().toList(),
+      'styles': getAvailableStyles().toList(),
+      'word_pair_counts': getWordPairCounts(),
+      'style_word_counts': getWordPairCountsByStyle(),
+      'phrasal_verb_count': getAllPhrasalVerbs().values.fold(0, (sum, list) => sum + list.length),
+    };
   }
 }

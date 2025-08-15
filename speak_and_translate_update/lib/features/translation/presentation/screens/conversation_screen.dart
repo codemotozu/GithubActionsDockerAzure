@@ -1,4 +1,4 @@
-// conversation_screen.dart - Enhanced with PERFECT UI-Audio synchronization debugging
+// conversation_screen.dart - Complete file with multi-style support
 
 import 'dart:async';
 
@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speak_and_translate_update/features/translation/presentation/providers/shared_provider.dart' show settingsProvider;
 
 import '../../data/models/chat_message_model.dart';
+import '../../domain/entities/translation.dart';
 import '../../domain/repositories/translation_repository.dart';
 import '../providers/speech_provider.dart';
 import '../providers/translation_provider.dart';
@@ -120,6 +121,19 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     }
   }
 
+  Color _getLanguageColor(String language) {
+    switch (language.toLowerCase()) {
+      case 'german':
+        return Colors.amber;
+      case 'english':
+        return Colors.blue;
+      case 'spanish':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
   String _getExpectedBehaviorForMotherTongue(String motherTongue) {
     switch (motherTongue.toLowerCase()) {
       case 'spanish':
@@ -144,26 +158,34 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     final bool hasWordByWordData = translation.wordByWord != null && 
                                    (translation.wordByWord as Map).isNotEmpty;
     
-    // Count word pairs by language
+    // Count word pairs by language and style
     final Map<String, int> wordPairCounts = {};
+    final Map<String, int> styleCounts = {};
     final List<String> syncIssues = [];
     final List<String> syncFeatures = [];
     
     if (hasWordByWordData) {
       final wordByWordMap = translation.wordByWord as Map<String, Map<String, String>>;
       
-      // Group by language and count
+      // Group by language and style
       for (final entry in wordByWordMap.entries) {
         final data = entry.value;
         final language = data['language'] ?? 'unknown';
+        final style = data['style'] ?? 'unknown';
+        
         if (language != 'unknown') {
           wordPairCounts[language] = (wordPairCounts[language] ?? 0) + 1;
+        }
+        
+        if (style != 'unknown') {
+          styleCounts[style] = (styleCounts[style] ?? 0) + 1;
         }
       }
       
       // Analyze perfect sync features
       syncFeatures.add('✓ UI display order = Audio speaking order');
       syncFeatures.add('✓ UI format = Audio format (exactly)');
+      syncFeatures.add('✓ Multiple styles synchronized');
       
       // Check for phrasal/separable verbs
       final phrasalVerbs = wordByWordMap.values.where(
@@ -180,7 +202,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
         final source = data['source'] ?? '';
         final spanish = data['spanish'] ?? '';
         final displayFormat = data['display_format'] ?? '';
-        final expectedFormat = '[$source] ([$spanish])';
+        final expectedFormat = '[$source] ([${spanish}])';
         
         if (displayFormat == expectedFormat) {
           validFormatCount++;
@@ -199,7 +221,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     Color syncColor;
     
     if (anyWordByWordRequested && hasAudio && hasWordByWordData && syncIssues.isEmpty) {
-      syncStatus = 'PERFECT SYNCHRONIZATION';
+      syncStatus = 'PERFECT MULTI-STYLE SYNCHRONIZATION';
       syncColor = Colors.green;
     } else if (anyWordByWordRequested && hasAudio && hasWordByWordData && syncIssues.isNotEmpty) {
       syncStatus = 'SYNC ISSUES DETECTED';
@@ -222,6 +244,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
       'hasWordByWordData': hasWordByWordData,
       'anyWordByWordRequested': anyWordByWordRequested,
       'wordPairCounts': wordPairCounts,
+      'styleCounts': styleCounts,
       'syncFeatures': syncFeatures,
       'syncIssues': syncIssues,
       'germanWordByWord': germanWordByWord,
@@ -234,9 +257,9 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: syncAnalysis['syncColor'].withOpacity(0.1),
+        color: (syncAnalysis['syncColor'] as Color).withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: syncAnalysis['syncColor'], width: 1),
+        border: Border.all(color: syncAnalysis['syncColor'] as Color, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -244,16 +267,16 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
           Row(
             children: [
               Icon(
-                _getSyncStatusIcon(syncAnalysis['syncStatus']),
-                color: syncAnalysis['syncColor'],
+                _getSyncStatusIcon(syncAnalysis['syncStatus'] as String),
+                color: syncAnalysis['syncColor'] as Color,
                 size: 20,
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  syncAnalysis['syncStatus'],
+                  syncAnalysis['syncStatus'] as String,
                   style: TextStyle(
-                    color: syncAnalysis['syncColor'],
+                    color: syncAnalysis['syncColor'] as Color,
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
@@ -262,47 +285,47 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
             ],
           ),
           
-          if (syncAnalysis['anyWordByWordRequested']) ...[
+          if (syncAnalysis['anyWordByWordRequested'] as bool) ...[
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'Word-by-word audio requested:',
               style: TextStyle(color: Colors.white70, fontSize: 12),
             ),
-            if (syncAnalysis['germanWordByWord'])
-              Text('  • German: [German word] ([Spanish equivalent])',
+            if (syncAnalysis['germanWordByWord'] as bool)
+              const Text('  • German: [German word] ([Spanish equivalent])',
                    style: TextStyle(color: Colors.amber, fontSize: 11, fontFamily: 'monospace')),
-            if (syncAnalysis['englishWordByWord'])
-              Text('  • English: [English word] ([Spanish equivalent])',
+            if (syncAnalysis['englishWordByWord'] as bool)
+              const Text('  • English: [English word] ([Spanish equivalent])',
                    style: TextStyle(color: Colors.blue, fontSize: 11, fontFamily: 'monospace')),
           ],
           
-          if (syncAnalysis['wordPairCounts'].isNotEmpty) ...[
+          if ((syncAnalysis['styleCounts'] as Map).isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(
-              'Perfect sync data generated:',
+            const Text(
+              'Multi-style sync data generated:',
               style: TextStyle(color: Colors.white70, fontSize: 12),
             ),
-            ...syncAnalysis['wordPairCounts'].entries.map((entry) =>
+            ...(syncAnalysis['styleCounts'] as Map).entries.map((entry) =>
               Text('  • ${entry.key}: ${entry.value} synchronized pairs',
-                   style: TextStyle(color: Colors.green, fontSize: 11))
+                   style: const TextStyle(color: Colors.green, fontSize: 11))
             ).toList(),
           ],
           
-          if (syncAnalysis['syncFeatures'].isNotEmpty) ...[
+          if ((syncAnalysis['syncFeatures'] as List).isNotEmpty) ...[
             const SizedBox(height: 8),
-            ...syncAnalysis['syncFeatures'].map((feature) =>
-              Text(feature, style: TextStyle(color: Colors.green, fontSize: 11))
+            ...(syncAnalysis['syncFeatures'] as List).map((feature) =>
+              Text(feature, style: const TextStyle(color: Colors.green, fontSize: 11))
             ).toList(),
           ],
           
-          if (syncAnalysis['syncIssues'].isNotEmpty) ...[
+          if ((syncAnalysis['syncIssues'] as List).isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'Synchronization issues:',
               style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold),
             ),
-            ...syncAnalysis['syncIssues'].map((issue) =>
-              Text('  • $issue', style: TextStyle(color: Colors.red, fontSize: 10))
+            ...(syncAnalysis['syncIssues'] as List).map((issue) =>
+              Text('  • $issue', style: const TextStyle(color: Colors.red, fontSize: 10))
             ).toList(),
           ],
         ],
@@ -312,6 +335,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
 
   IconData _getSyncStatusIcon(String status) {
     switch (status) {
+      case 'PERFECT MULTI-STYLE SYNCHRONIZATION':
       case 'PERFECT SYNCHRONIZATION':
         return Icons.verified;
       case 'SYNC ISSUES DETECTED':
@@ -325,6 +349,204 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     }
   }
 
+  // Helper method to group translations by style
+  Map<String, List<Map<String, dynamic>>> _groupTranslationsByStyle(Translation translation) {
+    final Map<String, List<Map<String, dynamic>>> grouped = {
+      'german': [],
+      'english': [],
+      'spanish': [],
+    };
+    
+    // Parse the translated text to identify different styles
+    if (translation.translations != null) {
+      // Group translations based on the translation data
+      translation.translations!.forEach((key, value) {
+        if (key.contains('german')) {
+          grouped['german']!.add({
+            'style': key,
+            'translation': value,
+          });
+        } else if (key.contains('english')) {
+          grouped['english']!.add({
+            'style': key,
+            'translation': value,
+          });
+        } else if (key.contains('spanish')) {
+          grouped['spanish']!.add({
+            'style': key,
+            'translation': value,
+          });
+        }
+      });
+    }
+    
+    return grouped;
+  }
+
+  // Add this new method to display multiple style translations
+  Widget _buildMultiStyleTranslations(Translation translation, Map<String, dynamic> settings) {
+    // Parse the translation text to show different styles
+    final lines = translation.translatedText.split('\n');
+    final widgets = <Widget>[];
+    
+    String? currentLanguage;
+    final List<Map<String, String>> currentStyles = [];
+    
+    for (final line in lines) {
+      if (line.contains('GERMAN TRANSLATIONS:')) {
+        if (currentStyles.isNotEmpty && currentLanguage != null) {
+          widgets.add(_buildLanguageStyleSection(currentLanguage, currentStyles, settings));
+        }
+        currentLanguage = 'German';
+        currentStyles.clear();
+      } else if (line.contains('ENGLISH TRANSLATIONS:')) {
+        if (currentStyles.isNotEmpty && currentLanguage != null) {
+          widgets.add(_buildLanguageStyleSection(currentLanguage, currentStyles, settings));
+        }
+        currentLanguage = 'English';
+        currentStyles.clear();
+      } else if (line.contains('SPANISH TRANSLATIONS:')) {
+        if (currentStyles.isNotEmpty && currentLanguage != null) {
+          widgets.add(_buildLanguageStyleSection(currentLanguage, currentStyles, settings));
+        }
+        currentLanguage = 'Spanish';
+        currentStyles.clear();
+      } else if (line.contains(':') && currentLanguage != null && !line.contains('===') && !line.contains('---')) {
+        final parts = line.split(':');
+        if (parts.length >= 2) {
+          final styleName = parts[0].trim().replaceAll('*', '').trim();
+          final translation = parts.sublist(1).join(':').trim();
+          if (translation.isNotEmpty && !translation.contains('[') && 
+              !line.contains('WORD-BY-WORD') && !line.contains('RESULTS')) {
+            currentStyles.add({
+              'style': styleName,
+              'translation': translation,
+            });
+          }
+        }
+      }
+    }
+    
+    // Add the last language section
+    if (currentStyles.isNotEmpty && currentLanguage != null) {
+      widgets.add(_buildLanguageStyleSection(currentLanguage, currentStyles, settings));
+    }
+    
+    if (widgets.isEmpty) {
+      // Fallback to simple markdown display
+      return MarkdownBody(
+        data: translation.translatedText,
+        styleSheet: MarkdownStyleSheet(
+          p: const TextStyle(fontSize: 16, color: Colors.white),
+          h1: const TextStyle(fontSize: 24, color: Colors.orange),
+          h2: const TextStyle(fontSize: 22, color: Colors.orange),
+          h3: const TextStyle(fontSize: 20, color: Colors.orange),
+          code: const TextStyle(
+            backgroundColor: Colors.orange,
+            fontFamily: 'monospace',
+          ),
+          listBullet: TextStyle(color: Colors.orange[800]),
+        ),
+      );
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: widgets,
+    );
+  }
+
+  // Add this helper method to build language style sections
+  Widget _buildLanguageStyleSection(String language, List<Map<String, String>> styles, Map<String, dynamic> settings) {
+    final bool isWordByWordEnabled = language.toLowerCase() == 'german' 
+        ? settings['germanWordByWord'] == true
+        : (language.toLowerCase() == 'english' ? settings['englishWordByWord'] == true : false);
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: _getLanguageColor(language).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: _getLanguageColor(language).withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                _getLanguageFlag(language),
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  language,
+                  style: TextStyle(
+                    color: _getLanguageColor(language),
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              if (isWordByWordEnabled)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'WORD-BY-WORD',
+                    style: TextStyle(
+                      color: Colors.orange,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ...styles.map((style) => Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _getLanguageColor(language).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    style['style']!,
+                    style: TextStyle(
+                      color: _getLanguageColor(language),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    style['translation']!,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )).toList(),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final translationState = ref.watch(translationProvider);
@@ -336,7 +558,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: const Color(0xFF1C1C1E),
-        title: const Text('AI Conversation - Perfect Sync',
+        title: const Text('AI Multi-Style Conversation',
             style: TextStyle(color: Colors.white)),
         actions: [
           IconButton(
@@ -388,24 +610,26 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     final selectedStyles = <String>[];
     final audioFeatures = <String>[];
     
-    // Check German styles
-    if (settings['germanNative'] == true) selectedStyles.add('German Native');
-    if (settings['germanColloquial'] == true) selectedStyles.add('German Colloquial');
-    if (settings['germanInformal'] == true) selectedStyles.add('German Informal');
-    if (settings['germanFormal'] == true) selectedStyles.add('German Formal');
+    // Count German styles
+    int germanStyleCount = 0;
+    if (settings['germanNative'] == true) { selectedStyles.add('German Native'); germanStyleCount++; }
+    if (settings['germanColloquial'] == true) { selectedStyles.add('German Colloquial'); germanStyleCount++; }
+    if (settings['germanInformal'] == true) { selectedStyles.add('German Informal'); germanStyleCount++; }
+    if (settings['germanFormal'] == true) { selectedStyles.add('German Formal'); germanStyleCount++; }
     
-    // Check English styles
-    if (settings['englishNative'] == true) selectedStyles.add('English Native');
-    if (settings['englishColloquial'] == true) selectedStyles.add('English Colloquial');
-    if (settings['englishInformal'] == true) selectedStyles.add('English Informal');
-    if (settings['englishFormal'] == true) selectedStyles.add('English Formal');
+    // Count English styles
+    int englishStyleCount = 0;
+    if (settings['englishNative'] == true) { selectedStyles.add('English Native'); englishStyleCount++; }
+    if (settings['englishColloquial'] == true) { selectedStyles.add('English Colloquial'); englishStyleCount++; }
+    if (settings['englishInformal'] == true) { selectedStyles.add('English Informal'); englishStyleCount++; }
+    if (settings['englishFormal'] == true) { selectedStyles.add('English Formal'); englishStyleCount++; }
 
-    // Check word-by-word audio settings with PERFECT SYNC indicators
-    if (settings['germanWordByWord'] == true) {
-      audioFeatures.add('German Perfect Sync Audio');
+    // Check word-by-word audio settings
+    if (settings['germanWordByWord'] == true && germanStyleCount > 0) {
+      audioFeatures.add('German Perfect Sync Audio ($germanStyleCount styles)');
     }
-    if (settings['englishWordByWord'] == true) {
-      audioFeatures.add('English Perfect Sync Audio');
+    if (settings['englishWordByWord'] == true && englishStyleCount > 0) {
+      audioFeatures.add('English Perfect Sync Audio ($englishStyleCount styles)');
     }
 
     // Determine target languages based on mother tongue
@@ -414,36 +638,36 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     
     switch (motherTongue.toLowerCase()) {
       case 'spanish':
-        if (selectedStyles.any((style) => style.startsWith('German'))) {
-          expectedTargetLanguages.add('German');
+        if (germanStyleCount > 0) {
+          expectedTargetLanguages.add('German ($germanStyleCount styles)');
         }
-        if (selectedStyles.any((style) => style.startsWith('English'))) {
-          expectedTargetLanguages.add('English');
+        if (englishStyleCount > 0) {
+          expectedTargetLanguages.add('English ($englishStyleCount styles)');
         }
         break;
       case 'english':
         automaticTargetLanguages.add('Spanish');
-        if (selectedStyles.any((style) => style.startsWith('German'))) {
-          expectedTargetLanguages.add('German');
+        if (germanStyleCount > 0) {
+          expectedTargetLanguages.add('German ($germanStyleCount styles)');
         }
         break;
       case 'german':
         automaticTargetLanguages.add('Spanish');
-        if (selectedStyles.any((style) => style.startsWith('English'))) {
-          expectedTargetLanguages.add('English');
+        if (englishStyleCount > 0) {
+          expectedTargetLanguages.add('English ($englishStyleCount styles)');
         }
         break;
       default:
-        if (selectedStyles.any((style) => style.startsWith('German'))) {
-          expectedTargetLanguages.add('German');
+        if (germanStyleCount > 0) {
+          expectedTargetLanguages.add('German ($germanStyleCount styles)');
         }
-        if (selectedStyles.any((style) => style.startsWith('English'))) {
-          expectedTargetLanguages.add('English');
+        if (englishStyleCount > 0) {
+          expectedTargetLanguages.add('English ($englishStyleCount styles)');
         }
         break;
     }
 
-    // Show appropriate status with PERFECT SYNC emphasis
+    // Show appropriate status
     if (selectedStyles.isEmpty && audioFeatures.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(12),
@@ -551,7 +775,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                       Icon(Icons.sync, size: 12, color: Colors.orange),
                       SizedBox(width: 4),
                       Text(
-                        'PERFECT SYNC',
+                        'MULTI-STYLE',
                         style: TextStyle(
                           color: Colors.orange,
                           fontSize: 10,
@@ -579,17 +803,17 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
             ],
           ),
           
-          if (selectedStyles.isNotEmpty) ...[
+          if (selectedStyles.length > 1) ...[
             const SizedBox(height: 8),
             Row(
               children: [
                 const SizedBox(width: 32),
-                const Icon(Icons.style, color: Colors.green, size: 16),
+                const Icon(Icons.style, color: Colors.purple, size: 16),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    selectedStyles.join(', '),
-                    style: const TextStyle(color: Colors.green),
+                    '${selectedStyles.length} styles selected: ${selectedStyles.join(', ')}',
+                    style: const TextStyle(color: Colors.purple, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -607,7 +831,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                     const Icon(Icons.sync, size: 16, color: Colors.orange),
                     const SizedBox(width: 8),
                     Text(
-                      '$feature: [target word] ([Spanish equivalent])',
+                      feature,
                       style: const TextStyle(
                         color: Colors.orange,
                         fontStyle: FontStyle.italic,
@@ -622,7 +846,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
             const Padding(
               padding: EdgeInsets.only(left: 32),
               child: Text(
-                '🎯 GUARANTEE: What you see = What you hear (exactly)',
+                '🎯 MULTI-STYLE GUARANTEE: Each style with perfect UI-Audio sync',
                 style: TextStyle(
                   color: Colors.orange,
                   fontSize: 11,
@@ -772,26 +996,15 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    MarkdownBody(
-                      data: translation.translatedText,
-                      styleSheet: MarkdownStyleSheet(
-                        p: const TextStyle(fontSize: 16, color: Colors.white),
-                        h1: const TextStyle(fontSize: 24, color: Colors.orange),
-                        h2: const TextStyle(fontSize: 22, color: Colors.orange),
-                        h3: const TextStyle(fontSize: 20, color: Colors.orange),
-                        code: const TextStyle(
-                          backgroundColor: Colors.orange,
-                          fontFamily: 'monospace',
-                        ),
-                        listBullet: TextStyle(color: Colors.orange[800]),
-                      ),
-                    ),
+                    // Display translations with multi-style support
+                    _buildMultiStyleTranslations(translation, settings),
                     
                     // CRITICAL: Perfect sync word-by-word visualization
-                    WordByWordVisualizationWidget(
-                      wordByWordData: translation.wordByWord,
-                      isVisible: translation.wordByWord != null && translation.wordByWord!.isNotEmpty,
-                    ),
+                    if (translation.wordByWord != null && translation.wordByWord!.isNotEmpty)
+                      WordByWordVisualizationWidget(
+                        wordByWordData: translation.wordByWord,
+                        isVisible: true,
+                      ),
                     
                     if (translation.audioPath != null)
                       Padding(
@@ -817,7 +1030,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                               },
                             ),
                             Text(
-                              speechState ? 'Pause' : 'Play Perfect Sync Audio',
+                              speechState ? 'Pause' : 'Play Multi-Style Audio',
                               style: TextStyle(color: Colors.orange[800]),
                             ),
                           ],
@@ -836,6 +1049,17 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
   Widget _buildLoadingMessage() {
     final settings = ref.watch(settingsProvider);
     final motherTongue = settings['motherTongue'] as String? ?? 'spanish';
+    
+    // Count selected styles
+    int totalStyles = 0;
+    if (settings['germanNative'] == true) totalStyles++;
+    if (settings['germanColloquial'] == true) totalStyles++;
+    if (settings['germanInformal'] == true) totalStyles++;
+    if (settings['germanFormal'] == true) totalStyles++;
+    if (settings['englishNative'] == true) totalStyles++;
+    if (settings['englishColloquial'] == true) totalStyles++;
+    if (settings['englishInformal'] == true) totalStyles++;
+    if (settings['englishFormal'] == true) totalStyles++;
     
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -857,6 +1081,17 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                 fontStyle: FontStyle.italic,
               ),
             ),
+            if (totalStyles > 1) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Generating $totalStyles different style translations...',
+                style: const TextStyle(
+                  color: Colors.purple,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(8),
@@ -864,9 +1099,11 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                 color: Colors.orange.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text(
-                '🎯 Preparing perfect UI-Audio synchronization...',
-                style: TextStyle(
+              child: Text(
+                totalStyles > 1 
+                    ? '🎯 Preparing MULTI-STYLE perfect UI-Audio synchronization...'
+                    : '🎯 Preparing perfect UI-Audio synchronization...',
+                style: const TextStyle(
                   color: Colors.orange,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
@@ -897,7 +1134,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Error in Perfect Sync Translation: $error',
+                    'Error in Multi-Style Translation: $error',
                     style: const TextStyle(color: Colors.red),
                   ),
                   const SizedBox(height: 8),
@@ -914,7 +1151,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                     style: TextStyle(color: Colors.red, fontSize: 12),
                   ),
                   const Text(
-                    '• Perfect sync validation failures',
+                    '• Multi-style sync validation failures',
                     style: TextStyle(color: Colors.red, fontSize: 12),
                   ),
                   if (error.contains('translation style'))

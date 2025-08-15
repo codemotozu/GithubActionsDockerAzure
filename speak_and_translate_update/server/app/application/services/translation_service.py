@@ -1,4 +1,4 @@
-# translation_service.py - Fixed for PERFECT UI-Audio synchronization
+# translation_service.py - Complete file with multi-style support
 
 from google.generativeai import GenerativeModel
 import google.generativeai as genai
@@ -86,189 +86,109 @@ class TranslationService:
         print(f"🔍 Language detection scores: {scores} -> Detected: {detected}")
         return detected
 
-#     def _create_enhanced_context_prompt(self, input_text: str, mother_tongue: str, style_preferences) -> str:
-#         """Create a SIMPLIFIED prompt that ensures consistent AI response format."""
-        
-#         print(f"🎯 Creating SIMPLIFIED context prompt for: {mother_tongue.upper()}")
-        
-#         target_languages = []
-        
-#         # Determine target languages based on mother tongue and selections
-#         if mother_tongue.lower() == 'spanish':
-#             if any([style_preferences.german_native, style_preferences.german_colloquial, 
-#                    style_preferences.german_informal, style_preferences.german_formal]):
-#                 target_languages.append('german')
-#             if any([style_preferences.english_native, style_preferences.english_colloquial,
-#                    style_preferences.english_informal, style_preferences.english_formal]):
-#                 target_languages.append('english')
-                
-#         elif mother_tongue.lower() == 'english':
-#             target_languages.append('spanish')
-#             if any([style_preferences.german_native, style_preferences.german_colloquial,
-#                    style_preferences.german_informal, style_preferences.german_formal]):
-#                 target_languages.append('german')
-                
-#         elif mother_tongue.lower() == 'german':
-#             target_languages.append('spanish')
-#             if any([style_preferences.english_native, style_preferences.english_colloquial,
-#                    style_preferences.english_informal, style_preferences.english_formal]):
-#                 target_languages.append('english')
-
-#         print(f"🎯 Target languages: {target_languages}")
-
-#         # SIMPLIFIED prompt with consistent format
-#         prompt = f"""Translate the {mother_tongue} text: "{input_text}"
-
-# Please provide translations in this EXACT format:
-
-# """
-
-#         # Add language sections with SIMPLE format
-#         if 'german' in target_languages:
-#             prompt += """GERMAN TRANSLATIONS:
-# German Native: [German translation here]
-# German Colloquial: [Colloquial German translation here]
-
-# GERMAN WORD-BY-WORD:
-# Format each word as: [German word] ([Spanish equivalent])
-# Example: [Ich] ([Yo]) [gehe] ([voy]) [nach] ([a]) [Hause] ([casa])
-
-# """
-
-#         if 'english' in target_languages:
-#             prompt += """ENGLISH TRANSLATIONS:
-# English Native: [English translation here]
-# English Colloquial: [Colloquial English translation here]
-
-# ENGLISH WORD-BY-WORD:
-# Format each word as: [English word] ([Spanish equivalent])
-# Example: [I] ([Yo]) [go] ([voy]) [home] ([casa])
-
-# """
-
-#         if 'spanish' in target_languages:
-#             prompt += """SPANISH TRANSLATIONS:
-# Spanish Colloquial: [Spanish translation here]
-
-# """
-
-#         prompt += """IMPORTANT RULES:
-# 1. Use EXACT format shown above
-# 2. For phrasal verbs (like "wake up"), treat as ONE unit: [wake up] ([despertar])
-# 3. For German separable verbs (like "stehe auf"), treat as ONE unit: [stehe auf] ([me levanto])
-# 4. Keep word-by-word on ONE line per language
-# 5. Use contextually correct Spanish translations"""
-
-#         print(f"📝 Generated SIMPLIFIED prompt ({len(prompt)} characters)")
-#         return prompt
-
     def _create_enhanced_context_prompt(self, input_text: str, mother_tongue: str, style_preferences) -> str:
-        """Create a SIMPLIFIED prompt that ensures consistent AI response format."""
+        """Create enhanced prompt for multiple simultaneous styles."""
         
-        print(f"🎯 Creating SIMPLIFIED context prompt for: {mother_tongue.upper()}")
+        print(f"🎯 Creating MULTI-STYLE context prompt for: {mother_tongue.upper()}")
         
         target_languages = []
+        german_styles = []
+        english_styles = []
+        
+        # Collect all selected German styles
+        if style_preferences.german_native:
+            german_styles.append('native')
+        if style_preferences.german_colloquial:
+            german_styles.append('colloquial')
+        if style_preferences.german_informal:
+            german_styles.append('informal')
+        if style_preferences.german_formal:
+            german_styles.append('formal')
+        
+        # Collect all selected English styles
+        if style_preferences.english_native:
+            english_styles.append('native')
+        if style_preferences.english_colloquial:
+            english_styles.append('colloquial')
+        if style_preferences.english_informal:
+            english_styles.append('informal')
+        if style_preferences.english_formal:
+            english_styles.append('formal')
         
         # Determine target languages based on mother tongue and selections
         if mother_tongue.lower() == 'spanish':
-            if any([style_preferences.german_native, style_preferences.german_colloquial, 
-                style_preferences.german_informal, style_preferences.german_formal]):
+            if german_styles:
                 target_languages.append('german')
-            if any([style_preferences.english_native, style_preferences.english_colloquial,
-                style_preferences.english_informal, style_preferences.english_formal]):
+            if english_styles:
                 target_languages.append('english')
-                
         elif mother_tongue.lower() == 'english':
             target_languages.append('spanish')
-            if any([style_preferences.german_native, style_preferences.german_colloquial,
-                style_preferences.german_informal, style_preferences.german_formal]):
+            if german_styles:
                 target_languages.append('german')
-                
         elif mother_tongue.lower() == 'german':
             target_languages.append('spanish')
-            if any([style_preferences.english_native, style_preferences.english_colloquial,
-                style_preferences.english_informal, style_preferences.english_formal]):
+            if english_styles:
                 target_languages.append('english')
 
         print(f"🎯 Target languages: {target_languages}")
+        print(f"🇩🇪 German styles selected: {german_styles}")
+        print(f"🇺🇸 English styles selected: {english_styles}")
 
-        # SIMPLIFIED prompt with consistent format
+        # Build comprehensive prompt for multiple styles
         prompt = f"""Translate the {mother_tongue} text: "{input_text}"
 
-    Please provide translations in this EXACT format:
+Please provide ALL requested translations in this EXACT format:
 
-    """
+"""
 
-        # Add language sections with SIMPLE format
-        if 'german' in target_languages:
-            prompt += """GERMAN TRANSLATIONS:"""
-            if style_preferences.german_native:
-                prompt += "\nGerman Native: [German translation here]"
-            if style_preferences.german_colloquial:
-                prompt += "\nGerman Colloquial: [Colloquial German translation here]"
-            if style_preferences.german_informal:
-                prompt += "\nGerman Informal: [Informal German translation here]"
-            if style_preferences.german_formal:
-                prompt += "\nGerman Formal: [Formal German translation here]"
-            prompt += "\n\nGERMAN WORD-BY-WORD:\nFormat each word as: [German word] ([Spanish equivalent])\nExample: [Ich] ([Yo]) [gehe] ([voy]) [nach] ([a]) [Hause] ([casa])\n\n"
+        # Add German translations for ALL selected styles
+        if 'german' in target_languages and german_styles:
+            prompt += "GERMAN TRANSLATIONS:\n"
+            for style in german_styles:
+                prompt += f"German {style.capitalize()}: [Provide {style} German translation here]\n"
+            
+            # Add word-by-word section if enabled
+            if style_preferences.german_word_by_word:
+                prompt += "\nGERMAN WORD-BY-WORD:\n"
+                for style in german_styles:
+                    prompt += f"{style.capitalize()} style: "
+                    prompt += "Format each word as [German word] ([Spanish equivalent]). "
+                    prompt += "Example: [Ich] ([Yo]) [gehe] ([voy]) [nach] ([a]) [Hause] ([casa])\n"
+            prompt += "\n"
 
-        if 'english' in target_languages:
-            prompt += """ENGLISH TRANSLATIONS:"""
-            if style_preferences.english_native:
-                prompt += "\nEnglish Native: [English translation here]"
-            if style_preferences.english_colloquial:
-                prompt += "\nEnglish Colloquial: [Colloquial English translation here]"
-            if style_preferences.english_informal:
-                prompt += "\nEnglish Informal: [Informal English translation here]"
-            if style_preferences.english_formal:
-                prompt += "\nEnglish Formal: [Formal English translation here]"
-            prompt += "\n\nENGLISH WORD-BY-WORD:\nFormat each word as: [English word] ([Spanish equivalent])\nExample: [I] ([Yo]) [go] ([voy]) [home] ([casa])\n\n"
-        
+        # Add English translations for ALL selected styles
+        if 'english' in target_languages and english_styles:
+            prompt += "ENGLISH TRANSLATIONS:\n"
+            for style in english_styles:
+                prompt += f"English {style.capitalize()}: [Provide {style} English translation here]\n"
+            
+            # Add word-by-word section if enabled
+            if style_preferences.english_word_by_word:
+                prompt += "\nENGLISH WORD-BY-WORD:\n"
+                for style in english_styles:
+                    prompt += f"{style.capitalize()} style: "
+                    prompt += "Format each word as [English word] ([Spanish equivalent]). "
+                    prompt += "Example: [I] ([Yo]) [go] ([voy]) [home] ([casa])\n"
+            prompt += "\n"
+
+        # Add Spanish translations if needed
         if 'spanish' in target_languages:
-            prompt += """SPANISH TRANSLATIONS:\nSpanish Colloquial: [Spanish translation here]\n\n"""
+            prompt += "SPANISH TRANSLATIONS:\nSpanish Colloquial: [Spanish translation here]\n\n"
 
         prompt += """IMPORTANT RULES:
-    1. Use EXACT format shown above
-    2. For phrasal verbs (like "wake up"), treat as ONE unit: [wake up] ([despertar])
-    3. For German separable verbs (like "stehe auf"), treat as ONE unit: [stehe auf] ([me levanto])
-    4. Keep word-by-word on ONE line per language
-    5. Use contextually correct Spanish translations"""
+1. Provide translations for ALL selected styles
+2. Each style should have a distinct translation appropriate to its formality level
+3. For phrasal verbs (like "wake up"), treat as ONE unit: [wake up] ([despertar])
+4. For German separable verbs (like "stehe auf"), treat as ONE unit: [stehe auf] ([me levanto])
+5. Keep word-by-word translations on ONE line per style
+6. Use contextually correct Spanish translations for each word/phrase
+7. Native style: Most natural expression a native speaker would use
+8. Colloquial style: Conversational, everyday language
+9. Informal style: Relaxed, casual, friendly tone
+10. Formal style: Professional, polite, structured language"""
 
-        print(f"📝 Generated SIMPLIFIED prompt ({len(prompt)} characters)")
+        print(f"📝 Generated MULTI-STYLE prompt ({len(prompt)} characters)")
         return prompt
-
-
-    # def _should_generate_audio(self, translations_data: Dict, style_preferences) -> bool:
-    #     """Only generate audio if user has selected translation styles"""
-    #     has_translations = len(translations_data.get('translations', [])) > 0
-        
-    #     has_enabled_styles = False
-    #     if style_preferences:
-    #         style_checks = [
-    #             style_preferences.german_native, style_preferences.german_colloquial,
-    #             style_preferences.german_informal, style_preferences.german_formal,
-    #             style_preferences.english_native, style_preferences.english_colloquial,
-    #             style_preferences.english_informal, style_preferences.english_formal
-    #         ]
-    #         has_enabled_styles = any(style_checks)
-        
-    #     word_by_word_requested = False
-    #     if style_preferences:
-    #         word_by_word_requested = (
-    #             style_preferences.german_word_by_word or 
-    #             style_preferences.english_word_by_word
-    #         )
-        
-    #     should_generate = has_translations and has_enabled_styles
-        
-    #     print(f"🎵 Audio Generation Decision:")
-    #     print(f"   Translations available: {has_translations}")
-    #     print(f"   Translation styles enabled: {has_enabled_styles}")
-    #     print(f"   Word-by-word audio requested: {word_by_word_requested}")
-    #     print(f"   🎯 Will generate audio: {should_generate}")
-    #     print(f"   🎯 Audio type: {'Word-by-word breakdown' if word_by_word_requested else 'Simple translation reading'}")
-        
-    #     return should_generate
 
     def _should_generate_audio(self, translations_data: Dict, style_preferences) -> bool:
         """Only generate audio if user has selected translation styles"""
@@ -307,11 +227,10 @@ class TranslationService:
         
         return should_generate
 
-
     async def _generate_audio_with_resilience(self, translations_data: Dict, detected_mother_tongue: str, style_preferences) -> Optional[str]:
-        """Generate audio with enhanced error handling"""
+        """Generate audio with enhanced error handling for multiple styles"""
         try:
-            print("🎵 Attempting SYNCHRONIZED audio generation...")
+            print("🎵 Attempting MULTI-STYLE SYNCHRONIZED audio generation...")
             
             audio_task = asyncio.create_task(
                 self.tts_service.text_to_speech_word_pairs_v2(
@@ -326,7 +245,7 @@ class TranslationService:
                 audio_filename = await asyncio.wait_for(audio_task, timeout=self.audio_timeout_seconds)
                 
                 if audio_filename:
-                    print(f"✅ SYNCHRONIZED audio generation successful: {audio_filename}")
+                    print(f"✅ MULTI-STYLE SYNCHRONIZED audio generation successful: {audio_filename}")
                     return audio_filename
                 else:
                     print("⚠️ Audio generation returned None")
@@ -358,20 +277,20 @@ class TranslationService:
             detected_mother_tongue = self._detect_input_language(text, mother_tongue)
             
             print(f"\n{'='*80}")
-            print(f"🌐 PROCESSING ENHANCED CONTEXTUAL TRANSLATION")
+            print(f"🌐 PROCESSING MULTI-STYLE ENHANCED CONTEXTUAL TRANSLATION")
             print(f"{'='*80}")
             print(f"📝 Input text: '{text}'")
             print(f"🌍 Detected mother tongue: {detected_mother_tongue}")
 
-            # Create SIMPLIFIED context prompt 
+            # Create enhanced multi-style context prompt 
             enhanced_prompt = self._create_enhanced_context_prompt(
                 text, detected_mother_tongue, style_preferences
             )
             
-            print(f"📤 Sending SIMPLIFIED prompt to Gemini AI...")
+            print(f"📤 Sending MULTI-STYLE prompt to Gemini AI...")
 
             try:
-                # Use direct model call instead of chat session for more reliable parsing
+                # Use direct model call for more reliable parsing
                 response = self.model.generate_content(enhanced_prompt)
                 generated_text = response.text
 
@@ -395,7 +314,7 @@ class TranslationService:
                     grammar_explanations=None,
                 )
 
-            # Extract translations with FIXED parsing
+            # Extract translations with MULTI-STYLE support
             translations_data = self._extract_translations_fixed(generated_text, style_preferences)
 
             audio_filename = None
@@ -403,24 +322,24 @@ class TranslationService:
             # Check if audio should be generated
             should_generate_audio = self._should_generate_audio(translations_data, style_preferences)
             
-            # Generate synchronized audio
+            # Generate synchronized audio for all selected styles
             if should_generate_audio:
-                print("🎵 Starting SYNCHRONIZED audio generation...")
+                print("🎵 Starting MULTI-STYLE SYNCHRONIZED audio generation...")
                 audio_filename = await self._generate_audio_with_resilience(
                     translations_data, detected_mother_tongue, style_preferences
                 )
                 
                 if audio_filename:
-                    print(f"✅ SYNCHRONIZED audio completed: {audio_filename}")
+                    print(f"✅ MULTI-STYLE SYNCHRONIZED audio completed: {audio_filename}")
                 else:
                     print("ℹ️ Audio generation failed/skipped - continuing without audio")
             else:
                 print("🔇 No audio generated - no translation styles enabled")
 
-            # Create perfect UI-Audio synchronized data
+            # Create perfect UI-Audio synchronized data for all styles
             ui_word_by_word = self._create_perfect_ui_sync_data(translations_data, style_preferences)
 
-            # Create final translation text
+            # Create final translation text with all styles
             final_translation_text = self._create_formatted_translation_text(translations_data)
 
             return Translation(
@@ -442,166 +361,22 @@ class TranslationService:
             traceback.print_exc()
             raise Exception(f"Translation processing failed: {str(e)}")
 
-    # def _extract_translations_fixed(self, generated_text: str, style_preferences) -> Dict:
-    #     """FIXED extraction with robust parsing"""
-    #     result = {
-    #         'translations': [],
-    #         'style_data': []
-    #     }
-
-    #     print("🔍 EXTRACTING TRANSLATIONS (FIXED)")
-    #     print("="*50)
-    #     print(f"📄 Generated text length: {len(generated_text)}")
-
-    #     try:
-    #         # Split into lines for easier parsing
-    #         lines = generated_text.split('\n')
-            
-    #         current_language = None
-    #         word_by_word_text = {}
-            
-    #         for line in lines:
-    #             line = line.strip()
-    #             if not line:
-    #                 continue
-                
-    #             # Detect language sections
-    #             if 'GERMAN TRANSLATIONS:' in line.upper():
-    #                 current_language = 'german'
-    #                 print(f"📍 Found German section")
-    #             elif 'ENGLISH TRANSLATIONS:' in line.upper():
-    #                 current_language = 'english'
-    #                 print(f"📍 Found English section")
-    #             elif 'SPANISH TRANSLATIONS:' in line.upper():
-    #                 current_language = 'spanish'
-    #                 print(f"📍 Found Spanish section")
-                
-    #             # Extract translations
-    #             elif current_language == 'german':
-    #                 if 'German Native:' in line:
-    #                     translation = self._extract_translation_from_line(line, 'German Native:')
-    #                     if translation and style_preferences.german_native:
-    #                         result['translations'].append(translation)
-    #                         result['style_data'].append({
-    #                             'translation': translation,
-    #                             'word_pairs': [],
-    #                             'is_german': True,
-    #                             'is_spanish': False,
-    #                             'style_name': 'german_native'
-    #                         })
-    #                         print(f"✅ German Native: {translation[:50]}...")
-                    
-    #                 elif 'German Colloquial:' in line:
-    #                     translation = self._extract_translation_from_line(line, 'German Colloquial:')
-    #                     if translation and style_preferences.german_colloquial:
-    #                         result['translations'].append(translation)
-    #                         result['style_data'].append({
-    #                             'translation': translation,
-    #                             'word_pairs': [],
-    #                             'is_german': True,
-    #                             'is_spanish': False,
-    #                             'style_name': 'german_colloquial'
-    #                         })
-    #                         print(f"✅ German Colloquial: {translation[:50]}...")
-                    
-    #                 elif 'GERMAN WORD-BY-WORD:' in line.upper():
-    #                     # Start collecting word-by-word for German
-    #                     print(f"📍 Found German word-by-word section")
-                    
-    #                 elif '[' in line and ']' in line and '(' in line and ')' in line and current_language == 'german':
-    #                     # This looks like word-by-word data
-    #                     word_by_word_text['german'] = line
-    #                     print(f"📝 German word-by-word: {line[:100]}...")
-                
-    #             elif current_language == 'english':
-    #                 if 'English Native:' in line:
-    #                     translation = self._extract_translation_from_line(line, 'English Native:')
-    #                     if translation and style_preferences.english_native:
-    #                         result['translations'].append(translation)
-    #                         result['style_data'].append({
-    #                             'translation': translation,
-    #                             'word_pairs': [],
-    #                             'is_german': False,
-    #                             'is_spanish': False,
-    #                             'style_name': 'english_native'
-    #                         })
-    #                         print(f"✅ English Native: {translation[:50]}...")
-                    
-    #                 elif 'English Colloquial:' in line:
-    #                     translation = self._extract_translation_from_line(line, 'English Colloquial:')
-    #                     if translation and style_preferences.english_colloquial:
-    #                         result['translations'].append(translation)
-    #                         result['style_data'].append({
-    #                             'translation': translation,
-    #                             'word_pairs': [],
-    #                             'is_german': False,
-    #                             'is_spanish': False,
-    #                             'style_name': 'english_colloquial'
-    #                         })
-    #                         print(f"✅ English Colloquial: {translation[:50]}...")
-                    
-    #                 elif 'ENGLISH WORD-BY-WORD:' in line.upper():
-    #                     print(f"📍 Found English word-by-word section")
-                    
-    #                 elif '[' in line and ']' in line and '(' in line and ')' in line and current_language == 'english':
-    #                     word_by_word_text['english'] = line
-    #                     print(f"📝 English word-by-word: {line[:100]}...")
-                
-    #             elif current_language == 'spanish':
-    #                 if 'Spanish Colloquial:' in line:
-    #                     translation = self._extract_translation_from_line(line, 'Spanish Colloquial:')
-    #                     if translation:
-    #                         result['translations'].append(translation)
-    #                         result['style_data'].append({
-    #                             'translation': translation,
-    #                             'word_pairs': [],
-    #                             'is_german': False,
-    #                             'is_spanish': True,
-    #                             'style_name': 'spanish_colloquial'
-    #                         })
-    #                         print(f"✅ Spanish Colloquial: {translation[:50]}...")
-
-    #         # Now process word-by-word data if we found any
-    #         self._process_word_by_word_data(result, word_by_word_text, style_preferences)
-
-    #         print(f"✅ Extracted {len(result['translations'])} translations")
-    #         print(f"✅ Extracted {len(result['style_data'])} style entries")
-            
-    #     except Exception as e:
-    #         print(f"❌ Error in extraction: {str(e)}")
-    #         import traceback
-    #         traceback.print_exc()
-            
-    #         # Fallback: create minimal result
-    #         if not result['translations']:
-    #             result['translations'] = [generated_text[:500]]  # Use first part of response
-    #             result['style_data'] = [{
-    #                 'translation': generated_text[:500],
-    #                 'word_pairs': [],
-    #                 'is_german': False,
-    #                 'is_spanish': False,
-    #                 'style_name': 'fallback'
-    #             }]
-
-    #     return result
-
     def _extract_translations_fixed(self, generated_text: str, style_preferences) -> Dict:
-        """FIXED extraction with robust parsing"""
+        """ENHANCED extraction for multiple simultaneous styles with perfect sync."""
         result = {
             'translations': [],
             'style_data': []
         }
 
-        print("🔍 EXTRACTING TRANSLATIONS (FIXED)")
+        print("🔍 EXTRACTING MULTI-STYLE TRANSLATIONS")
         print("="*50)
         print(f"📄 Generated text length: {len(generated_text)}")
 
         try:
-            # Split into lines for easier parsing
             lines = generated_text.split('\n')
-            
             current_language = None
             word_by_word_text = {}
+            all_word_by_word_data = {}  # Store word-by-word for ALL styles
             
             for line in lines:
                 line = line.strip()
@@ -618,131 +393,96 @@ class TranslationService:
                 elif 'SPANISH TRANSLATIONS:' in line.upper():
                     current_language = 'spanish'
                     print(f"📍 Found Spanish section")
+                elif 'GERMAN WORD-BY-WORD:' in line.upper():
+                    print(f"📍 Found German word-by-word section")
+                    current_language = 'german_wbw'
+                elif 'ENGLISH WORD-BY-WORD:' in line.upper():
+                    print(f"📍 Found English word-by-word section")
+                    current_language = 'english_wbw'
                 
-                # Extract translations
+                # Extract translations for ALL selected styles
                 elif current_language == 'german':
-                    if 'German Native:' in line:
-                        translation = self._extract_translation_from_line(line, 'German Native:')
-                        if translation and style_preferences.german_native:
-                            result['translations'].append(translation)
-                            result['style_data'].append({
-                                'translation': translation,
-                                'word_pairs': [],
-                                'is_german': True,
-                                'is_spanish': False,
-                                'style_name': 'german_native'
-                            })
-                            print(f"✅ German Native: {translation[:50]}...")
+                    # Process ALL German styles
+                    styles_to_check = [
+                        ('German Native:', 'german_native', style_preferences.german_native),
+                        ('German Colloquial:', 'german_colloquial', style_preferences.german_colloquial),
+                        ('German Informal:', 'german_informal', style_preferences.german_informal),
+                        ('German Formal:', 'german_formal', style_preferences.german_formal)
+                    ]
                     
-                    elif 'German Colloquial:' in line:
-                        translation = self._extract_translation_from_line(line, 'German Colloquial:')
-                        if translation and style_preferences.german_colloquial:
-                            result['translations'].append(translation)
-                            result['style_data'].append({
-                                'translation': translation,
-                                'word_pairs': [],
-                                'is_german': True,
-                                'is_spanish': False,
-                                'style_name': 'german_colloquial'
-                            })
-                            print(f"✅ German Colloquial: {translation[:50]}...")
-                    
-                    # NEW: Handle informal and formal styles
-                    elif 'German Informal:' in line:
-                        translation = self._extract_translation_from_line(line, 'German Informal:')
-                        if translation and style_preferences.german_informal:
-                            result['translations'].append(translation)
-                            result['style_data'].append({
-                                'translation': translation,
-                                'word_pairs': [],
-                                'is_german': True,
-                                'is_spanish': False,
-                                'style_name': 'german_informal'
-                            })
-                            print(f"✅ German Informal: {translation[:50]}...")
-                    
-                    elif 'German Formal:' in line:
-                        translation = self._extract_translation_from_line(line, 'German Formal:')
-                        if translation and style_preferences.german_formal:
-                            result['translations'].append(translation)
-                            result['style_data'].append({
-                                'translation': translation,
-                                'word_pairs': [],
-                                'is_german': True,
-                                'is_spanish': False,
-                                'style_name': 'german_formal'
-                            })
-                            print(f"✅ German Formal: {translation[:50]}...")
-                    
-                    elif 'GERMAN WORD-BY-WORD:' in line.upper():
-                        # Start collecting word-by-word for German
-                        print(f"📍 Found German word-by-word section")
-                    
-                    elif '[' in line and ']' in line and '(' in line and ')' in line and current_language == 'german':
-                        # This looks like word-by-word data
-                        word_by_word_text['german'] = line
-                        print(f"📝 German word-by-word: {line[:100]}...")
+                    for prefix, style_name, is_enabled in styles_to_check:
+                        if prefix in line and is_enabled:
+                            translation = self._extract_translation_from_line(line, prefix)
+                            if translation:
+                                result['translations'].append(translation)
+                                result['style_data'].append({
+                                    'translation': translation,
+                                    'word_pairs': [],
+                                    'is_german': True,
+                                    'is_spanish': False,
+                                    'style_name': style_name
+                                })
+                                print(f"✅ {style_name}: {translation[:50]}...")
                 
                 elif current_language == 'english':
-                    if 'English Native:' in line:
-                        translation = self._extract_translation_from_line(line, 'English Native:')
-                        if translation and style_preferences.english_native:
-                            result['translations'].append(translation)
-                            result['style_data'].append({
-                                'translation': translation,
-                                'word_pairs': [],
-                                'is_german': False,
-                                'is_spanish': False,
-                                'style_name': 'english_native'
-                            })
-                            print(f"✅ English Native: {translation[:50]}...")
+                    # Process ALL English styles
+                    styles_to_check = [
+                        ('English Native:', 'english_native', style_preferences.english_native),
+                        ('English Colloquial:', 'english_colloquial', style_preferences.english_colloquial),
+                        ('English Informal:', 'english_informal', style_preferences.english_informal),
+                        ('English Formal:', 'english_formal', style_preferences.english_formal)
+                    ]
                     
-                    elif 'English Colloquial:' in line:
-                        translation = self._extract_translation_from_line(line, 'English Colloquial:')
-                        if translation and style_preferences.english_colloquial:
-                            result['translations'].append(translation)
-                            result['style_data'].append({
-                                'translation': translation,
-                                'word_pairs': [],
-                                'is_german': False,
-                                'is_spanish': False,
-                                'style_name': 'english_colloquial'
-                            })
-                            print(f"✅ English Colloquial: {translation[:50]}...")
-                    
-                    # NEW: Handle informal and formal styles
-                    elif 'English Informal:' in line:
-                        translation = self._extract_translation_from_line(line, 'English Informal:')
-                        if translation and style_preferences.english_informal:
-                            result['translations'].append(translation)
-                            result['style_data'].append({
-                                'translation': translation,
-                                'word_pairs': [],
-                                'is_german': False,
-                                'is_spanish': False,
-                                'style_name': 'english_informal'
-                            })
-                            print(f"✅ English Informal: {translation[:50]}...")
-                    
-                    elif 'English Formal:' in line:
-                        translation = self._extract_translation_from_line(line, 'English Formal:')
-                        if translation and style_preferences.english_formal:
-                            result['translations'].append(translation)
-                            result['style_data'].append({
-                                'translation': translation,
-                                'word_pairs': [],
-                                'is_german': False,
-                                'is_spanish': False,
-                                'style_name': 'english_formal'
-                            })
-                            print(f"✅ English Formal: {translation[:50]}...")
-                    
-                    elif 'ENGLISH WORD-BY-WORD:' in line.upper():
-                        print(f"📍 Found English word-by-word section")
-                    
-                    elif '[' in line and ']' in line and '(' in line and ')' in line and current_language == 'english':
-                        word_by_word_text['english'] = line
-                        print(f"📝 English word-by-word: {line[:100]}...")
+                    for prefix, style_name, is_enabled in styles_to_check:
+                        if prefix in line and is_enabled:
+                            translation = self._extract_translation_from_line(line, prefix)
+                            if translation:
+                                result['translations'].append(translation)
+                                result['style_data'].append({
+                                    'translation': translation,
+                                    'word_pairs': [],
+                                    'is_german': False,
+                                    'is_spanish': False,
+                                    'style_name': style_name
+                                })
+                                print(f"✅ {style_name}: {translation[:50]}...")
+                
+                # Handle word-by-word sections for multiple styles
+                elif current_language == 'german_wbw':
+                    # Check if this line specifies a style
+                    for style in ['Native', 'Colloquial', 'Informal', 'Formal']:
+                        if f'{style} style:' in line:
+                            style_key = f'german_{style.lower()}'
+                            # Extract the word-by-word part
+                            wbw_start = line.find('[')
+                            if wbw_start >= 0:
+                                all_word_by_word_data[style_key] = line[wbw_start:]
+                                print(f"📝 German {style} word-by-word: {line[wbw_start:100]}...")
+                            break
+                    else:
+                        # If line contains brackets, might be general word-by-word
+                        if '[' in line and ']' in line and '(' in line and ')' in line:
+                            if 'german' not in word_by_word_text:
+                                word_by_word_text['german'] = line
+                                print(f"📝 German general word-by-word: {line[:100]}...")
+                
+                elif current_language == 'english_wbw':
+                    # Check if this line specifies a style
+                    for style in ['Native', 'Colloquial', 'Informal', 'Formal']:
+                        if f'{style} style:' in line:
+                            style_key = f'english_{style.lower()}'
+                            # Extract the word-by-word part
+                            wbw_start = line.find('[')
+                            if wbw_start >= 0:
+                                all_word_by_word_data[style_key] = line[wbw_start:]
+                                print(f"📝 English {style} word-by-word: {line[wbw_start:100]}...")
+                            break
+                    else:
+                        # If line contains brackets, might be general word-by-word
+                        if '[' in line and ']' in line and '(' in line and ')' in line:
+                            if 'english' not in word_by_word_text:
+                                word_by_word_text['english'] = line
+                                print(f"📝 English general word-by-word: {line[:100]}...")
                 
                 elif current_language == 'spanish':
                     if 'Spanish Colloquial:' in line:
@@ -758,8 +498,30 @@ class TranslationService:
                             })
                             print(f"✅ Spanish Colloquial: {translation[:50]}...")
 
-            # Now process word-by-word data if we found any
-            self._process_word_by_word_data(result, word_by_word_text, style_preferences)
+            # Process word-by-word data for EACH style
+            for style_entry in result['style_data']:
+                style_name = style_entry['style_name']
+                is_german = style_entry['is_german']
+                
+                # Check if we have specific word-by-word for this style
+                if style_name in all_word_by_word_data:
+                    # Use style-specific word-by-word
+                    if (is_german and style_preferences.german_word_by_word) or \
+                       (not is_german and not style_entry['is_spanish'] and style_preferences.english_word_by_word):
+                        word_pairs = self._parse_word_by_word_line(all_word_by_word_data[style_name])
+                        if word_pairs:
+                            style_entry['word_pairs'] = word_pairs
+                            print(f"✅ Added {len(word_pairs)} word pairs to {style_name}")
+                else:
+                    # Fall back to general word-by-word if available
+                    language = 'german' if is_german else 'english'
+                    if language in word_by_word_text:
+                        if (is_german and style_preferences.german_word_by_word) or \
+                           (not is_german and style_preferences.english_word_by_word):
+                            word_pairs = self._parse_word_by_word_line(word_by_word_text[language])
+                            if word_pairs:
+                                style_entry['word_pairs'] = word_pairs
+                                print(f"✅ Added {len(word_pairs)} general word pairs to {style_name}")
 
             print(f"✅ Extracted {len(result['translations'])} translations")
             print(f"✅ Extracted {len(result['style_data'])} style entries")
@@ -771,7 +533,7 @@ class TranslationService:
             
             # Fallback: create minimal result
             if not result['translations']:
-                result['translations'] = [generated_text[:500]]  # Use first part of response
+                result['translations'] = [generated_text[:500]]
                 result['style_data'] = [{
                     'translation': generated_text[:500],
                     'word_pairs': [],
@@ -800,51 +562,6 @@ class TranslationService:
         
         return None
 
-    def _process_word_by_word_data(self, result: Dict, word_by_word_text: Dict, style_preferences):
-        """Process word-by-word data and add to style entries"""
-        
-        # Process German word-by-word
-        if 'german' in word_by_word_text and style_preferences.german_word_by_word:
-            german_pairs = self._parse_word_by_word_line(word_by_word_text['german'])
-            if german_pairs:
-                print(f"✅ Parsed {len(german_pairs)} German word pairs")
-                
-                # Add to existing German style entries
-                for style_entry in result['style_data']:
-                    if style_entry['is_german']:
-                        style_entry['word_pairs'] = german_pairs
-                        break
-                else:
-                    # Create new entry if no German styles exist
-                    result['style_data'].append({
-                        'translation': 'German translation (word-by-word only)',
-                        'word_pairs': german_pairs,
-                        'is_german': True,
-                        'is_spanish': False,
-                        'style_name': 'german_word_by_word'
-                    })
-
-        # Process English word-by-word
-        if 'english' in word_by_word_text and style_preferences.english_word_by_word:
-            english_pairs = self._parse_word_by_word_line(word_by_word_text['english'])
-            if english_pairs:
-                print(f"✅ Parsed {len(english_pairs)} English word pairs")
-                
-                # Add to existing English style entries
-                for style_entry in result['style_data']:
-                    if not style_entry['is_german'] and not style_entry['is_spanish']:
-                        style_entry['word_pairs'] = english_pairs
-                        break
-                else:
-                    # Create new entry if no English styles exist
-                    result['style_data'].append({
-                        'translation': 'English translation (word-by-word only)',
-                        'word_pairs': english_pairs,
-                        'is_german': False,
-                        'is_spanish': False,
-                        'style_name': 'english_word_by_word'
-                    })
-
     def _parse_word_by_word_line(self, line: str) -> List[Tuple[str, str]]:
         """Parse a word-by-word line into pairs"""
         pairs = []
@@ -872,17 +589,23 @@ class TranslationService:
         return pairs
 
     def _create_perfect_ui_sync_data(self, translations_data: Dict, style_preferences) -> Dict[str, Dict[str, str]]:
-        """Create UI data that PERFECTLY matches what will be spoken in audio"""
+        """Create UI data that PERFECTLY matches what will be spoken in audio for ALL styles"""
         ui_data = {}
         
-        print("📱 Creating PERFECT UI-Audio synchronization data...")
+        print("📱 Creating PERFECT MULTI-STYLE UI-Audio synchronization data...")
         print("="*60)
+        
+        style_counter = {}  # Track counters per style
         
         for style_info in translations_data.get('style_data', []):
             style_name = style_info['style_name']
             word_pairs = style_info.get('word_pairs', [])
             is_german = style_info.get('is_german', False)
             is_spanish = style_info.get('is_spanish', False)
+            
+            # Initialize counter for this style
+            if style_name not in style_counter:
+                style_counter[style_name] = 0
             
             # Check if word-by-word is enabled for this language
             should_include = False
@@ -902,6 +625,7 @@ class TranslationService:
                     # CRITICAL: Create EXACT same format for UI and audio
                     display_format = f"[{source_clean}] ([{spanish_clean}])"
                     
+                    # Create unique key for each style's word pairs
                     key = f"{style_name}_{i}_{source_clean.replace(' ', '_')}"
                     
                     ui_data[key] = {
@@ -909,26 +633,28 @@ class TranslationService:
                         "spanish": spanish_clean,
                         "language": "german" if is_german else "english",
                         "style": style_name,
-                        "order": str(i),
+                        "order": str(style_counter[style_name]),
                         "is_phrasal_verb": str(" " in source_clean),
                         "display_format": display_format  # EXACT audio format
                     }
                     
-                    print(f"   {i+1:2d}. UI: {display_format}")
+                    style_counter[style_name] += 1
+                    
+                    print(f"   {i+1:2d}. {style_name} UI: {display_format}")
                     if " " in source_clean:
                         verb_type = "German Separable Verb" if is_german else "English Phrasal Verb"
                         print(f"       🔗 {verb_type}: Single unit")
         
-        print(f"✅ Created PERFECT UI sync data for {len(ui_data)} word pairs")
+        print(f"✅ Created PERFECT UI sync data for {len(ui_data)} word pairs across {len(style_counter)} styles")
         print("="*60)
         return ui_data
 
     def _create_formatted_translation_text(self, translations_data: Dict) -> str:
-        """Create nicely formatted translation text for display"""
+        """Create nicely formatted translation text for display with all styles"""
         formatted_parts = []
         
         formatted_parts.append("=" * 50)
-        formatted_parts.append("TRANSLATION RESULTS:")
+        formatted_parts.append("MULTI-STYLE TRANSLATION RESULTS:")
         formatted_parts.append("=" * 50)
         
         # Group by language
@@ -989,8 +715,8 @@ class TranslationService:
     def _generate_grammar_explanations(self, text: str) -> dict[str, str]:
         """Generate grammar explanations for the translation."""
         return {
-            "structure": "Enhanced grammar explanation with context",
-            "tense": "Tense usage adapted to mother tongue with context",
+            "structure": "Enhanced multi-style grammar explanation with context",
+            "tense": "Tense usage adapted to multiple styles and mother tongue",
         }
 
     def _normalize_text(self, text: str) -> str:
@@ -1055,3 +781,6 @@ class TranslationService:
             corrected_words.append(word)
 
         return " ".join(corrected_words)
+    
+
+

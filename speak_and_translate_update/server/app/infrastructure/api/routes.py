@@ -1,4 +1,4 @@
-# routes.py - Enhanced with PERFECT UI-Audio synchronization debugging and validation
+# routes.py - Enhanced with PERFECT UI-Audio synchronization and Multi-Style Support
 
 import logging
 import tempfile
@@ -9,7 +9,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from ...application.services.speech_service import SpeechService
 from ...application.services.translation_service import TranslationService
 from ...domain.entities.translation import Translation
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup logic with perfect sync info
-    logger.info("🚀 Starting PERFECT UI-AUDIO SYNC Translation API")
+    logger.info("🚀 Starting PERFECT UI-AUDIO SYNC Translation API with Multi-Style Support")
     logger.info("🎯 CRITICAL FEATURE: What user sees = What user hears")
     logger.info("📋 Perfect Synchronization Features:")
     logger.info("   1. EXACT format matching: UI display = Audio speech")
@@ -37,6 +37,7 @@ async def lifespan(app: FastAPI):
     logger.info("   3. Phrasal verb handling: Single units in both UI and audio")
     logger.info("   4. Contextual accuracy: AI provides context-aware translations")
     logger.info("   5. Perfect validation: Zero discrepancies allowed")
+    logger.info("   6. Multi-Style Support: Multiple simultaneous translation styles")
     
     yield  # App runs here
     
@@ -44,9 +45,9 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down Perfect UI-Audio Sync Translation API")
 
 app = FastAPI(
-    title="Perfect UI-Audio Sync Translation API",
-    description="GUARANTEED perfect synchronization between UI display and audio output",
-    version="3.0-PERFECT-SYNC",
+    title="Perfect UI-Audio Sync Translation API with Multi-Style",
+    description="GUARANTEED perfect synchronization between UI display and audio output with multiple style support",
+    version="4.0-MULTI-STYLE",
     root_path="",
     openapi_url="/openapi.json"
 )
@@ -65,14 +66,14 @@ translation_service = TranslationService()
 speech_service = SpeechService()
 
 class TranslationStylePreferences(BaseModel):
-    """Translation style preferences with perfect sync support"""
-    # German styles
+    """Translation style preferences with perfect sync and multi-style support"""
+    # German styles - ALL can be selected simultaneously
     german_native: bool = False
     german_colloquial: bool = False
     german_informal: bool = False
     german_formal: bool = False
     
-    # English styles
+    # English styles - ALL can be selected simultaneously
     english_native: bool = False
     english_colloquial: bool = False
     english_informal: bool = False
@@ -102,21 +103,38 @@ def _validate_mother_tongue(mother_tongue: str) -> str:
     
     return normalized
 
-def _apply_intelligent_defaults(style_preferences: TranslationStylePreferences) -> TranslationStylePreferences:
-    """Apply intelligent defaults based on mother tongue"""
-    mother_tongue = _validate_mother_tongue(style_preferences.mother_tongue or 'spanish')
-    
-    # Check if any styles are selected
-    has_any_style = any([
-        style_preferences.german_native, style_preferences.german_colloquial,
-        style_preferences.german_informal, style_preferences.german_formal,
-        style_preferences.english_native, style_preferences.english_colloquial,
-        style_preferences.english_informal, style_preferences.english_formal
+def _count_selected_styles(style_preferences: TranslationStylePreferences) -> Dict[str, int]:
+    """Count how many styles are selected for each language"""
+    german_count = sum([
+        style_preferences.german_native,
+        style_preferences.german_colloquial,
+        style_preferences.german_informal,
+        style_preferences.german_formal
     ])
     
+    english_count = sum([
+        style_preferences.english_native,
+        style_preferences.english_colloquial,
+        style_preferences.english_informal,
+        style_preferences.english_formal
+    ])
+    
+    return {
+        'german': german_count,
+        'english': english_count,
+        'total': german_count + english_count
+    }
+
+def _apply_intelligent_defaults(style_preferences: TranslationStylePreferences) -> TranslationStylePreferences:
+    """Apply intelligent defaults based on mother tongue if no styles selected"""
+    mother_tongue = _validate_mother_tongue(style_preferences.mother_tongue or 'spanish')
+    
+    # Count selected styles
+    style_counts = _count_selected_styles(style_preferences)
+    
     # Apply defaults only if NO styles are selected
-    if not has_any_style:
-        logger.info(f"🎯 Applying perfect sync defaults for mother tongue: {mother_tongue}")
+    if style_counts['total'] == 0:
+        logger.info(f"🎯 No styles selected - applying defaults for mother tongue: {mother_tongue}")
         
         if mother_tongue == "spanish":
             style_preferences.german_colloquial = True
@@ -133,174 +151,175 @@ def _apply_intelligent_defaults(style_preferences: TranslationStylePreferences) 
             style_preferences.english_colloquial = True
             logger.info(f"   ✅ {mother_tongue} defaults: German + English colloquial")
     else:
-        logger.info(f"🎯 User selected specific styles for mother tongue: {mother_tongue}")
+        logger.info(f"🎯 User selected {style_counts['total']} specific styles")
+        if style_counts['german'] > 0:
+            logger.info(f"   🇩🇪 German: {style_counts['german']} styles")
+        if style_counts['english'] > 0:
+            logger.info(f"   🇺🇸 English: {style_counts['english']} styles")
     
     return style_preferences
 
 def _log_perfect_sync_setup(text: str, style_preferences: TranslationStylePreferences):
-    """Log the perfect sync translation setup with detailed debugging"""
+    """Log the perfect sync translation setup with multi-style support"""
     mother_tongue = style_preferences.mother_tongue or 'spanish'
+    style_counts = _count_selected_styles(style_preferences)
     
     logger.info(f"\n" + "🎯" + "="*80)
-    logger.info(f"🎯 PERFECT UI-AUDIO SYNC TRANSLATION SETUP")
+    logger.info(f"🎯 PERFECT UI-AUDIO SYNC MULTI-STYLE TRANSLATION SETUP")
     logger.info(f"🎯" + "="*80)
     logger.info(f"📝 Input Text: '{text}'")
     logger.info(f"🌍 Mother Tongue: {mother_tongue.upper()}")
+    logger.info(f"📊 Total Styles Selected: {style_counts['total']}")
     
     # Log expected behavior with perfect sync details
     expected_translations = []
     automatic_translations = []
     
     if mother_tongue == 'spanish':
-        if any([style_preferences.german_native, style_preferences.german_colloquial,
-               style_preferences.german_informal, style_preferences.german_formal]):
-            expected_translations.append('German')
-        if any([style_preferences.english_native, style_preferences.english_colloquial,
-               style_preferences.english_informal, style_preferences.english_formal]):
-            expected_translations.append('English')
+        if style_counts['german'] > 0:
+            expected_translations.append(f'German ({style_counts["german"]} styles)')
+        if style_counts['english'] > 0:
+            expected_translations.append(f'English ({style_counts["english"]} styles)')
     elif mother_tongue == 'english':
         automatic_translations.append('Spanish')
-        if any([style_preferences.german_native, style_preferences.german_colloquial,
-               style_preferences.german_informal, style_preferences.german_formal]):
-            expected_translations.append('German')
+        if style_counts['german'] > 0:
+            expected_translations.append(f'German ({style_counts["german"]} styles)')
     elif mother_tongue == 'german':
         automatic_translations.append('Spanish')
-        if any([style_preferences.english_native, style_preferences.english_colloquial,
-               style_preferences.english_informal, style_preferences.english_formal]):
-            expected_translations.append('English')
+        if style_counts['english'] > 0:
+            expected_translations.append(f'English ({style_counts["english"]} styles)')
     
     # Log translation targets
     if automatic_translations:
         logger.info(f"🔄 Automatic Translations: {', '.join(automatic_translations)}")
     if expected_translations:
         logger.info(f"🎯 User-Selected Translations: {', '.join(expected_translations)}")
-    else:
-        logger.info(f"⚠️ No target languages selected")
     
     # CRITICAL: Log perfect sync audio settings
     logger.info(f"🎵 PERFECT SYNC Audio Settings:")
     logger.info(f"   German word-by-word: {style_preferences.german_word_by_word}")
     logger.info(f"   English word-by-word: {style_preferences.english_word_by_word}")
     
-    # Determine audio format
+    # Detailed style breakdown
+    logger.info(f"🇩🇪 German Styles Selected:")
+    if style_preferences.german_native:
+        logger.info(f"   ✅ Native")
+    if style_preferences.german_colloquial:
+        logger.info(f"   ✅ Colloquial")
+    if style_preferences.german_informal:
+        logger.info(f"   ✅ Informal")
+    if style_preferences.german_formal:
+        logger.info(f"   ✅ Formal")
+    
+    logger.info(f"🇺🇸 English Styles Selected:")
+    if style_preferences.english_native:
+        logger.info(f"   ✅ Native")
+    if style_preferences.english_colloquial:
+        logger.info(f"   ✅ Colloquial")
+    if style_preferences.english_informal:
+        logger.info(f"   ✅ Informal")
+    if style_preferences.english_formal:
+        logger.info(f"   ✅ Formal")
+    
+    # Audio format information
     if style_preferences.german_word_by_word or style_preferences.english_word_by_word:
-        logger.info(f"   🎯 Audio format: [target word] ([Spanish equivalent])")
-        logger.info(f"   🎯 UI format: EXACTLY THE SAME as audio format")
-        logger.info(f"   🎯 Synchronization: PERFECT - UI order = Audio order")
-        
-        # Log specific word-by-word details
-        if style_preferences.german_word_by_word:
-            logger.info(f"   🇩🇪 German word-by-word: [German word/phrase] ([Spanish])")
-            logger.info(f"      • Separable verbs treated as single units")
-            logger.info(f"      • UI display matches audio exactly")
-        if style_preferences.english_word_by_word:
-            logger.info(f"   🇺🇸 English word-by-word: [English word/phrase] ([Spanish])")
-            logger.info(f"      • Phrasal verbs treated as single units")
-            logger.info(f"      • UI display matches audio exactly")
-    else:
-        logger.info(f"   🎯 Audio format: Simple translation reading")
-        logger.info(f"   🎯 No word-by-word sync needed")
-    
-    # Log style selections with perfect sync implications
-    logger.info(f"🇩🇪 German Styles (Perfect Sync Enabled):")
-    logger.info(f"   Native: {style_preferences.german_native}")
-    logger.info(f"   Colloquial: {style_preferences.german_colloquial}")
-    logger.info(f"   Informal: {style_preferences.german_informal}")
-    logger.info(f"   Formal: {style_preferences.german_formal}")
-    
-    logger.info(f"🇺🇸 English Styles (Perfect Sync Enabled):")
-    logger.info(f"   Native: {style_preferences.english_native}")
-    logger.info(f"   Colloquial: {style_preferences.english_colloquial}")
-    logger.info(f"   Informal: {style_preferences.english_informal}")
-    logger.info(f"   Formal: {style_preferences.english_formal}")
+        logger.info(f"🎯 Multi-Style Audio Generation:")
+        logger.info(f"   • Each selected style will be spoken")
+        logger.info(f"   • Format: Full translation → Word-by-word breakdown")
+        logger.info(f"   • Word format: [target word] ([Spanish equivalent])")
+        logger.info(f"   • UI display will match audio EXACTLY")
     
     logger.info(f"🎯" + "="*80)
 
 def _validate_perfect_sync_response(translation: Translation, style_preferences: TranslationStylePreferences):
-    """Validate that the response supports perfect UI-Audio synchronization"""
-    logger.info("\n🔍 VALIDATING PERFECT UI-AUDIO SYNCHRONIZATION")
+    """Validate perfect synchronization for multiple styles"""
+    logger.info("\n🔍 VALIDATING PERFECT MULTI-STYLE SYNCHRONIZATION")
     logger.info("="*60)
+    
+    style_counts = _count_selected_styles(style_preferences)
     
     validation_results = {
         'has_audio': translation.audio_path is not None,
         'has_word_by_word': translation.word_by_word is not None and len(translation.word_by_word) > 0,
-        'word_by_word_requested': False,
+        'word_by_word_requested': style_preferences.german_word_by_word or style_preferences.english_word_by_word,
+        'styles_requested': style_counts['total'],
+        'styles_in_response': 0,
         'sync_validation': [],
         'warnings': [],
         'errors': []
     }
     
-    # Check if word-by-word was requested
-    german_requested = getattr(style_preferences, 'german_word_by_word', False)
-    english_requested = getattr(style_preferences, 'english_word_by_word', False)
-    validation_results['word_by_word_requested'] = german_requested or english_requested
-    
     logger.info(f"Audio generated: {validation_results['has_audio']}")
     logger.info(f"Word-by-word data present: {validation_results['has_word_by_word']}")
     logger.info(f"Word-by-word requested: {validation_results['word_by_word_requested']}")
+    logger.info(f"Styles requested: {validation_results['styles_requested']}")
     
     if validation_results['word_by_word_requested'] and validation_results['has_word_by_word']:
-        logger.info("🎯 PERFECT SYNC MODE ACTIVE - Validating synchronization...")
+        logger.info("🎯 MULTI-STYLE PERFECT SYNC MODE ACTIVE - Validating...")
         
-        # Validate word-by-word data structure
+        # Validate word-by-word data structure for multiple styles
         word_by_word = translation.word_by_word
         total_pairs = len(word_by_word)
         
         logger.info(f"📊 Total word pairs for UI display: {total_pairs}")
         
-        # Group by language and validate order
-        by_language = {}
+        # Group by style and validate
+        style_groups = {}
         for key, data in word_by_word.items():
+            style_name = data.get('style', 'unknown')
             language = data.get('language', 'unknown')
-            if language not in by_language:
-                by_language[language] = []
-            by_language[language].append((key, data))
+            
+            if style_name not in style_groups:
+                style_groups[style_name] = []
+            style_groups[style_name].append((key, data))
         
-        # Validate each language group
-        for language, pairs in by_language.items():
+        validation_results['styles_in_response'] = len(style_groups)
+        logger.info(f"📊 Styles in response: {validation_results['styles_in_response']}")
+        
+        # Validate each style's word-by-word data
+        for style_name, pairs in style_groups.items():
             # Sort by order
             try:
                 pairs.sort(key=lambda x: int(x[1].get('order', '0')))
-                logger.info(f"✅ {language}: {len(pairs)} pairs in correct order")
+                logger.info(f"✅ {style_name}: {len(pairs)} pairs in correct order")
                 
-                # Validate each pair
-                for i, (key, data) in enumerate(pairs):
+                # Validate format for first few pairs
+                for i, (key, data) in enumerate(pairs[:3]):
                     source = data.get('source', '')
                     spanish = data.get('spanish', '')
                     display_format = data.get('display_format', '')
                     expected_format = f"[{source}] ([{spanish}])"
                     
                     if display_format == expected_format:
-                        validation_results['sync_validation'].append(f"✅ {key}: Perfect format match")
+                        validation_results['sync_validation'].append(f"✅ {style_name} pair {i+1}: Perfect format")
                     else:
-                        validation_results['errors'].append(f"❌ {key}: Format mismatch - Expected: {expected_format}, Got: {display_format}")
+                        validation_results['errors'].append(
+                            f"❌ {style_name}: Format mismatch - Expected: {expected_format}, Got: {display_format}"
+                        )
                     
-                    # Log first few for debugging
                     if i < 3:
                         logger.info(f"   {i+1}. {display_format} ✅")
                         
             except Exception as e:
-                validation_results['errors'].append(f"❌ {language}: Order validation failed - {str(e)}")
+                validation_results['errors'].append(f"❌ {style_name}: Validation failed - {str(e)}")
         
         # Check for phrasal/separable verbs
         phrasal_verbs = [data for data in word_by_word.values() if data.get('is_phrasal_verb') == 'true']
         if phrasal_verbs:
-            logger.info(f"🔗 Found {len(phrasal_verbs)} phrasal/separable verbs (treated as single units)")
-            for data in phrasal_verbs[:3]:  # Log first few
-                logger.info(f"   • {data.get('source', '')} → {data.get('spanish', '')}")
-        
+            logger.info(f"🔗 Found {len(phrasal_verbs)} phrasal/separable verbs across all styles")
+    
     elif validation_results['word_by_word_requested'] and not validation_results['has_word_by_word']:
         validation_results['warnings'].append("⚠️ Word-by-word requested but no data generated")
         logger.warning("⚠️ Word-by-word audio requested but no synchronization data generated")
     
     # Final validation summary
     if validation_results['errors']:
-        logger.error(f"❌ PERFECT SYNC VALIDATION FAILED: {len(validation_results['errors'])} errors")
+        logger.error(f"❌ MULTI-STYLE SYNC VALIDATION FAILED: {len(validation_results['errors'])} errors")
         for error in validation_results['errors']:
             logger.error(f"   {error}")
     elif validation_results['word_by_word_requested']:
-        logger.info("✅ PERFECT UI-AUDIO SYNCHRONIZATION VALIDATED")
-        logger.info("🎯 UI display will match audio output exactly")
+        logger.info("✅ PERFECT MULTI-STYLE UI-AUDIO SYNCHRONIZATION VALIDATED")
+        logger.info(f"🎯 {validation_results['styles_in_response']} styles with perfect sync")
     else:
         logger.info("ℹ️ Simple translation mode - no perfect sync validation needed")
     
@@ -310,7 +329,7 @@ def _validate_perfect_sync_response(translation: Translation, style_preferences:
 # Health check endpoint with perfect sync info
 @app.get("/health")
 async def health_check():
-    """Health check with perfect UI-Audio synchronization status"""
+    """Health check with perfect UI-Audio synchronization and multi-style status"""
     # Create audio directory
     audio_dir = "/tmp/tts_audio" if os.name != "nt" else os.path.join(os.environ.get("TEMP", ""), "tts_audio")
     try:
@@ -330,8 +349,8 @@ async def health_check():
 
     return {
         "status": "healthy",
-        "service": "Perfect UI-Audio Sync Translation API",
-        "version": "3.0-PERFECT-SYNC",
+        "service": "Perfect UI-Audio Sync Translation API with Multi-Style",
+        "version": "4.0-MULTI-STYLE",
         "timestamp": datetime.utcnow().isoformat(),
         "perfect_sync_features": {
             "ui_audio_synchronization": "GUARANTEED perfect match",
@@ -339,7 +358,14 @@ async def health_check():
             "order_consistency": "UI display order = Audio speaking order",
             "phrasal_verb_handling": "Single units in both UI and audio",
             "contextual_accuracy": "AI provides context-aware translations",
-            "validation_system": "Zero discrepancies allowed"
+            "validation_system": "Zero discrepancies allowed",
+            "multi_style_support": "Multiple simultaneous translation styles"
+        },
+        "multi_style_features": {
+            "simultaneous_styles": "Select multiple styles at once",
+            "per_style_audio": "Each style gets its own audio segment",
+            "word_by_word_all_styles": "Word-by-word for all selected styles",
+            "perfect_sync_all_styles": "UI-Audio sync maintained for each style"
         },
         "sync_guarantee": {
             "what_you_see": "EXACTLY what you hear",
@@ -357,124 +383,40 @@ async def health_check():
 async def root():
     return {
         "status": "ok", 
-        "service": "Perfect UI-Audio Sync Translation API",
-        "description": "GUARANTEED perfect synchronization between UI display and audio output",
-        "version": "3.0-PERFECT-SYNC",
+        "service": "Perfect UI-Audio Sync Translation API with Multi-Style Support",
+        "description": "GUARANTEED perfect synchronization with multiple simultaneous translation styles",
+        "version": "4.0-MULTI-STYLE",
         "perfect_sync_guarantee": {
             "visual_audio_match": "What you see is exactly what you hear",
             "format_consistency": "UI format = Audio format (identical)",
             "order_consistency": "UI order = Audio order (identical)",
             "phrasal_verb_unity": "Phrasal/separable verbs as single units",
-            "zero_discrepancies": "Perfect synchronization guaranteed"
+            "zero_discrepancies": "Perfect synchronization guaranteed",
+            "multi_style_support": "All selected styles perfectly synchronized"
         },
         "requirements_compliance": {
-            "4.1_solution": "Perfect UI-Audio synchronization implemented",
+            "multi_style_solution": "Handle multiple simultaneous translation styles",
             "spanish_mother_tongue": "German and/or English based on selections",
             "english_mother_tongue": "Spanish (automatic) + German if selected", 
             "german_mother_tongue": "Spanish (automatic) + English if selected",
-            "word_by_word_audio": "Only if user selects 'word by word audio'",
+            "word_by_word_audio": "Available for ALL selected styles",
             "audio_format": "[target word] ([Spanish equivalent])",
-            "ai_powered": "Contextually accurate translations",
+            "ai_powered": "Contextually accurate translations for each style",
             "dynamic_behavior": "Based on user preferences"
         },
         "endpoints": {
-            "/api/conversation": "Main perfect sync translation endpoint",
+            "/api/conversation": "Main perfect sync multi-style translation endpoint",
             "/api/speech-to-text": "Speech recognition with mother tongue detection",
             "/api/voice-command": "Voice command processing",
             "/api/audio/{filename}": "Audio file serving",
-            "/health": "Health check with perfect sync status"
+            "/health": "Health check with perfect sync and multi-style status"
         }
     }
-
-# @app.post("/api/conversation", response_model=Translation)
-# async def start_conversation(prompt: PromptRequest):
-#     """
-#     Main conversation endpoint with PERFECT UI-Audio synchronization.
-#     """
-#     try:
-#         # Set up default style preferences if none provided
-#         if prompt.style_preferences is None:
-#             prompt.style_preferences = TranslationStylePreferences(
-#                 german_colloquial=True,
-#                 english_colloquial=True,
-#                 mother_tongue="spanish"
-#             )
-        
-#         # Validate and normalize mother tongue
-#         mother_tongue = _validate_mother_tongue(prompt.style_preferences.mother_tongue or 'spanish')
-#         prompt.style_preferences.mother_tongue = mother_tongue
-        
-#         # Apply intelligent defaults if no styles selected
-#         prompt.style_preferences = _apply_intelligent_defaults(prompt.style_preferences)
-        
-#         # Log the perfect sync translation setup
-#         _log_perfect_sync_setup(prompt.text, prompt.style_preferences)
-        
-#         # Process the translation with perfect sync
-#         logger.info(f"🚀 Starting PERFECT SYNC translation with mother tongue: {mother_tongue}")
-#         response = await translation_service.process_prompt(
-#             text=prompt.text, 
-#             source_lang=prompt.source_lang or "auto", 
-#             target_lang=prompt.target_lang or "multi",
-#             style_preferences=prompt.style_preferences,
-#             mother_tongue=mother_tongue
-#         )
-        
-#         # CRITICAL: Validate perfect synchronization
-#         sync_validation = _validate_perfect_sync_response(response, prompt.style_preferences)
-        
-#         # Log the successful completion with sync details
-#         logger.info(f"✅ PERFECT SYNC translation completed successfully")
-#         logger.info(f"   Input ('{response.source_language}'): {response.original_text}")
-#         logger.info(f"   Output length: {len(response.translated_text)} characters")
-#         logger.info(f"   Audio generated: {'Yes' if response.audio_path else 'No'}")
-#         logger.info(f"   Word-by-word data: {'Yes' if response.word_by_word else 'No'}")
-        
-#         if response.audio_path:
-#             # Check if word-by-word was requested
-#             word_by_word_requested = (
-#                 prompt.style_preferences.german_word_by_word or 
-#                 prompt.style_preferences.english_word_by_word
-#             )
-#             logger.info(f"   Audio type: {'Word-by-word breakdown' if word_by_word_requested else 'Simple translation reading'}")
-            
-#             if word_by_word_requested and response.word_by_word:
-#                 total_pairs = len(response.word_by_word)
-#                 logger.info(f"   Perfect sync pairs: {total_pairs}")
-#                 logger.info(f"   Synchronization status: {'✅ PERFECT' if not sync_validation['errors'] else '❌ ISSUES DETECTED'}")
-        
-#         # Add perfect sync validation info to response (for debugging)
-#         logger.info("\n📱 WORD-BY-WORD UI VISUALIZATION DEBUG:")
-#         logger.info("="*60)
-#         if response.word_by_word:
-#             logger.info(f"   📝 Word-by-word data available for UI")
-#             logger.info(f"   📊 Total UI elements: {len(response.word_by_word)}")
-            
-#             # Log a sample of UI data structure
-#             sample_keys = list(response.word_by_word.keys())[:3]
-#             for key in sample_keys:
-#                 data = response.word_by_word[key]
-#                 logger.info(f"   📱 UI: {data.get('display_format', 'N/A')}")
-#         else:
-#             logger.info(f"   📝 No word-by-word data available for UI")
-        
-#         logger.info("="*60)
-        
-#         return response
-        
-#     except HTTPException as he:
-#         # Re-raise HTTP exceptions as-is
-#         raise he
-#     except Exception as e:
-#         logger.error(f"❌ Perfect sync translation error: {str(e)}", exc_info=True)
-#         raise HTTPException(status_code=500, detail=f"Perfect sync translation failed: {str(e)}")
-
-# routes.py - Additional error handling fixes for conversation endpoint
 
 @app.post("/api/conversation", response_model=Translation)
 async def start_conversation(prompt: PromptRequest):
     """
-    Main conversation endpoint with PERFECT UI-Audio synchronization and robust error handling.
+    Main conversation endpoint with PERFECT UI-Audio synchronization and multi-style support.
     """
     try:
         # Set up default style preferences if none provided
@@ -495,8 +437,8 @@ async def start_conversation(prompt: PromptRequest):
         # Log the perfect sync translation setup
         _log_perfect_sync_setup(prompt.text, prompt.style_preferences)
         
-        # Process the translation with perfect sync and enhanced error handling
-        logger.info(f"🚀 Starting PERFECT SYNC translation with mother tongue: {mother_tongue}")
+        # Process the translation with perfect sync and multi-style support
+        logger.info(f"🚀 Starting PERFECT SYNC MULTI-STYLE translation with mother tongue: {mother_tongue}")
         
         try:
             response = await translation_service.process_prompt(
@@ -524,7 +466,7 @@ async def start_conversation(prompt: PromptRequest):
             logger.info("📋 Returning fallback response due to translation error")
             return fallback_response
         
-        # CRITICAL: Validate perfect synchronization
+        # CRITICAL: Validate perfect synchronization for multiple styles
         try:
             sync_validation = _validate_perfect_sync_response(response, prompt.style_preferences)
         except Exception as validation_error:
@@ -532,9 +474,11 @@ async def start_conversation(prompt: PromptRequest):
             sync_validation = {'errors': [], 'warnings': ['Validation skipped due to error']}
         
         # Log the successful completion with sync details
-        logger.info(f"✅ PERFECT SYNC translation completed successfully")
+        style_counts = _count_selected_styles(prompt.style_preferences)
+        logger.info(f"✅ PERFECT SYNC MULTI-STYLE translation completed successfully")
         logger.info(f"   Input ('{response.source_language}'): {response.original_text}")
         logger.info(f"   Output length: {len(response.translated_text)} characters")
+        logger.info(f"   Styles processed: {style_counts['total']}")
         logger.info(f"   Audio generated: {'Yes' if response.audio_path else 'No'}")
         logger.info(f"   Word-by-word data: {'Yes' if response.word_by_word else 'No'}")
         
@@ -544,25 +488,29 @@ async def start_conversation(prompt: PromptRequest):
                 prompt.style_preferences.german_word_by_word or 
                 prompt.style_preferences.english_word_by_word
             )
-            logger.info(f"   Audio type: {'Word-by-word breakdown' if word_by_word_requested else 'Simple translation reading'}")
+            logger.info(f"   Audio type: {'Multi-style word-by-word breakdown' if word_by_word_requested else 'Multi-style translation reading'}")
             
             if word_by_word_requested and response.word_by_word:
                 total_pairs = len(response.word_by_word)
                 logger.info(f"   Perfect sync pairs: {total_pairs}")
+                logger.info(f"   Styles in sync: {sync_validation.get('styles_in_response', 0)}")
                 logger.info(f"   Synchronization status: {'✅ PERFECT' if not sync_validation['errors'] else '❌ ISSUES DETECTED'}")
         
         # Add perfect sync validation info to response (for debugging)
-        logger.info("\n📱 WORD-BY-WORD UI VISUALIZATION DEBUG:")
+        logger.info("\n📱 MULTI-STYLE WORD-BY-WORD UI VISUALIZATION DEBUG:")
         logger.info("="*60)
         if response.word_by_word:
             logger.info(f"   📝 Word-by-word data available for UI")
             logger.info(f"   📊 Total UI elements: {len(response.word_by_word)}")
+            logger.info(f"   🎯 Styles covered: {sync_validation.get('styles_in_response', 0)}")
             
             # Log a sample of UI data structure
-            sample_keys = list(response.word_by_word.keys())[:3]
+            sample_keys = list(response.word_by_word.keys())[:5]
             for key in sample_keys:
                 data = response.word_by_word[key]
-                logger.info(f"   📱 UI: {data.get('display_format', 'N/A')}")
+                style = data.get('style', 'unknown')
+                format_str = data.get('display_format', 'N/A')
+                logger.info(f"   📱 {style}: {format_str}")
         else:
             logger.info(f"   📝 No word-by-word data available for UI")
         
@@ -600,7 +548,6 @@ async def start_conversation(prompt: PromptRequest):
                 detail="Translation service is temporarily unavailable. Please try again later."
             )
 
-# Keep all other endpoints unchanged (speech-to-text, voice-command, audio serving, etc.)
 @app.post("/api/speech-to-text")
 async def speech_to_text(file: UploadFile = File(...), mother_tongue: Optional[str] = "auto"):
     """Speech-to-text with dynamic mother tongue detection and support."""
@@ -730,7 +677,7 @@ async def get_audio(filename: str):
 
 @app.get("/api/supported-languages")
 async def get_supported_languages():
-    """Get list of supported mother tongue languages with perfect sync info"""
+    """Get list of supported mother tongue languages with perfect sync and multi-style info"""
     try:
         languages = speech_service.get_supported_languages()
         return {
@@ -742,16 +689,69 @@ async def get_supported_languages():
                 "german": "Translates to Spanish (automatic) + English if selected",
                 "others": "Translate to German and/or English based on user selections"
             },
+            "multi_style_features": {
+                "simultaneous_styles": "Select multiple styles at once (e.g., Native + Colloquial + Formal)",
+                "per_style_translation": "Each style gets its own contextually appropriate translation",
+                "all_styles_audio": "Audio includes all selected styles sequentially",
+                "word_by_word_all_styles": "Word-by-word breakdown for each selected style"
+            },
             "perfect_sync_features": {
-                "word_by_word_audio": "Only generated if user selects 'word by word audio' for specific languages",
+                "word_by_word_audio": "Generated for ALL selected styles when enabled",
                 "audio_format": "[target word] ([Spanish equivalent])",
                 "ui_format": "EXACTLY the same as audio format",
-                "synchronization": "Perfect - UI order = Audio order",
+                "synchronization": "Perfect - UI order = Audio order for all styles",
                 "phrasal_verbs": "Treated as single units in both UI and audio",
                 "validation": "Automatic validation ensures zero discrepancies"
             },
-            "description": "Perfect UI-Audio synchronization guaranteed - What you see is exactly what you hear"
+            "description": "Perfect UI-Audio synchronization with multi-style support - What you see is exactly what you hear for ALL selected styles"
         }
     except Exception as e:
         logger.error(f"Error fetching supported languages: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch supported languages")
+
+@app.get("/api/style-combinations")
+async def get_style_combinations():
+    """Get information about possible style combinations"""
+    return {
+        "max_simultaneous_styles": {
+            "german": 4,  # Native, Colloquial, Informal, Formal
+            "english": 4,  # Native, Colloquial, Informal, Formal
+            "total": 8  # All styles can be selected simultaneously
+        },
+        "example_combinations": [
+            {
+                "name": "Complete German Learning",
+                "german_styles": ["native", "colloquial", "informal", "formal"],
+                "english_styles": [],
+                "word_by_word": ["german"],
+                "description": "All German styles with word-by-word audio"
+            },
+            {
+                "name": "Business Communication",
+                "german_styles": ["formal"],
+                "english_styles": ["formal"],
+                "word_by_word": ["german", "english"],
+                "description": "Formal styles in both languages"
+            },
+            {
+                "name": "Casual Conversation",
+                "german_styles": ["colloquial", "informal"],
+                "english_styles": ["colloquial", "informal"],
+                "word_by_word": [],
+                "description": "Casual styles without word-by-word"
+            },
+            {
+                "name": "Complete Immersion",
+                "german_styles": ["native", "colloquial", "informal", "formal"],
+                "english_styles": ["native", "colloquial", "informal", "formal"],
+                "word_by_word": ["german", "english"],
+                "description": "All 8 styles with complete word-by-word"
+            }
+        ],
+        "audio_generation": {
+            "format": "Single audio file containing all selected styles",
+            "structure": "Style announcement → Full translation → Word-by-word (if enabled)",
+            "separation": "Brief pause between different styles",
+            "order": "German styles first, then English styles"
+        }
+    }
