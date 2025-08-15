@@ -307,7 +307,7 @@ class _MultiStyleWordByWordWidgetState extends State<MultiStyleWordByWordWidget>
                   ),
                 ),
                 
-               pcon const SizedBox(width: 6),
+                const SizedBox(width: 6),
                 Icon(
                   Icons.arrow_forward,
                   color: isHighlighted ? Colors.orange : Colors.white54,
