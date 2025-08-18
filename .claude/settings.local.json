@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m app.main)"
+    ],
+    "deny": [],
+    "ask": [],
+    "additionalDirectories": [
+      "C:\\c\\Users\\rodri\\VSCode-Files\\SpeakAndTranslate2.0_CI_CD\\speak_and_translate_update"
+    ]
+  }
+}

@@ -10,6 +10,7 @@ from azure.cognitiveservices.speech import (
     SpeechSynthesisOutputFormat,
     ResultReason,
     CancellationReason,
+    PropertyId,
 )
 from azure.cognitiveservices.speech.audio import AudioOutputConfig
 import os
@@ -101,8 +102,8 @@ class EnhancedTTSService:
 
         # Set extended properties for better resilience
         self.speech_config.set_property(
-            property_id="SPEECH-ConnectionTimeoutInSeconds", 
-            value="30"
+            property_id=PropertyId.Speech_SegmentationSilenceTimeoutMs, 
+            value="5000"
         )
 
         self.speech_config.set_speech_synthesis_output_format(
@@ -128,9 +129,10 @@ class EnhancedTTSService:
             },
         }
 
-        logger.info("✅ TTS service initialized successfully")
-            
+        # Initialize voice failure tracking
+        self._voice_failure_count = {}
 
+        logger.info("✅ TTS service initialized successfully")
 
     def _get_temp_directory(self) -> str:
         """Create and return the temporary directory path with proper permissions"""
@@ -199,8 +201,8 @@ class EnhancedTTSService:
                 
                 # Configure connection settings explicitly
                 speech_config.set_property(
-                    property_id="SPEECH-ConnectionTimeoutInSeconds",
-                    value="30"
+                    property_id=PropertyId.Speech_SegmentationSilenceTimeoutMs,
+                    value="5000"
                 )
                 
                 # Create audio config
@@ -789,11 +791,6 @@ class EnhancedTTSService:
             return fallbacks[language_code][0]
         
         return None
-
-    # Initialize voice failure tracking
-    if not hasattr(self, '_voice_failure_count'):
-        self._voice_failure_count = {}
-
         
     async def text_to_speech(
         self, ssml: str, output_path: Optional[str] = None
