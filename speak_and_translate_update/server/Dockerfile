@@ -50,6 +50,8 @@ RUN mkdir -p /tmp/tts_audio && chmod 777 /tmp/tts_audio
 ENV PORT=8000
 ENV TTS_DEVICE=cpu
 ENV CONTAINER_ENV=true
+ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
+ENV GST_PLUGIN_PATH=/usr/lib/x86_64-linux-gnu/gstreamer-1.0
 
 EXPOSE 8000
 
