@@ -46,10 +46,9 @@ RUN apt-get update && apt-get install -y \
     libnghttp2-14 \
     librtmp1 \
     libssh2-1 \
-    libldap-2.4-2 \
+    libldap-common \
     # Additional SSL/TLS support
     openssl \
-    libssl3 \
     # Cleanup
     && rm -rf /var/lib/apt/lists/* \
     && update-ca-certificates
