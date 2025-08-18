@@ -32,18 +32,7 @@ RUN apt-get update && apt-get install -y \
     libicu-dev \
     # Cleanup
     && rm -rf /var/lib/apt/lists/* \
-    && update-ca-certificates \
-    libasound2 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdbus-1-3 \
-    libgbm1 \
-    libnss3 \
-    libpulse0 \
-    libsndfile1 \
-    libgtk-3-0 \
-    libcairo2
+    && update-ca-certificates
 
 WORKDIR /app
 
