@@ -157,10 +157,14 @@ class TranslationService:
                     prompt += "For each word or grammatical unit in your German translation, provide its EXACT SEMANTIC EQUIVALENT in the original Spanish context. "
                     prompt += "Format as: [German word/phrase] ([Spanish equivalent]). "
                     prompt += f"CRITICAL: For the Spanish phrase '{input_text}', provide EXACT word-to-word mappings. Each German word should map to its corresponding Spanish word(s) from the original phrase. Do NOT reorder or create new Spanish words - only use words that appear in '{input_text}'. "
-                    prompt += f"Example format: If translating 'soy una mujer', your German 'Ich bin eine Frau' should map as [Ich]([soy]) [bin]([soy]) [eine]([una]) [Frau]([mujer]) - each German word maps to the Spanish word that means the same thing. "
+                    prompt += f"IMPORTANT: In Spanish, the subject pronoun 'yo' is often implicit (not written) but understood. If '{input_text}' has an implicit 'yo' (when the verb is conjugated in first person), then map [Ich] to ([yo]) even if 'yo' doesn't appear in the text. "
+                    prompt += f"Example format: If translating 'yo soy una mujer', your German 'Ich bin eine Frau' should map as [Ich]([yo]) [bin]([soy]) [eine]([una]) [Frau]([mujer]) - each German word maps to the Spanish word that means the same thing. "
+                    prompt += f"Another example: 'hoy me levanté temprano' = 'Ich bin heute früh aufgestanden' should map as [Ich]([yo]) [bin]([levanté]) [heute]([hoy]) [früh]([temprano]) [aufgestanden]([levanté]). NOTE: 'levanté' is first person, so 'Ich' maps to implicit 'yo'. "
+                    prompt += f"Another example: 'quiero ganar masa' = 'Ich möchte zunehmen' should map as [Ich]([yo]) [möchte]([quiero]) [zunehmen]([ganar]). NOTE: 'quiero' is first person, so 'Ich' maps to implicit 'yo'. "
                     
                     # Language-specific guidance
                     prompt += "Pay special attention to:\n"
+                    prompt += "- PRONOUNS: [ich] = ([yo]), [mich] = ([me]), [mir] = ([me]), [wir] = ([nosotros])\n"
                     prompt += "- Verb conjugations (e.g., [sind] should be ([son/están]) based on context)\n"
                     prompt += "- Articles must match gender/number: [den] with feminine plural nouns = ([las]), with masculine singular = ([el])\n"
                     prompt += "- Prepositions in context: [unter] = ([debajo de]) or ([bajo]) depending on usage\n"
@@ -185,10 +189,14 @@ class TranslationService:
                     prompt += "For each word or grammatical unit in your English translation, provide its EXACT SEMANTIC EQUIVALENT in the original Spanish context. "
                     prompt += "Format as: [English word/phrase] ([Spanish equivalent]). "
                     prompt += f"CRITICAL: For the Spanish phrase '{input_text}', provide EXACT word-to-word mappings. Each English word should map to its corresponding Spanish word(s) from the original phrase. Do NOT reorder or create new Spanish words - only use words that appear in '{input_text}'. "
-                    prompt += f"Example format: If translating 'soy una mujer', your English 'I am a woman' should map as [I]([soy]) [am]([soy]) [a]([una]) [woman]([mujer]) - each English word maps to the Spanish word that means the same thing. "
+                    prompt += f"IMPORTANT: In Spanish, the subject pronoun 'yo' is often implicit (not written) but understood. If '{input_text}' has an implicit 'yo' (when the verb is conjugated in first person), then map [I] to ([yo]) even if 'yo' doesn't appear in the text. "
+                    prompt += f"Example format: If translating 'yo soy una mujer', your English 'I am a woman' should map as [I]([yo]) [am]([soy]) [a]([una]) [woman]([mujer]) - each English word maps to the Spanish word that means the same thing. "
+                    prompt += f"Another example: 'hoy me levanté temprano' = 'I got up early today' should map as [I]([yo]) [got up]([levanté]) [early]([temprano]) [today]([hoy]). NOTE: 'levanté' is first person, so 'I' maps to implicit 'yo'. "
+                    prompt += f"Another example: 'quiero ganar masa' = 'I want to gain mass' should map as [I]([yo]) [want]([quiero]) [to gain]([ganar]) [mass]([masa]). NOTE: 'quiero' is first person, so 'I' maps to implicit 'yo'. "
                     
                     # Language-specific guidance
                     prompt += "Pay special attention to:\n"
+                    prompt += "- PRONOUNS: [I] = ([yo]), [me] = ([me]), [my] = ([mi/mis]), [we] = ([nosotros])\n"
                     prompt += "- Verb conjugations (e.g., [are] should be ([son/están]) based on context)\n"
                     prompt += "- Articles must match gender/number: [the] with feminine plural = ([las]), with masculine = ([el])\n"
                     prompt += "- Prepositions: [under] = ([debajo de]) or ([bajo]) depending on context\n"
