@@ -164,33 +164,137 @@ class EnhancedTTSService:
         
         return temp_dir
 
+    # async def _synthesize_with_retry(self, ssml: str, output_path: str, max_retries: int = 3) -> bool:
+    #     """Synthesize speech with enhanced retry logic and HTTP platform error handling"""
+    #     synthesizer = None
+        
+    #     for attempt in range(max_retries):
+    #         try:
+    #             # Apply rate limiting before each attempt
+    #             await self.rate_limiter.wait_if_needed()
+                
+    #             # Add delay between attempts (increasing with each retry)
+    #             if attempt > 0:
+    #                 delay = (2 ** attempt) + random.uniform(0.1, 0.5)
+    #                 logger.info(f"🔄 Retry delay: waiting {delay:.2f}s before attempt {attempt + 1}")
+    #                 await asyncio.sleep(delay)
+                
+    #             # Explicitly clean up previous synthesizer if it exists
+    #             if synthesizer:
+    #                 try:
+    #                     del synthesizer
+    #                     synthesizer = None
+    #                     # Force garbage collection to ensure resources are released
+    #                     import gc
+    #                     gc.collect()
+    #                     await asyncio.sleep(0.5)  # Short delay to ensure cleanup
+    #                 except Exception as cleanup_error:
+    #                     logger.warning(f"⚠️ Cleanup error (non-critical): {str(cleanup_error)}")
+                
+    #             # Create fresh speech config for each attempt
+    #             speech_config = SpeechConfig(
+    #                 subscription=self.subscription_key, region=self.region
+    #             )
+    #             speech_config.set_speech_synthesis_output_format(
+    #                 SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3
+    #             )
+                
+    #             # Configure connection settings explicitly
+    #             speech_config.set_property(
+    #                 property_id=PropertyId.Speech_SegmentationSilenceTimeoutMs,
+    #                 value="5000"
+    #             )
+                
+    #             # Create audio config
+    #             audio_config = AudioOutputConfig(filename=output_path)
+                
+    #             # Create synthesizer with explicit cleanup
+    #             logger.info(f"🎤 Creating new synthesizer instance (attempt {attempt + 1}/{max_retries})")
+    #             synthesizer = SpeechSynthesizer(
+    #                 speech_config=speech_config, audio_config=audio_config
+    #             )
+
+    #             logger.info(f"🔍 Attempting speech synthesis (attempt {attempt + 1}/{max_retries})")
+                
+    #             # Synthesize with timeout
+    #             result = await asyncio.get_event_loop().run_in_executor(
+    #                 None, lambda: synthesizer.speak_ssml_async(ssml).get()
+    #             )
+
+    #             if result.reason == ResultReason.SynthesizingAudioCompleted:
+    #                 logger.info(f"✅ Speech synthesis successful on attempt {attempt + 1}")
+    #                 return True
+
+    #             elif result.reason == ResultReason.Canceled:
+    #                 cancellation_details = result.cancellation_details
+                    
+    #                 if cancellation_details.reason == CancellationReason.Error:
+    #                     error_details = cancellation_details.error_details
+    #                     logger.warning(f"⚠️ Synthesis error (attempt {attempt + 1}): {error_details}")
+                        
+    #                     # Handle specific HTTP platform errors
+    #                     if "HTTP platform" in error_details or "Error: 27" in error_details:
+    #                         logger.warning("🔄 HTTP platform initialization error - will retry with new configuration")
+    #                         # Force cleanup before retry
+    #                         if synthesizer:
+    #                             del synthesizer
+    #                             synthesizer = None
+    #                             import gc
+    #                             gc.collect()
+    #                         # Longer delay for HTTP platform errors
+    #                         await asyncio.sleep(3)
+    #                         continue
+                            
+    #                     # Handle rate limiting errors
+    #                     elif "429" in error_details or "Too many requests" in error_details:
+    #                         # Exponential backoff for rate limiting
+    #                         base_delay = 5 ** attempt
+    #                         jitter = random.uniform(0.1, 0.5)
+    #                         delay = base_delay + jitter
+                            
+    #                         logger.info(f"🔄 Rate limit hit, retrying in {delay:.2f}s...")
+    #                         await asyncio.sleep(delay)
+    #                         continue
+    #                     else:
+    #                         # Other errors - attempt retry with increasing delay
+    #                         delay = 2 + random.uniform(0.1, 0.3) * attempt
+    #                         logger.info(f"🔄 Other error, retrying in {delay:.2f}s...")
+    #                         await asyncio.sleep(delay)
+    #                         continue
+    #                 else:
+    #                     logger.error(f"❌ Synthesis canceled: {cancellation_details.reason}")
+    #                     return False
+    #             else:
+    #                 logger.error(f"❌ Synthesis failed with reason: {result.reason}")
+    #                 return False
+                    
+    #         except Exception as e:
+    #             logger.error(f"❌ Exception during synthesis attempt {attempt + 1}: {str(e)}")
+    #             # Clean up resources on exception
+    #             if synthesizer:
+    #                 try:
+    #                     del synthesizer
+    #                     synthesizer = None
+    #                 except Exception:
+    #                     pass
+                    
+    #             if attempt < max_retries - 1:
+    #                 delay = (3 ** attempt) + random.uniform(0.1, 0.5)
+    #                 logger.info(f"🔄 Exception recovery: retrying in {delay:.2f}s...")
+    #                 await asyncio.sleep(delay)
+    #                 continue
+    #             else:
+    #                 return False
+        
+    #     logger.error(f"❌ All {max_retries} synthesis attempts failed")
+    #     return False
+
+
     async def _synthesize_with_retry(self, ssml: str, output_path: str, max_retries: int = 3) -> bool:
-        """Synthesize speech with enhanced retry logic and HTTP platform error handling"""
-        synthesizer = None
+        """Synthesize speech with enhanced retry logic for HTTP platform errors"""
         
         for attempt in range(max_retries):
             try:
-                # Apply rate limiting before each attempt
-                await self.rate_limiter.wait_if_needed()
-                
-                # Add delay between attempts (increasing with each retry)
-                if attempt > 0:
-                    delay = (2 ** attempt) + random.uniform(0.1, 0.5)
-                    logger.info(f"🔄 Retry delay: waiting {delay:.2f}s before attempt {attempt + 1}")
-                    await asyncio.sleep(delay)
-                
-                # Explicitly clean up previous synthesizer if it exists
-                if synthesizer:
-                    try:
-                        del synthesizer
-                        synthesizer = None
-                        # Force garbage collection to ensure resources are released
-                        import gc
-                        gc.collect()
-                        await asyncio.sleep(0.5)  # Short delay to ensure cleanup
-                    except Exception as cleanup_error:
-                        logger.warning(f"⚠️ Cleanup error (non-critical): {str(cleanup_error)}")
-                
                 # Create fresh speech config for each attempt
                 speech_config = SpeechConfig(
                     subscription=self.subscription_key, region=self.region
@@ -199,95 +303,48 @@ class EnhancedTTSService:
                     SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3
                 )
                 
-                # Configure connection settings explicitly
-                speech_config.set_property(
-                    property_id=PropertyId.Speech_SegmentationSilenceTimeoutMs,
-                    value="5000"
-                )
-                
                 # Create audio config
                 audio_config = AudioOutputConfig(filename=output_path)
                 
-                # Create synthesizer with explicit cleanup
-                logger.info(f"🎤 Creating new synthesizer instance (attempt {attempt + 1}/{max_retries})")
+                # Add delay between attempts
+                if attempt > 0:
+                    logger.info(f"🔄 Retrying synthesis attempt {attempt+1}/{max_retries}")
+                    await asyncio.sleep(2 ** attempt)  # Exponential backoff
+                
+                # Create synthesizer
+                logger.info(f"🎤 Creating new synthesizer instance (attempt {attempt+1}/{max_retries})")
                 synthesizer = SpeechSynthesizer(
                     speech_config=speech_config, audio_config=audio_config
                 )
-
-                logger.info(f"🔍 Attempting speech synthesis (attempt {attempt + 1}/{max_retries})")
                 
-                # Synthesize with timeout
+                # Perform synthesis with proper cleanup
                 result = await asyncio.get_event_loop().run_in_executor(
                     None, lambda: synthesizer.speak_ssml_async(ssml).get()
                 )
-
+                
                 if result.reason == ResultReason.SynthesizingAudioCompleted:
-                    logger.info(f"✅ Speech synthesis successful on attempt {attempt + 1}")
                     return True
-
-                elif result.reason == ResultReason.Canceled:
-                    cancellation_details = result.cancellation_details
-                    
-                    if cancellation_details.reason == CancellationReason.Error:
-                        error_details = cancellation_details.error_details
-                        logger.warning(f"⚠️ Synthesis error (attempt {attempt + 1}): {error_details}")
-                        
-                        # Handle specific HTTP platform errors
-                        if "HTTP platform" in error_details or "Error: 27" in error_details:
-                            logger.warning("🔄 HTTP platform initialization error - will retry with new configuration")
-                            # Force cleanup before retry
-                            if synthesizer:
-                                del synthesizer
-                                synthesizer = None
-                                import gc
-                                gc.collect()
-                            # Longer delay for HTTP platform errors
-                            await asyncio.sleep(3)
-                            continue
-                            
-                        # Handle rate limiting errors
-                        elif "429" in error_details or "Too many requests" in error_details:
-                            # Exponential backoff for rate limiting
-                            base_delay = 5 ** attempt
-                            jitter = random.uniform(0.1, 0.5)
-                            delay = base_delay + jitter
-                            
-                            logger.info(f"🔄 Rate limit hit, retrying in {delay:.2f}s...")
-                            await asyncio.sleep(delay)
-                            continue
-                        else:
-                            # Other errors - attempt retry with increasing delay
-                            delay = 2 + random.uniform(0.1, 0.3) * attempt
-                            logger.info(f"🔄 Other error, retrying in {delay:.2f}s...")
-                            await asyncio.sleep(delay)
-                            continue
-                    else:
-                        logger.error(f"❌ Synthesis canceled: {cancellation_details.reason}")
-                        return False
                 else:
-                    logger.error(f"❌ Synthesis failed with reason: {result.reason}")
-                    return False
+                    logger.warning(f"Synthesis failed with reason: {result.reason}")
                     
             except Exception as e:
-                logger.error(f"❌ Exception during synthesis attempt {attempt + 1}: {str(e)}")
-                # Clean up resources on exception
-                if synthesizer:
-                    try:
-                        del synthesizer
-                        synthesizer = None
-                    except Exception:
-                        pass
+                error_message = str(e)
+                logger.error(f"❌ Exception during synthesis attempt {attempt+1}: {error_message}")
+                
+                # Special handling for HTTP platform error
+                if "Failed to get HTTP platform singleton instance" in error_message or "Error: 27" in error_message:
+                    logger.info("🔄 HTTP platform error detected, cleaning up resources...")
                     
-                if attempt < max_retries - 1:
-                    delay = (3 ** attempt) + random.uniform(0.1, 0.5)
-                    logger.info(f"🔄 Exception recovery: retrying in {delay:.2f}s...")
-                    await asyncio.sleep(delay)
+                    # Force garbage collection to release resources
+                    import gc
+                    gc.collect()
+                    
+                    # Add longer delay for HTTP platform errors
+                    await asyncio.sleep(3 + (2 * attempt))
                     continue
-                else:
-                    return False
         
-        logger.error(f"❌ All {max_retries} synthesis attempts failed")
         return False
+
 
     async def text_to_speech_word_pairs_v2(
         self,
