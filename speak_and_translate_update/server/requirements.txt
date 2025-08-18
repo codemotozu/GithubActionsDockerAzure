@@ -13,4 +13,6 @@ gunicorn==21.2.0
 azure-cognitiveservices-speech==1.38.0
 azure-common==1.1.28
 azure-core==1.29.5
+aiohttp==3.9.1
+requests==2.31.0
 PyAudio==0.2.13

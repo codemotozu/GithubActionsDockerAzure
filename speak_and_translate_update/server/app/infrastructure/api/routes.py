@@ -382,7 +382,7 @@ async def health_check():
 @app.get("/")
 async def root():
     return {
-        "status": "ok", 
+        "status": "ok 100 claude code", 
         "service": "Perfect UI-Audio Sync Translation API with Multi-Style Support",
         "description": "GUARANTEED perfect synchronization with multiple simultaneous translation styles",
         "version": "4.0-MULTI-STYLE",
