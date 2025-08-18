@@ -154,13 +154,17 @@ class TranslationService:
                 prompt += "\nGERMAN WORD-BY-WORD:\n"
                 for style in german_styles:
                     prompt += f"{style.capitalize()} style: "
-                    prompt += "For each word or grammatical unit in your German translation, provide its TRUE SEMANTIC EQUIVALENT in Spanish. "
-                    prompt += "Format as: [German word/phrase] ([Spanish semantic equivalent]). "
-                    prompt += "Translate what each word MEANS, not its position. "
+                    prompt += "For each word or grammatical unit in your German translation, provide its EXACT SEMANTIC EQUIVALENT in the original Spanish context. "
+                    prompt += "Format as: [German word/phrase] ([Spanish equivalent]). "
+                    prompt += f"CRITICAL: For the Spanish phrase '{input_text}', provide EXACT word-to-word mappings. Each German word should map to its corresponding Spanish word(s) from the original phrase. Do NOT reorder or create new Spanish words - only use words that appear in '{input_text}'. "
+                    prompt += f"Example format: If translating 'soy una mujer', your German 'Ich bin eine Frau' should map as [Ich]([soy]) [bin]([soy]) [eine]([una]) [Frau]([mujer]) - each German word maps to the Spanish word that means the same thing. "
                     
                     # Language-specific guidance
                     prompt += "Pay special attention to:\n"
                     prompt += "- Verb conjugations (e.g., [sind] should be ([son/están]) based on context)\n"
+                    prompt += "- Articles must match gender/number: [den] with feminine plural nouns = ([las]), with masculine singular = ([el])\n"
+                    prompt += "- Prepositions in context: [unter] = ([debajo de]) or ([bajo]) depending on usage\n"
+                    prompt += "- Map compound words appropriately: [Nagelstaub] = ([mugre de las uñas]) as whole concept\n"
                     prompt += "- Pronouns ([ich] should be ([yo]), [meine] should be ([mis/mi]))\n"
                     prompt += "- Articles and determiners ([eine] should be ([una]), [die] should be ([la/las]))\n"
                     prompt += "- When translating possession, match 'meine Hände' as [meine] ([mis]) [Hände] ([manos])\n"
@@ -178,13 +182,18 @@ class TranslationService:
                 prompt += "\nENGLISH WORD-BY-WORD:\n"
                 for style in english_styles:
                     prompt += f"{style.capitalize()} style: "
-                    prompt += "For each word or grammatical unit in your English translation, provide its TRUE SEMANTIC EQUIVALENT in Spanish. "
-                    prompt += "Format as: [English word/phrase] ([Spanish semantic equivalent]). "
-                    prompt += "Translate what each word MEANS, not its position. "
+                    prompt += "For each word or grammatical unit in your English translation, provide its EXACT SEMANTIC EQUIVALENT in the original Spanish context. "
+                    prompt += "Format as: [English word/phrase] ([Spanish equivalent]). "
+                    prompt += f"CRITICAL: For the Spanish phrase '{input_text}', provide EXACT word-to-word mappings. Each English word should map to its corresponding Spanish word(s) from the original phrase. Do NOT reorder or create new Spanish words - only use words that appear in '{input_text}'. "
+                    prompt += f"Example format: If translating 'soy una mujer', your English 'I am a woman' should map as [I]([soy]) [am]([soy]) [a]([una]) [woman]([mujer]) - each English word maps to the Spanish word that means the same thing. "
                     
                     # Language-specific guidance
                     prompt += "Pay special attention to:\n"
                     prompt += "- Verb conjugations (e.g., [are] should be ([son/están]) based on context)\n"
+                    prompt += "- Articles must match gender/number: [the] with feminine plural = ([las]), with masculine = ([el])\n"
+                    prompt += "- Prepositions: [under] = ([debajo de]) or ([bajo]) depending on context\n"
+                    prompt += "- Compound meanings: [fingernail] should map to ([uña]), not ([de uña])\n"
+                    prompt += "- For phrases like 'dirt under the fingernails': [dirt] = ([mugre]), [under] = ([debajo de]), [the] = ([las]), [fingernails] = ([uñas])\n\n"
                     prompt += "- Pronouns ([I] should be ([yo]), [my] should be ([mis/mi]))\n"
                     prompt += "- Articles and determiners ([a] should be ([un/una]), [the] should be ([el/la/los/las]))\n"
                     prompt += "- When translating 'I've got', ensure [I've] is ([yo]) and [got] is ([tengo])\n"
@@ -324,6 +333,10 @@ class TranslationService:
 
                 print(f"📥 Gemini response received ({len(generated_text)} characters)")
                 print(f"📄 Response preview: {generated_text[:200]}...")
+                print(f"🔍 DEBUG - Full AI response:")
+                print("=" * 80)
+                print(generated_text)
+                print("=" * 80)
 
             except Exception as e:
                 print(f"❌ Gemini API error: {str(e)}")
@@ -394,171 +407,48 @@ class TranslationService:
 
     def _fix_common_semantic_mismatches(self, pairs: List[Tuple[str, str]], is_german: bool = True) -> List[Tuple[str, str]]:
         """
-        Apply intelligent context-aware corrections to semantic mismatches.
-        Analyzes the full context before making corrections to ensure grammatical accuracy.
+        Apply minimal corrections only for obvious errors. Trust AI translations for most cases.
         """
         corrected_pairs = []
-        
-        # Detect source language characteristics
         language_name = "German" if is_german else "English"
         
-        # First pass: Build context from the full set of pairs
-        sentence_context = {
-            "has_possession": False,
-            "has_state_verb": False,
-            "nouns": [],
-            "plural_nouns": False,
-            "feminine_nouns": False,
-            "masculine_nouns": False,
-        }
-        
-        # Check for fingernails specifically (special case for the example)
-        contains_fingernails = any(
-            source.lower() in ["nägeln", "fingernails"] for source, _ in pairs
-        )
-        
-        if contains_fingernails:
-            sentence_context["plural_nouns"] = True
-            sentence_context["feminine_nouns"] = True  # uñas is feminine plural in Spanish
-        
-        # Analyze sentence structure
+        # Trust the AI translations and only fix OBVIOUS errors
         for source, target in pairs:
             source_lower = source.lower()
-            
-            # Check for possession markers
-            if is_german and source_lower in ["mein", "meine", "dein", "deine", "sein", "seine", "ihr", "ihre"]:
-                sentence_context["has_possession"] = True
-            elif not is_german and source_lower in ["my", "your", "his", "her", "their", "our"]:
-                sentence_context["has_possession"] = True
-                
-            # Check for state verbs
-            if is_german and source_lower in ["bin", "ist", "sind", "war", "waren"]:
-                sentence_context["has_state_verb"] = True
-                sentence_context["state_verb"] = source_lower
-            elif not is_german and source_lower in ["am", "is", "are", "was", "were"]:
-                sentence_context["has_state_verb"] = True
-                sentence_context["state_verb"] = source_lower
-            
-            # Detect common plurals
-            if source_lower.endswith("s") or source_lower.endswith("en"):
-                if is_german and source_lower in ["nägeln", "händen", "fingern"]:
-                    sentence_context["plural_nouns"] = True
-                    sentence_context["feminine_nouns"] = True
-                elif not is_german and source_lower in ["fingernails", "hands", "fingers"]:
-                    sentence_context["plural_nouns"] = True
-                    sentence_context["feminine_nouns"] = True
-        
-        # Second pass: Apply corrections with full context awareness
-        for source, target in pairs:
-            source_lower = source.lower()
+            target_lower = target.lower()
             corrected_target = target
             
-            # Apply corrections based on the source language and word
-            if is_german:  # German corrections
-                # German possessives
-                if source_lower == "meine":
-                    corrected_target = "mis" if sentence_context["plural_nouns"] else "mi"
-                elif source_lower == "mein":
-                    corrected_target = "mi"
+            # Only fix really obvious mistakes that would break the user experience
+            # Most of these are cases where the AI returns the wrong language or obvious errors
+            if is_german:
+                # Only fix if the target is obviously wrong (English words, same as source, etc.)
+                if (target_lower in ["the", "and", "of", "in", "to", "a"] or  # English words
+                    target_lower == source_lower or  # Same as source
+                    len(target_lower) <= 1):  # Too short
                     
-                # German pronouns
-                elif source_lower == "ich":
-                    corrected_target = "yo"
-                elif source_lower == "du":
-                    corrected_target = "tú"
-                    
-                # German verbs
-                elif source_lower == "bin":
-                    corrected_target = "soy" if not sentence_context["has_possession"] else "estoy"
-                elif source_lower == "ist":
-                    corrected_target = "es" if not sentence_context["has_possession"] else "está"
-                elif source_lower == "sind":
-                    corrected_target = "son" if not sentence_context["has_possession"] else "están"
-                elif source_lower == "habe":
-                    corrected_target = "tengo"
-                elif source_lower == "hat":
-                    corrected_target = "tiene"
-                    
-                # German articles - CRITICAL FIXES HERE
-                elif source_lower == "der":
-                    corrected_target = "el"  # Masculine singular
-                elif source_lower == "die":
-                    corrected_target = "la" if not sentence_context["plural_nouns"] else "las"  # Feminine
-                elif source_lower == "das":
-                    corrected_target = "el"  # Neuter (translated as masculine in Spanish)
-                elif source_lower == "den":
-                    # Critical fix: "den" should be "el" for masculine singular accusative
-                    # But for fingernails case (feminine plural), it should be "las"
-                    corrected_target = "las" if contains_fingernails else "el"
-                elif source_lower == "dem":
-                    corrected_target = "al"
-                elif source_lower == "ein":
-                    corrected_target = "un"  # Masculine singular
-                elif source_lower == "eine":
-                    corrected_target = "una"  # Feminine singular
-                elif source_lower == "einen":
-                    corrected_target = "un"  # Masculine accusative
-                    
-            else:  # English corrections
-                # English possessives
-                if source_lower == "my":
-                    corrected_target = "mis" if sentence_context["plural_nouns"] else "mi"
-                    
-                # English pronouns
-                elif source_lower == "i":
-                    corrected_target = "yo"
-                elif source_lower == "you":
-                    corrected_target = "tú"
-                    
-                # English verbs
-                elif source_lower == "am":
-                    corrected_target = "soy" if not sentence_context["has_possession"] else "estoy"
-                elif source_lower == "is":
-                    corrected_target = "es" if not sentence_context["has_possession"] else "está"
-                elif source_lower == "are":
-                    corrected_target = "son" if not sentence_context["has_possession"] else "están"
-                elif source_lower == "have":
-                    corrected_target = "tengo"
-                elif source_lower == "has":
-                    corrected_target = "tiene"
-                elif source_lower == "had":
-                    corrected_target = "tenía"
-                    
-                # English articles - CRITICAL FIXES HERE
-                elif source_lower == "the":
-                    # Critical fix: Check if we're referring to a plural noun
-                    # In the case of "fingernails", "the" should be "las" (feminine plural)
-                    if contains_fingernails or sentence_context["plural_nouns"]:
-                        if sentence_context["feminine_nouns"]:
-                            corrected_target = "las"  # Feminine plural
-                        else:
-                            corrected_target = "los"  # Masculine plural
-                    else:
-                        if sentence_context["feminine_nouns"]:
-                            corrected_target = "la"   # Feminine singular
-                        else:
-                            corrected_target = "el"   # Masculine singular (default)
-                elif source_lower == "a" or source_lower == "an":
-                    corrected_target = "una" if sentence_context["feminine_nouns"] else "un"
-                
-                # Special handling for contractions
-                elif source_lower == "i've":
-                    corrected_target = "yo"  # Usually followed by "got" which will be "tengo"
-                elif source_lower == "i'm":
-                    corrected_target = "yo" 
-                elif source_lower == "you're":
-                    corrected_target = "tú"
-                    
-                # Handle "got" in phrases like "I've got"
-                elif source_lower == "got" and any(s.lower() == "i've" for s, _ in pairs):
-                    corrected_target = "tengo"
-            
-            # Add correction if target was changed
-            if corrected_target != target:
-                print(f"🔧 Correcting {language_name} semantic match: '{source}' → '{target}' to '{corrected_target}'")
-                corrected_pairs.append((source, corrected_target))
+                    # Basic German-Spanish mappings for obvious cases
+                    basic_fixes = {
+                        "ich": "yo", "der": "el", "die": "las", "das": "el", "und": "y",
+                        "in": "en", "mit": "con", "von": "de", "zu": "a"
+                    }
+                    if source_lower in basic_fixes:
+                        corrected_target = basic_fixes[source_lower]
+                        print(f"🔧 Basic fix: '{source}' → '{target}' to '{corrected_target}'")
             else:
-                corrected_pairs.append((source, target))
+                # English corrections - same logic
+                if (target_lower in ["der", "die", "das", "und"] or  # German words  
+                    target_lower == source_lower or  # Same as source
+                    len(target_lower) <= 1):  # Too short
+                    
+                    basic_fixes = {
+                        "i": "yo", "the": "las", "and": "y", "of": "de", "in": "en",
+                        "to": "a", "a": "un", "with": "con", "from": "de"
+                    }
+                    if source_lower in basic_fixes:
+                        corrected_target = basic_fixes[source_lower]
+                        print(f"🔧 Basic fix: '{source}' → '{target}' to '{corrected_target}'")
+            
+            corrected_pairs.append((source, corrected_target))
         
         return corrected_pairs
 
@@ -745,7 +635,8 @@ class TranslationService:
                             wbw_start = line.find('[')
                             if wbw_start >= 0:
                                 all_word_by_word_data[style_key] = line[wbw_start:]
-                                print(f"📝 German {style} word-by-word: {line[wbw_start:100]}...")
+                                print(f"📝 German {style} word-by-word: {line[wbw_start:200]}...")
+                                print(f"🔍 Full line for debugging: {line}")
                             break
                     else:
                         # If line contains brackets, might be general word-by-word
@@ -763,7 +654,8 @@ class TranslationService:
                             wbw_start = line.find('[')
                             if wbw_start >= 0:
                                 all_word_by_word_data[style_key] = line[wbw_start:]
-                                print(f"📝 English {style} word-by-word: {line[wbw_start:100]}...")
+                                print(f"📝 English {style} word-by-word: {line[wbw_start:200]}...")
+                                print(f"🔍 Full line for debugging: {line}")
                             break
                     else:
                         # If line contains brackets, might be general word-by-word
