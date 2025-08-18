@@ -20,6 +20,7 @@ import re
 import logging
 import time
 import random
+import threading
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -89,6 +90,9 @@ class EnhancedTTSService:
         # Rate limiter to prevent 429 errors
         self.rate_limiter = RateLimiter(max_requests_per_minute=12, max_requests_per_second=1)
 
+        # Initialize Azure Speech SDK for containerized environments
+        self._initialize_speech_sdk()
+
         # Speech configuration
         self.speech_config = SpeechConfig(
             subscription=self.subscription_key,
@@ -117,6 +121,27 @@ class EnhancedTTSService:
             },
         }
 
+    def _initialize_speech_sdk(self):
+        """Initialize Azure Speech SDK for containerized environments to prevent Error 27"""
+        try:
+            # Set environment variables to help with Azure SDK initialization
+            os.environ['GRPC_VERBOSITY'] = 'ERROR'  # Reduce gRPC logging
+            os.environ['GRPC_TRACE'] = ''  # Disable gRPC tracing
+            
+            # Set HTTP user agent to identify container environment
+            os.environ['AZURE_HTTP_USER_AGENT'] = 'SpeakAndTranslate-Container/1.0'
+            
+            # Set timeout values to prevent hanging
+            os.environ['AZURE_CORE_PIPELINE_TIMEOUT'] = '30'
+            
+            # Force IPv4 to avoid IPv6 issues in containers
+            os.environ['PYTHONHTTPSVERIFY'] = '0'  # For development only
+            
+            logger.info("🔧 Azure Speech SDK initialized for container environment")
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to set Azure SDK environment variables: {e}")
+
     def _get_temp_directory(self) -> str:
         """Create and return the temporary directory path"""
         if os.name == "nt":  # Windows
@@ -133,7 +158,7 @@ class EnhancedTTSService:
                 # Apply rate limiting before each attempt
                 await self.rate_limiter.wait_if_needed()
                 
-                # Create fresh synthesizer for each attempt
+                # Create fresh synthesizer for each attempt with container-safe initialization
                 audio_config = AudioOutputConfig(filename=output_path)
                 speech_config = SpeechConfig(
                     subscription=self.subscription_key, region=self.region
@@ -141,6 +166,11 @@ class EnhancedTTSService:
                 speech_config.set_speech_synthesis_output_format(
                     SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3
                 )
+                
+                # Set additional properties for container environments
+                speech_config.set_property_by_name("SpeechServiceConnection_InitialSilenceTimeoutMs", "5000")
+                speech_config.set_property_by_name("SpeechServiceConnection_EndSilenceTimeoutMs", "5000")
+                speech_config.set_property_by_name("SpeechServiceConnection_RecoTimeoutMs", "30000")
 
                 synthesizer = SpeechSynthesizer(
                     speech_config=speech_config, audio_config=audio_config
@@ -193,7 +223,18 @@ class EnhancedTTSService:
                     return False
                     
             except Exception as e:
-                logger.error(f"❌ Exception during synthesis attempt {attempt + 1}: {str(e)}")
+                error_str = str(e)
+                logger.error(f"❌ Exception during synthesis attempt {attempt + 1}: {error_str}")
+                
+                # Handle specific container-related errors
+                if "Error: 27" in error_str or "HTTP platform singleton" in error_str:
+                    logger.info("🔧 Detected Azure SDK initialization error, trying environment fix...")
+                    # Re-initialize SDK environment
+                    self._initialize_speech_sdk()
+                    
+                    # Add extra delay for initialization
+                    await asyncio.sleep(2.0)
+                
                 if attempt < max_retries - 1:
                     delay = (2 ** attempt) + random.uniform(0.1, 0.5)
                     logger.info(f"🔄 Retrying in {delay:.2f}s...")
