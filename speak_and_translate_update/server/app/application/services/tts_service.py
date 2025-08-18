@@ -4,15 +4,6 @@
 
 # tts_service.py - Fixed SSML structure for Azure Speech Services
 
-from azure.cognitiveservices.speech import (
-    SpeechConfig,
-    SpeechSynthesizer,
-    SpeechSynthesisOutputFormat,
-    ResultReason,
-    CancellationReason,
-    PropertyId,
-)
-from azure.cognitiveservices.speech.audio import AudioOutputConfig
 import os
 from typing import Optional, Dict, List, Tuple
 from datetime import datetime
@@ -21,6 +12,24 @@ import re
 import logging
 import time
 import random
+import requests
+import aiohttp
+
+# Try to import Azure Speech SDK, but have fallback if it fails
+try:
+    from azure.cognitiveservices.speech import (
+        SpeechConfig,
+        SpeechSynthesizer,
+        SpeechSynthesisOutputFormat,
+        ResultReason,
+        CancellationReason,
+        PropertyId,
+    )
+    from azure.cognitiveservices.speech.audio import AudioOutputConfig
+    AZURE_SDK_AVAILABLE = True
+except ImportError as e:
+    logging.warning(f"Azure Speech SDK not available: {e}")
+    AZURE_SDK_AVAILABLE = False
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -169,8 +178,46 @@ class EnhancedTTSService:
         
         return temp_dir
 
+    async def _synthesize_with_rest_api(self, ssml: str, output_path: str) -> bool:
+        """Fallback method using Azure Speech REST API"""
+        try:
+            headers = {
+                'Ocp-Apim-Subscription-Key': self.subscription_key,
+                'Content-Type': 'application/ssml+xml',
+                'X-Microsoft-OutputFormat': 'audio-16khz-32kbitrate-mono-mp3',
+                'User-Agent': 'SpeakAndTranslate'
+            }
+            
+            # Azure TTS REST API endpoint
+            url = f"https://{self.region}.tts.speech.microsoft.com/cognitiveservices/v1"
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, headers=headers, data=ssml) as response:
+                    if response.status == 200:
+                        audio_data = await response.read()
+                        with open(output_path, 'wb') as f:
+                            f.write(audio_data)
+                        logger.info(f"✅ REST API synthesis successful: {len(audio_data)} bytes")
+                        return True
+                    else:
+                        error_text = await response.text()
+                        logger.error(f"❌ REST API synthesis failed: {response.status} - {error_text}")
+                        return False
+                        
+        except Exception as e:
+            logger.error(f"❌ REST API synthesis exception: {str(e)}")
+            return False
+
     async def _synthesize_with_retry(self, ssml: str, output_path: str, max_retries: int = 3) -> bool:
         """Synthesize speech with enhanced retry logic and HTTP platform error handling"""
+        # First, try REST API if SDK is not available or has failed before
+        if not AZURE_SDK_AVAILABLE or hasattr(self, '_sdk_failed'):
+            logger.info("🌐 Using Azure Speech REST API (SDK unavailable or failed)")
+            success = await self._synthesize_with_rest_api(ssml, output_path)
+            if success:
+                return True
+            logger.warning("⚠️ REST API also failed, trying SDK...")
+        
         synthesizer = None
         
         for attempt in range(max_retries):
@@ -314,6 +361,10 @@ class EnhancedTTSService:
                 # Check for HTTP platform errors in exception messages too
                 if "HTTP platform" in error_str or "Error: 27" in error_str:
                     logger.info("🔄 HTTP platform error detected, cleaning up resources...")
+                    # Mark SDK as failed and try REST API
+                    self._sdk_failed = True
+                    logger.info("🌐 Switching to Azure Speech REST API due to SDK issues")
+                    return await self._synthesize_with_rest_api(ssml, output_path)
                 
                 # Clean up resources on exception
                 if synthesizer:
@@ -331,7 +382,10 @@ class EnhancedTTSService:
                     await asyncio.sleep(delay)
                     continue
                 else:
-                    return False
+                    # Final fallback to REST API
+                    logger.info("🌐 All SDK attempts failed, trying REST API as final fallback")
+                    self._sdk_failed = True
+                    return await self._synthesize_with_rest_api(ssml, output_path)
         
         logger.error(f"❌ All {max_retries} synthesis attempts failed")
         return False
