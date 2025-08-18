@@ -20,7 +20,6 @@ import re
 import logging
 import time
 import random
-import threading
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -77,14 +76,10 @@ class RateLimiter:
 
 
 class EnhancedTTSService:
-    _lock = threading.Lock()
-    _initialized = False
-    
     def __init__(self):
         # Initialize Speech Config
         self.subscription_key = os.getenv("AZURE_SPEECH_KEY")
         self.region = os.getenv("AZURE_SPEECH_REGION")
-        self.is_container = os.getenv("CONTAINER_ENV", "false").lower() == "true"
 
         if not self.subscription_key or not self.region:
             raise ValueError(
@@ -94,9 +89,6 @@ class EnhancedTTSService:
         # Rate limiter to prevent 429 errors
         self.rate_limiter = RateLimiter(max_requests_per_minute=12, max_requests_per_second=1)
 
-        # Initialize Speech SDK for container environment
-        self._initialize_speech_sdk()
-
         # Speech configuration
         self.speech_config = SpeechConfig(
             subscription=self.subscription_key,
@@ -105,12 +97,6 @@ class EnhancedTTSService:
         self.speech_config.set_speech_synthesis_output_format(
             SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3
         )
-        
-        # Container-specific configuration
-        if self.is_container:
-            logger.info("🐳 Container environment detected, applying container optimizations")
-            self.speech_config.set_property_by_name("SPEECH_SDK_LINUXBUILD", "1")
-            self.speech_config.set_property_by_name("SPEECH_SDK_THREADING_MODEL", "SingleThreaded")
 
         # Voice mapping
         self.voice_mapping = {
@@ -131,35 +117,6 @@ class EnhancedTTSService:
             },
         }
 
-    def _initialize_speech_sdk(self):
-        """Initialize Speech SDK with container-specific workarounds"""
-        with self._lock:
-            if self._initialized:
-                return
-                
-            try:
-                if self.is_container:
-                    logger.info("🔧 Initializing Azure Speech SDK for container environment")
-                    
-                    # Set environment variables for container compatibility
-                    os.environ["SPEECH_SDK_LINUXBUILD"] = "1"
-                    os.environ["GSTREAMER_ROOT"] = "/usr"
-                    
-                    # Force GST plugin path for containers
-                    gst_path = os.getenv("GST_PLUGIN_PATH", "/usr/lib/x86_64-linux-gnu/gstreamer-1.0")
-                    os.environ["GST_PLUGIN_PATH"] = gst_path
-                    logger.info(f"🎵 GST_PLUGIN_PATH set to: {gst_path}")
-                    
-                else:
-                    logger.info("🖥️ Initializing Azure Speech SDK for local environment")
-                
-                self._initialized = True
-                logger.info("✅ Speech SDK initialization completed")
-                
-            except Exception as e:
-                logger.warning(f"⚠️ Speech SDK initialization warning: {str(e)}")
-                self._initialized = True  # Continue anyway
-
     def _get_temp_directory(self) -> str:
         """Create and return the temporary directory path"""
         if os.name == "nt":  # Windows
@@ -169,21 +126,6 @@ class EnhancedTTSService:
         os.makedirs(temp_dir, exist_ok=True)
         return temp_dir
 
-    def _safe_synthesis(self, synthesizer, ssml: str):
-        """Safe synthesis method for container environments"""
-        try:
-            # Pre-initialize to avoid HTTP platform singleton issues
-            synthesizer.synthesis_started.connect(lambda evt: None)
-            synthesizer.synthesis_completed.connect(lambda evt: None)
-            
-            # Use synchronous method in containers
-            result = synthesizer.speak_ssml(ssml)
-            return result
-        except Exception as e:
-            logger.error(f"❌ Safe synthesis failed: {str(e)}")
-            # Fallback to async method
-            return synthesizer.speak_ssml_async(ssml).get()
-
     async def _synthesize_with_retry(self, ssml: str, output_path: str, max_retries: int = 3) -> bool:
         """Synthesize speech with retry logic and exponential backoff"""
         for attempt in range(max_retries):
@@ -191,7 +133,7 @@ class EnhancedTTSService:
                 # Apply rate limiting before each attempt
                 await self.rate_limiter.wait_if_needed()
                 
-                # Create fresh synthesizer for each attempt with container-specific config
+                # Create fresh synthesizer for each attempt
                 audio_config = AudioOutputConfig(filename=output_path)
                 speech_config = SpeechConfig(
                     subscription=self.subscription_key, region=self.region
@@ -199,12 +141,6 @@ class EnhancedTTSService:
                 speech_config.set_speech_synthesis_output_format(
                     SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3
                 )
-                
-                # Apply container-specific settings
-                if self.is_container:
-                    speech_config.set_property_by_name("SPEECH_SDK_LINUXBUILD", "1")
-                    speech_config.set_property_by_name("SPEECH_SDK_THREADING_MODEL", "SingleThreaded")
-                    speech_config.set_property_by_name("SPEECH_SDK_DISABLE_ASYNC_OPERATION", "true")
 
                 synthesizer = SpeechSynthesizer(
                     speech_config=speech_config, audio_config=audio_config
@@ -212,27 +148,10 @@ class EnhancedTTSService:
 
                 logger.info(f"🎤 Attempting speech synthesis (attempt {attempt + 1}/{max_retries})")
                 
-                # Synthesize with timeout and error handling
-                try:
-                    if self.is_container:
-                        # For container environments, use a more robust approach
-                        result = await asyncio.get_event_loop().run_in_executor(
-                            None, self._safe_synthesis, synthesizer, ssml
-                        )
-                    else:
-                        result = await asyncio.get_event_loop().run_in_executor(
-                            None, lambda: synthesizer.speak_ssml_async(ssml).get()
-                        )
-                except Exception as synthesis_error:
-                    error_msg = str(synthesis_error)
-                    if "HTTP platform singleton" in error_msg or "Error: 27" in error_msg:
-                        logger.warning(f"⚠️ HTTP platform singleton error detected: {error_msg}")
-                        # Try alternative synthesis method for containers
-                        if self.is_container and attempt < max_retries - 1:
-                            logger.info("🔄 Attempting container-specific synthesis workaround")
-                            await asyncio.sleep(1.0)  # Brief pause before retry
-                            continue
-                    raise synthesis_error
+                # Synthesize with timeout
+                result = await asyncio.get_event_loop().run_in_executor(
+                    None, lambda: synthesizer.speak_ssml_async(ssml).get()
+                )
 
                 if result.reason == ResultReason.SynthesizingAudioCompleted:
                     logger.info(f"✅ Speech synthesis successful on attempt {attempt + 1}")
@@ -274,48 +193,17 @@ class EnhancedTTSService:
                     return False
                     
             except Exception as e:
-                error_msg = str(e)
-                logger.error(f"❌ Exception during synthesis attempt {attempt + 1}: {error_msg}")
-                
-                # Special handling for HTTP platform singleton error
-                if "HTTP platform singleton" in error_msg or "Error: 27" in error_msg:
-                    if self.is_container:
-                        logger.info("🐳 Container HTTP platform error - trying workaround")
-                        # Try to create a simple fallback audio file
-                        if attempt == max_retries - 1:
-                            return self._create_fallback_audio(output_path)
-                
+                logger.error(f"❌ Exception during synthesis attempt {attempt + 1}: {str(e)}")
                 if attempt < max_retries - 1:
                     delay = (2 ** attempt) + random.uniform(0.1, 0.5)
                     logger.info(f"🔄 Retrying in {delay:.2f}s...")
                     await asyncio.sleep(delay)
                     continue
                 else:
-                    # Last attempt - try fallback
-                    if self.is_container:
-                        return self._create_fallback_audio(output_path)
                     return False
         
         logger.error(f"❌ All {max_retries} synthesis attempts failed")
-        if self.is_container:
-            return self._create_fallback_audio(output_path)
         return False
-
-    def _create_fallback_audio(self, output_path: str) -> bool:
-        """Create a minimal fallback audio file when synthesis fails in containers"""
-        try:
-            logger.info("🔄 Creating fallback silent audio file")
-            # Create a minimal MP3 file with silence (44 bytes of MP3 header + minimal silence)
-            fallback_mp3 = b'\xff\xfb\x90\x00' + b'\x00' * 40
-            
-            with open(output_path, 'wb') as f:
-                f.write(fallback_mp3)
-            
-            logger.info(f"✅ Fallback audio created: {os.path.basename(output_path)}")
-            return True
-        except Exception as e:
-            logger.error(f"❌ Failed to create fallback audio: {str(e)}")
-            return False
 
     async def text_to_speech_word_pairs_v2(
         self,

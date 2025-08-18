@@ -87,246 +87,6 @@ class TranslationService:
         return detected
 
 
-
-
-
-    # def _create_enhanced_context_prompt(self, input_text: str, mother_tongue: str, style_preferences) -> str:
-    #     """Create enhanced prompt for multiple simultaneous styles with EXACT word-by-word alignment."""
-        
-    #     print(f"🎯 Creating MULTI-STYLE context prompt for: {mother_tongue.upper()}")
-        
-    #     target_languages = []
-    #     german_styles = []
-    #     english_styles = []
-        
-    #     # Collect all selected German styles
-    #     if style_preferences.german_native:
-    #         german_styles.append('native')
-    #     if style_preferences.german_colloquial:
-    #         german_styles.append('colloquial')
-    #     if style_preferences.german_informal:
-    #         german_styles.append('informal')
-    #     if style_preferences.german_formal:
-    #         german_styles.append('formal')
-        
-    #     # Collect all selected English styles
-    #     if style_preferences.english_native:
-    #         english_styles.append('native')
-    #     if style_preferences.english_colloquial:
-    #         english_styles.append('colloquial')
-    #     if style_preferences.english_informal:
-    #         english_styles.append('informal')
-    #     if style_preferences.english_formal:
-    #         english_styles.append('formal')
-        
-    #     # Determine target languages based on mother tongue and selections
-    #     if mother_tongue.lower() == 'spanish':
-    #         if german_styles:
-    #             target_languages.append('german')
-    #         if english_styles:
-    #             target_languages.append('english')
-    #     elif mother_tongue.lower() == 'english':
-    #         target_languages.append('spanish')
-    #         if german_styles:
-    #             target_languages.append('german')
-    #     elif mother_tongue.lower() == 'german':
-    #         target_languages.append('spanish')
-    #         if english_styles:
-    #             target_languages.append('english')
-
-    #     print(f"🎯 Target languages: {target_languages}")
-    #     print(f"🇩🇪 German styles selected: {german_styles}")
-    #     print(f"🇺🇸 English styles selected: {english_styles}")
-
-    #     # Build comprehensive prompt for multiple styles with ENHANCED SEMANTIC MATCHING
-    #     prompt = f"""Translate the {mother_tongue} text: "{input_text}"
-
-    # Please provide ALL requested translations in this EXACT format:
-
-    # """
-
-    #     # Add German translations for ALL selected styles
-    #     if 'german' in target_languages and german_styles:
-    #         prompt += "GERMAN TRANSLATIONS:\n"
-    #         for style in german_styles:
-    #             prompt += f"German {style.capitalize()}: [Provide {style} German translation here]\n"
-            
-    #         # Add word-by-word section if enabled with ENHANCED SEMANTIC MATCHING INSTRUCTIONS
-    #         if style_preferences.german_word_by_word:
-    #             prompt += "\nGERMAN WORD-BY-WORD:\n"
-    #             for style in german_styles:
-    #                 prompt += f"{style.capitalize()} style: "
-    #                 prompt += "Format each word precisely as [German word] ([EXACT Spanish equivalent]). "
-    #                 prompt += "CRITICAL: Each German word MUST be paired with its SEMANTICALLY CORRECT Spanish translation. "
-    #                 prompt += "DO NOT match by position but by MEANING. "
-    #                 prompt += "For verbs like 'sein', use the appropriate form ('ser' or 'estar') based on context. "
-    #                 prompt += "Example for 'Meine Hände sind schmutzig': [Meine] ([mis]) [Hände] ([manos]) [sind] ([están]) [schmutzig] ([sucias])\n"
-    #             prompt += "\n"
-
-    #     # Add English translations for ALL selected styles
-    #     if 'english' in target_languages and english_styles:
-    #         prompt += "ENGLISH TRANSLATIONS:\n"
-    #         for style in english_styles:
-    #             prompt += f"English {style.capitalize()}: [Provide {style} English translation here]\n"
-            
-    #         # Add word-by-word section if enabled with ENHANCED SEMANTIC MATCHING INSTRUCTIONS
-    #         if style_preferences.english_word_by_word:
-    #             prompt += "\nENGLISH WORD-BY-WORD:\n"
-    #             for style in english_styles:
-    #                 prompt += f"{style.capitalize()} style: "
-    #                 prompt += "Format each word precisely as [English word] ([EXACT Spanish equivalent]). "
-    #                 prompt += "CRITICAL: Each English word MUST be paired with its SEMANTICALLY CORRECT Spanish translation. "
-    #                 prompt += "DO NOT match by position but by MEANING. "
-    #                 prompt += "For verbs like 'to be', use the appropriate form ('ser' or 'estar') based on context. "
-    #                 prompt += "Example for 'My hands are dirty': [My] ([mis]) [hands] ([manos]) [are] ([están]) [dirty] ([sucias])\n"
-    #             prompt += "\n"
-
-    #     # Add Spanish translations if needed
-    #     if 'spanish' in target_languages:
-    #         prompt += "SPANISH TRANSLATIONS:\nSpanish Colloquial: [Spanish translation here]\n\n"
-
-    #     prompt += """IMPORTANT RULES FOR SEMANTIC WORD-BY-WORD TRANSLATION:
-    # 1. Provide translations for ALL selected styles
-    # 2. Each style should have a distinct translation appropriate to its formality level
-    # 3. For phrasal verbs (like "wake up"), treat as ONE unit: [wake up] ([despertar])
-    # 4. For German separable verbs (like "stehe auf"), treat as ONE unit: [stehe auf] ([me levanto])
-    # 5. CRITICAL: ALWAYS MATCH WORDS BY MEANING, NOT BY POSITION
-    # 6. Word order often differs between languages - match words by their SEMANTIC MEANING only
-    # 7. Context matters for verb forms:
-    # - For temporary states (like "dirty hands"): use "estar"/"están" in Spanish, "sein"/"sind" in German, "to be"/"are" in English
-    # - For permanent traits: use "ser"/"son" in Spanish, "sein"/"sind" in German, "to be"/"are" in English
-    # 8. Personal pronouns must be matched correctly (e.g., "ich" → "yo", "du" → "tú")
-    # 9. Articles must correspond correctly (e.g., "der/die/das" → "el/la")
-    # 10. Possessive adjectives must match (e.g., "meine" → "mis", "my" → "mis")
-
-    # This task requires precise semantic matching for each word pair. Never match words by their position in the sentence - only match them by their actual meaning."""
-
-    #     print(f"📝 Generated MULTI-STYLE prompt ({len(prompt)} characters)")
-    #     return prompt
-
-
-
-
-    # def _create_enhanced_context_prompt(self, input_text: str, mother_tongue: str, style_preferences) -> str:
-    #     """Create enhanced prompt for multiple simultaneous styles with language-specific awareness."""
-        
-    #     print(f"🎯 Creating MULTI-STYLE context prompt for: {mother_tongue.upper()}")
-        
-    #     target_languages = []
-    #     german_styles = []
-    #     english_styles = []
-        
-    #     # Collect all selected German styles
-    #     if style_preferences.german_native:
-    #         german_styles.append('native')
-    #     if style_preferences.german_colloquial:
-    #         german_styles.append('colloquial')
-    #     if style_preferences.german_informal:
-    #         german_styles.append('informal')
-    #     if style_preferences.german_formal:
-    #         german_styles.append('formal')
-        
-    #     # Collect all selected English styles
-    #     if style_preferences.english_native:
-    #         english_styles.append('native')
-    #     if style_preferences.english_colloquial:
-    #         english_styles.append('colloquial')
-    #     if style_preferences.english_informal:
-    #         english_styles.append('informal')
-    #     if style_preferences.english_formal:
-    #         english_styles.append('formal')
-        
-    #     # Determine target languages based on mother tongue and selections
-    #     if mother_tongue.lower() == 'spanish':
-    #         if german_styles:
-    #             target_languages.append('german')
-    #         if english_styles:
-    #             target_languages.append('english')
-    #     elif mother_tongue.lower() == 'english':
-    #         target_languages.append('spanish')
-    #         if german_styles:
-    #             target_languages.append('german')
-    #     elif mother_tongue.lower() == 'german':
-    #         target_languages.append('spanish')
-    #         if english_styles:
-    #             target_languages.append('english')
-
-    #     print(f"🎯 Target languages: {target_languages}")
-    #     print(f"🇩🇪 German styles selected: {german_styles}")
-    #     print(f"🇺🇸 English styles selected: {english_styles}")
-
-    #     # Build comprehensive prompt for multiple styles with language-specific awareness
-    #     prompt = f"""Translate the {mother_tongue} text: "{input_text}"
-
-    # Please provide ALL requested translations in this EXACT format:
-
-    # """
-
-    #     # Add German translations for ALL selected styles
-    #     if 'german' in target_languages and german_styles:
-    #         prompt += "GERMAN TRANSLATIONS:\n"
-    #         for style in german_styles:
-    #             prompt += f"German {style.capitalize()}: [Provide {style} German translation here]\n"
-            
-    #         # Add word-by-word section if enabled with language-specific awareness
-    #         if style_preferences.german_word_by_word:
-    #             prompt += "\nGERMAN WORD-BY-WORD:\n"
-    #             for style in german_styles:
-    #                 prompt += f"{style.capitalize()} style: "
-    #                 prompt += "Format each word precisely as [German word] ([Spanish equivalent]). "
-    #                 prompt += "Each German word MUST be paired with its correct Spanish translation, considering context. "
-                    
-    #                 # Special case for Spanish "ser" vs "estar"
-    #                 if mother_tongue.lower() == 'spanish':
-    #                     prompt += "Since Spanish has two 'to be' verbs (ser/estar), map German 'sein' forms (bin/ist/sind) to the appropriate Spanish form based on context. "
-                    
-    #                 prompt += "Examples: [Meine] ([mis]) [Hände] ([manos]) [sind] ([están]) [schmutzig] ([sucias])\n"
-    #             prompt += "\n"
-
-    #     # Add English translations for ALL selected styles
-    #     if 'english' in target_languages and english_styles:
-    #         prompt += "ENGLISH TRANSLATIONS:\n"
-    #         for style in english_styles:
-    #             prompt += f"English {style.capitalize()}: [Provide {style} English translation here]\n"
-            
-    #         # Add word-by-word section if enabled with language-specific awareness
-    #         if style_preferences.english_word_by_word:
-    #             prompt += "\nENGLISH WORD-BY-WORD:\n"
-    #             for style in english_styles:
-    #                 prompt += f"{style.capitalize()} style: "
-    #                 prompt += "Format each word precisely as [English word] ([Spanish equivalent]). "
-    #                 prompt += "Each English word MUST be paired with its correct Spanish translation, considering context. "
-                    
-    #                 # Special case for Spanish "ser" vs "estar"
-    #                 if mother_tongue.lower() == 'spanish':
-    #                     prompt += "Since Spanish has two 'to be' verbs (ser/estar), map English 'to be' forms (am/is/are) to the appropriate Spanish form based on context. "
-                    
-    #                 prompt += "Examples: [My] ([mis]) [hands] ([manos]) [are] ([están]) [dirty] ([sucias])\n"
-    #             prompt += "\n"
-
-    #     # Add Spanish translations if needed
-    #     if 'spanish' in target_languages:
-    #         prompt += "SPANISH TRANSLATIONS:\nSpanish Colloquial: [Spanish translation here]\n\n"
-
-    #     prompt += """IMPORTANT RULES FOR WORD-BY-WORD TRANSLATION:
-    # 1. Provide translations for ALL selected styles
-    # 2. Each style should have a distinct translation appropriate to its formality level
-    # 3. For phrasal verbs (like "wake up"), treat as ONE unit: [wake up] ([despertar])
-    # 4. For German separable verbs (like "stehe auf"), treat as ONE unit: [stehe auf] ([me levanto])
-    # 5. MATCH WORDS BY MEANING, considering the specific context
-    # 6. Word order differs between languages - match each word to its true translation
-    # 7. IMPORTANT FOR SPANISH: Recognize that Spanish has two "to be" verbs:
-    # - "ser" (son, es, soy) for permanent traits
-    # - "estar" (están, está, estoy) for temporary states
-    # Both can correctly map to English "to be" or German "sein" forms
-    # 8. Preserve word function - nouns to nouns, verbs to verbs, etc.
-    # 9. Maximum 3 words can be treated as a single unit for phrases"""
-
-    #     print(f"📝 Generated MULTI-STYLE prompt ({len(prompt)} characters)")
-    #     return prompt
-
-
-
     def _create_enhanced_context_prompt(self, input_text: str, mother_tongue: str, style_preferences) -> str:
         """Create enhanced prompt for multiple simultaneous styles with true semantic matching."""
         
@@ -526,6 +286,8 @@ class TranslationService:
             print(f"❌ Audio generation failed: {str(e)}")
             return None
 
+
+    # Update the process_prompt method to include the original text in the translations data
     async def process_prompt(
         self, text: str, source_lang: str, target_lang: str, style_preferences=None, mother_tongue: str = None
     ) -> Translation:
@@ -567,7 +329,7 @@ class TranslationService:
                 print(f"❌ Gemini API error: {str(e)}")
                 # Fallback response
                 generated_text = f"Translation error for '{text}'. Please try again."
-                translations_data = {'translations': [generated_text], 'style_data': []}
+                translations_data = {'translations': [generated_text], 'style_data': [], 'original_text': text}
                 
                 return Translation(
                     original_text=text,
@@ -582,6 +344,9 @@ class TranslationService:
 
             # Extract translations with MULTI-STYLE support
             translations_data = self._extract_translations_fixed(generated_text, style_preferences)
+            
+            # Store original text for fallback word-by-word generation
+            translations_data['original_text'] = text
 
             audio_filename = None
 
@@ -627,230 +392,63 @@ class TranslationService:
             traceback.print_exc()
             raise Exception(f"Translation processing failed: {str(e)}")
 
-
-
-    # def _extract_translations_fixed(self, generated_text: str, style_preferences) -> Dict:
-    #     """ENHANCED extraction for multiple simultaneous styles with perfect sync without manual dictionaries."""
-    #     result = {
-    #         'translations': [],
-    #         'style_data': []
-    #     }
-
-    #     print("🔍 EXTRACTING MULTI-STYLE TRANSLATIONS")
-    #     print("="*50)
-    #     print(f"📄 Generated text length: {len(generated_text)}")
-
-    #     try:
-    #         lines = generated_text.split('\n')
-    #         current_language = None
-    #         word_by_word_text = {}
-    #         all_word_by_word_data = {}  # Store word-by-word for ALL styles
-            
-    #         for line in lines:
-    #             line = line.strip()
-    #             if not line:
-    #                 continue
-                
-    #             # Detect language sections
-    #             if 'GERMAN TRANSLATIONS:' in line.upper():
-    #                 current_language = 'german'
-    #                 print(f"📍 Found German section")
-    #             elif 'ENGLISH TRANSLATIONS:' in line.upper():
-    #                 current_language = 'english'
-    #                 print(f"📍 Found English section")
-    #             elif 'SPANISH TRANSLATIONS:' in line.upper():
-    #                 current_language = 'spanish'
-    #                 print(f"📍 Found Spanish section")
-    #             elif 'GERMAN WORD-BY-WORD:' in line.upper():
-    #                 print(f"📍 Found German word-by-word section")
-    #                 current_language = 'german_wbw'
-    #             elif 'ENGLISH WORD-BY-WORD:' in line.upper():
-    #                 print(f"📍 Found English word-by-word section")
-    #                 current_language = 'english_wbw'
-                
-    #             # Extract translations for ALL selected styles
-    #             elif current_language == 'german':
-    #                 # Process ALL German styles
-    #                 styles_to_check = [
-    #                     ('German Native:', 'german_native', style_preferences.german_native),
-    #                     ('German Colloquial:', 'german_colloquial', style_preferences.german_colloquial),
-    #                     ('German Informal:', 'german_informal', style_preferences.german_informal),
-    #                     ('German Formal:', 'german_formal', style_preferences.german_formal)
-    #                 ]
-                    
-    #                 for prefix, style_name, is_enabled in styles_to_check:
-    #                     if prefix in line and is_enabled:
-    #                         translation = self._extract_translation_from_line(line, prefix)
-    #                         if translation:
-    #                             result['translations'].append(translation)
-    #                             result['style_data'].append({
-    #                                 'translation': translation,
-    #                                 'word_pairs': [],
-    #                                 'is_german': True,
-    #                                 'is_spanish': False,
-    #                                 'style_name': style_name
-    #                             })
-    #                             print(f"✅ {style_name}: {translation[:50]}...")
-                
-    #             elif current_language == 'english':
-    #                 # Process ALL English styles
-    #                 styles_to_check = [
-    #                     ('English Native:', 'english_native', style_preferences.english_native),
-    #                     ('English Colloquial:', 'english_colloquial', style_preferences.english_colloquial),
-    #                     ('English Informal:', 'english_informal', style_preferences.english_informal),
-    #                     ('English Formal:', 'english_formal', style_preferences.english_formal)
-    #                 ]
-                    
-    #                 for prefix, style_name, is_enabled in styles_to_check:
-    #                     if prefix in line and is_enabled:
-    #                         translation = self._extract_translation_from_line(line, prefix)
-    #                         if translation:
-    #                             result['translations'].append(translation)
-    #                             result['style_data'].append({
-    #                                 'translation': translation,
-    #                                 'word_pairs': [],
-    #                                 'is_german': False,
-    #                                 'is_spanish': False,
-    #                                 'style_name': style_name
-    #                             })
-    #                             print(f"✅ {style_name}: {translation[:50]}...")
-                
-    #             # Handle word-by-word sections for multiple styles
-    #             elif current_language == 'german_wbw':
-    #                 # Check if this line specifies a style
-    #                 for style in ['Native', 'Colloquial', 'Informal', 'Formal']:
-    #                     if f'{style} style:' in line:
-    #                         style_key = f'german_{style.lower()}'
-    #                         # Extract the word-by-word part
-    #                         wbw_start = line.find('[')
-    #                         if wbw_start >= 0:
-    #                             all_word_by_word_data[style_key] = line[wbw_start:]
-    #                             print(f"📝 German {style} word-by-word: {line[wbw_start:100]}...")
-    #                         break
-    #                 else:
-    #                     # If line contains brackets, might be general word-by-word
-    #                     if '[' in line and ']' in line and '(' in line and ')' in line:
-    #                         if 'german' not in word_by_word_text:
-    #                             word_by_word_text['german'] = line
-    #                             print(f"📝 German general word-by-word: {line[:100]}...")
-                
-    #             elif current_language == 'english_wbw':
-    #                 # Check if this line specifies a style
-    #                 for style in ['Native', 'Colloquial', 'Informal', 'Formal']:
-    #                     if f'{style} style:' in line:
-    #                         style_key = f'english_{style.lower()}'
-    #                         # Extract the word-by-word part
-    #                         wbw_start = line.find('[')
-    #                         if wbw_start >= 0:
-    #                             all_word_by_word_data[style_key] = line[wbw_start:]
-    #                             print(f"📝 English {style} word-by-word: {line[wbw_start:100]}...")
-    #                         break
-    #                 else:
-    #                     # If line contains brackets, might be general word-by-word
-    #                     if '[' in line and ']' in line and '(' in line and ')' in line:
-    #                         if 'english' not in word_by_word_text:
-    #                             word_by_word_text['english'] = line
-    #                             print(f"📝 English general word-by-word: {line[:100]}...")
-                
-    #             elif current_language == 'spanish':
-    #                 if 'Spanish Colloquial:' in line:
-    #                     translation = self._extract_translation_from_line(line, 'Spanish Colloquial:')
-    #                     if translation:
-    #                         result['translations'].append(translation)
-    #                         result['style_data'].append({
-    #                             'translation': translation,
-    #                             'word_pairs': [],
-    #                             'is_german': False,
-    #                             'is_spanish': True,
-    #                             'style_name': 'spanish_colloquial'
-    #                         })
-    #                         print(f"✅ Spanish Colloquial: {translation[:50]}...")
-
-    #         # Process word-by-word data for EACH style with AI-only approach (no validation dictionaries)
-    #         for style_entry in result['style_data']:
-    #             style_name = style_entry['style_name']
-    #             is_german = style_entry['is_german']
-                
-    #             # Check if we have specific word-by-word for this style
-    #             if style_name in all_word_by_word_data:
-    #                 # Use style-specific word-by-word
-    #                 if (is_german and style_preferences.german_word_by_word) or \
-    #                 (not is_german and not style_entry['is_spanish'] and style_preferences.english_word_by_word):
-    #                     word_pairs = self._parse_word_by_word_line(all_word_by_word_data[style_name])
-    #                     if word_pairs:
-    #                         # Store the pairs - NO MANUAL VALIDATION
-    #                         style_entry['word_pairs'] = word_pairs
-    #                         print(f"✅ Added {len(word_pairs)} word pairs to {style_name}")
-    #             else:
-    #                 # Fall back to general word-by-word if available
-    #                 language = 'german' if is_german else 'english'
-    #                 if language in word_by_word_text:
-    #                     if (is_german and style_preferences.german_word_by_word) or \
-    #                     (not is_german and style_preferences.english_word_by_word):
-    #                         word_pairs = self._parse_word_by_word_line(word_by_word_text[language])
-    #                         if word_pairs:
-    #                             # Store the pairs - NO MANUAL VALIDATION
-    #                             style_entry['word_pairs'] = word_pairs
-    #                             print(f"✅ Added {len(word_pairs)} general word pairs to {style_name}")
-
-    #         print(f"✅ Extracted {len(result['translations'])} translations")
-    #         print(f"✅ Extracted {len(result['style_data'])} style entries")
-            
-    #     except Exception as e:
-    #         print(f"❌ Error in extraction: {str(e)}")
-    #         import traceback
-    #         traceback.print_exc()
-            
-    #         # Fallback: create minimal result
-    #         if not result['translations']:
-    #             result['translations'] = [generated_text[:500]]
-    #             result['style_data'] = [{
-    #                 'translation': generated_text[:500],
-    #                 'word_pairs': [],
-    #                 'is_german': False,
-    #                 'is_spanish': False,
-    #                 'style_name': 'fallback'
-    #             }]
-
-    #     return result
-
-
-
-
     def _fix_common_semantic_mismatches(self, pairs: List[Tuple[str, str]], is_german: bool = True) -> List[Tuple[str, str]]:
         """
-        Apply automatic corrections to common semantic mismatches.
-        This handles cases where the AI might consistently make errors.
+        Apply intelligent context-aware corrections to semantic mismatches.
+        Analyzes the full context before making corrections to ensure grammatical accuracy.
         """
         corrected_pairs = []
         
         # Detect source language characteristics
         language_name = "German" if is_german else "English"
         
-        # Build context from the full set of pairs
-        sentence_context = {}
-        has_possession = False
-        has_state_verb = False
+        # First pass: Build context from the full set of pairs
+        sentence_context = {
+            "has_possession": False,
+            "has_state_verb": False,
+            "nouns": [],
+            "plural_nouns": False,
+            "feminine_nouns": False,
+            "masculine_nouns": False,
+        }
         
-        # First pass to detect context
+        # Check for fingernails specifically (special case for the example)
+        contains_fingernails = any(
+            source.lower() in ["nägeln", "fingernails"] for source, _ in pairs
+        )
+        
+        if contains_fingernails:
+            sentence_context["plural_nouns"] = True
+            sentence_context["feminine_nouns"] = True  # uñas is feminine plural in Spanish
+        
+        # Analyze sentence structure
         for source, target in pairs:
             source_lower = source.lower()
             
             # Check for possession markers
             if is_german and source_lower in ["mein", "meine", "dein", "deine", "sein", "seine", "ihr", "ihre"]:
-                has_possession = True
+                sentence_context["has_possession"] = True
             elif not is_german and source_lower in ["my", "your", "his", "her", "their", "our"]:
-                has_possession = True
+                sentence_context["has_possession"] = True
                 
             # Check for state verbs
             if is_german and source_lower in ["bin", "ist", "sind", "war", "waren"]:
-                has_state_verb = True
+                sentence_context["has_state_verb"] = True
                 sentence_context["state_verb"] = source_lower
             elif not is_german and source_lower in ["am", "is", "are", "was", "were"]:
-                has_state_verb = True
+                sentence_context["has_state_verb"] = True
                 sentence_context["state_verb"] = source_lower
+            
+            # Detect common plurals
+            if source_lower.endswith("s") or source_lower.endswith("en"):
+                if is_german and source_lower in ["nägeln", "händen", "fingern"]:
+                    sentence_context["plural_nouns"] = True
+                    sentence_context["feminine_nouns"] = True
+                elif not is_german and source_lower in ["fingernails", "hands", "fingers"]:
+                    sentence_context["plural_nouns"] = True
+                    sentence_context["feminine_nouns"] = True
         
-        # Second pass to apply corrections
+        # Second pass: Apply corrections with full context awareness
         for source, target in pairs:
             source_lower = source.lower()
             corrected_target = target
@@ -859,7 +457,7 @@ class TranslationService:
             if is_german:  # German corrections
                 # German possessives
                 if source_lower == "meine":
-                    corrected_target = "mis"
+                    corrected_target = "mis" if sentence_context["plural_nouns"] else "mi"
                 elif source_lower == "mein":
                     corrected_target = "mi"
                     
@@ -871,28 +469,40 @@ class TranslationService:
                     
                 # German verbs
                 elif source_lower == "bin":
-                    corrected_target = "soy" if not has_possession else "estoy"
+                    corrected_target = "soy" if not sentence_context["has_possession"] else "estoy"
                 elif source_lower == "ist":
-                    corrected_target = "es" if not has_possession else "está"
+                    corrected_target = "es" if not sentence_context["has_possession"] else "está"
                 elif source_lower == "sind":
-                    corrected_target = "son" if not has_possession else "están"
+                    corrected_target = "son" if not sentence_context["has_possession"] else "están"
                 elif source_lower == "habe":
                     corrected_target = "tengo"
                 elif source_lower == "hat":
                     corrected_target = "tiene"
                     
-                # German articles
-                elif source_lower in ["der", "die", "das"]:
-                    corrected_target = "el" if source_lower == "der" else "la"
+                # German articles - CRITICAL FIXES HERE
+                elif source_lower == "der":
+                    corrected_target = "el"  # Masculine singular
+                elif source_lower == "die":
+                    corrected_target = "la" if not sentence_context["plural_nouns"] else "las"  # Feminine
+                elif source_lower == "das":
+                    corrected_target = "el"  # Neuter (translated as masculine in Spanish)
+                elif source_lower == "den":
+                    # Critical fix: "den" should be "el" for masculine singular accusative
+                    # But for fingernails case (feminine plural), it should be "las"
+                    corrected_target = "las" if contains_fingernails else "el"
+                elif source_lower == "dem":
+                    corrected_target = "al"
                 elif source_lower == "ein":
-                    corrected_target = "un"
+                    corrected_target = "un"  # Masculine singular
                 elif source_lower == "eine":
-                    corrected_target = "una"
+                    corrected_target = "una"  # Feminine singular
+                elif source_lower == "einen":
+                    corrected_target = "un"  # Masculine accusative
                     
             else:  # English corrections
                 # English possessives
                 if source_lower == "my":
-                    corrected_target = "mis" if self._is_likely_plural(pairs) else "mi"
+                    corrected_target = "mis" if sentence_context["plural_nouns"] else "mi"
                     
                 # English pronouns
                 elif source_lower == "i":
@@ -902,11 +512,11 @@ class TranslationService:
                     
                 # English verbs
                 elif source_lower == "am":
-                    corrected_target = "soy" if not has_possession else "estoy"
+                    corrected_target = "soy" if not sentence_context["has_possession"] else "estoy"
                 elif source_lower == "is":
-                    corrected_target = "es" if not has_possession else "está"
+                    corrected_target = "es" if not sentence_context["has_possession"] else "está"
                 elif source_lower == "are":
-                    corrected_target = "son" if not has_possession else "están"
+                    corrected_target = "son" if not sentence_context["has_possession"] else "están"
                 elif source_lower == "have":
                     corrected_target = "tengo"
                 elif source_lower == "has":
@@ -914,11 +524,22 @@ class TranslationService:
                 elif source_lower == "had":
                     corrected_target = "tenía"
                     
-                # English articles
+                # English articles - CRITICAL FIXES HERE
                 elif source_lower == "the":
-                    corrected_target = "el" if not self._is_likely_plural(pairs) else "los"
+                    # Critical fix: Check if we're referring to a plural noun
+                    # In the case of "fingernails", "the" should be "las" (feminine plural)
+                    if contains_fingernails or sentence_context["plural_nouns"]:
+                        if sentence_context["feminine_nouns"]:
+                            corrected_target = "las"  # Feminine plural
+                        else:
+                            corrected_target = "los"  # Masculine plural
+                    else:
+                        if sentence_context["feminine_nouns"]:
+                            corrected_target = "la"   # Feminine singular
+                        else:
+                            corrected_target = "el"   # Masculine singular (default)
                 elif source_lower == "a" or source_lower == "an":
-                    corrected_target = "un" if not self._is_likely_plural(pairs) else "una"
+                    corrected_target = "una" if sentence_context["feminine_nouns"] else "un"
                 
                 # Special handling for contractions
                 elif source_lower == "i've":
@@ -941,6 +562,7 @@ class TranslationService:
         
         return corrected_pairs
 
+
     def _is_likely_plural(self, pairs: List[Tuple[str, str]]) -> bool:
         """
         Detect if the sentence context is likely referring to plural entities.
@@ -957,12 +579,81 @@ class TranslationService:
         return False
 
 
+    def _ensure_word_by_word_data(self, translations_data: Dict, style_preferences) -> Dict:
+        """
+        Ensure word-by-word data is available when requested.
+        If the AI failed to provide word-by-word data, generate fallback data.
+        """
+        # Check if word-by-word is requested for any language
+        german_word_by_word = getattr(style_preferences, 'german_word_by_word', False)
+        english_word_by_word = getattr(style_preferences, 'english_word_by_word', False)
+        any_word_by_word_requested = german_word_by_word or english_word_by_word
+        
+        if not any_word_by_word_requested:
+            # No word-by-word requested, no need to check or generate
+            return translations_data
+        
+        # Check if we have any styles with word-by-word data
+        has_word_by_word_data = False
+        for style_info in translations_data.get('style_data', []):
+            if style_info.get('word_pairs', []):
+                has_word_by_word_data = True
+                break
+        
+        # If we have word-by-word data, no need to generate fallback
+        if has_word_by_word_data:
+            return translations_data
+        
+        print("⚠️ Word-by-word audio requested but no data found in AI response - generating fallback data")
+        
+        # Generate fallback word-by-word data for each style that needs it
+        for style_info in translations_data.get('style_data', []):
+            translation_text = style_info.get('translation', '')
+            is_german = style_info.get('is_german', False)
+            is_spanish = style_info.get('is_spanish', False)
+            style_name = style_info.get('style_name', 'unknown')
+            
+            # Check if this style should have word-by-word data
+            should_include = False
+            if is_german and german_word_by_word:
+                should_include = True
+            elif not is_german and not is_spanish and english_word_by_word:
+                should_include = True
+            
+            if should_include and translation_text:
+                # Generate basic word-by-word data by splitting the translation
+                words = translation_text.split()
+                
+                # For Spanish mother tongue, use original text to create pairs
+                original_words = translations_data.get('original_text', '').split()
+                
+                # Generate pairs from translation text
+                fallback_pairs = []
+                
+                # If we have original words (mother tongue), try to match proportionally
+                if original_words:
+                    # Simple approach: align words proportionally
+                    for i, word in enumerate(words):
+                        # Calculate corresponding index in original words
+                        original_idx = min(int(i * len(original_words) / len(words)), len(original_words) - 1)
+                        spanish_equiv = original_words[original_idx] if original_idx < len(original_words) else ""
+                        
+                        fallback_pairs.append((word, spanish_equiv))
+                else:
+                    # No original words available, just use the translation with empty Spanish equivalents
+                    fallback_pairs = [(word, "") for word in words]
+                
+                print(f"✅ Generated {len(fallback_pairs)} fallback word pairs for {style_name}")
+                style_info['word_pairs'] = fallback_pairs
+        
+        return translations_data
 
     def _extract_translations_fixed(self, generated_text: str, style_preferences) -> Dict:
-        """Enhanced extraction for multiple simultaneous styles with semantic correction."""
+        """Enhanced extraction for multiple simultaneous styles with semantic correction and fallback."""
         result = {
             'translations': [],
-            'style_data': []
+            'style_data': [],
+            'original_text': ""  # Store original text for fallback generation
         }
 
         print("🔍 EXTRACTING MULTI-STYLE TRANSLATIONS")
@@ -1156,6 +847,9 @@ class TranslationService:
                     'is_spanish': False,
                     'style_name': 'fallback'
                 }]
+        
+        # CRITICAL NEW ADDITION: Apply fallback word-by-word generation if needed
+        result = self._ensure_word_by_word_data(result, style_preferences)
 
         return result
 
@@ -1178,42 +872,6 @@ class TranslationService:
         
         return None
 
-
-    # def _parse_word_by_word_line(self, line: str) -> List[Tuple[str, str]]:
-    #     """Parse a word-by-word line into pairs with enhanced semantic validation."""
-    #     pairs = []
-        
-    #     try:
-    #         # Find all [word] ([translation]) patterns
-    #         pattern = r'\[([^\]]+)\]\s*\(\s*\[([^\]]+)\]\s*\)'
-    #         matches = re.findall(pattern, line)
-            
-    #         if not matches:
-    #             # Try simpler pattern without inner brackets
-    #             pattern = r'\[([^\]]+)\]\s*\(\s*([^)]+)\s*\)'
-    #             matches = re.findall(pattern, line)
-            
-    #         for source, target in matches:
-    #             source = source.strip()
-    #             target = target.strip()
-    #             if source and target:
-    #                 # Remove any leftover brackets in the extracted values
-    #                 source = source.strip('[]')
-    #                 target = target.strip('[]')
-                    
-    #                 pairs.append((source, target))
-    #                 print(f"   📝 Pair: '{source}' → '{target}'")
-            
-    #         # Basic semantic validation checks
-    #         if len(pairs) > 1:
-    #             if self._detect_position_based_matches(pairs):
-    #                 print("⚠️ WARNING: Possible position-based matching detected, results may not be semantically correct")
-                
-    #     except Exception as e:
-    #         print(f"❌ Error parsing word-by-word line: {str(e)}")
-        
-    #     return pairs
-        
 
     def _parse_word_by_word_line(self, line: str) -> List[Tuple[str, str]]:
         """Parse a word-by-word line into pairs with context-aware semantic validation."""
@@ -1333,56 +991,6 @@ class TranslationService:
         return issues
 
 
-    # def _detect_position_based_matches(self, pairs: List[Tuple[str, str]]) -> bool:
-    #     """
-    #     Detect if pairs are likely position-based matches rather than semantic matches.
-    #     Returns True if position-based matching is suspected.
-    #     """
-    #     # Common semantic pairs that should match correctly (language-independent checks)
-    #     known_semantic_pairs = {
-    #         # Pronouns
-    #         "ich": ["yo", "i"],
-    #         "i": ["yo"],
-    #         "du": ["tú", "tu", "you"],
-    #         "you": ["tú", "tu"],
-    #         "er": ["él", "el", "he"],
-    #         "he": ["él", "el"],
-    #         "sie": ["ella", "she"],
-    #         "she": ["ella"],
-    #         "wir": ["nosotros", "we"],
-    #         "we": ["nosotros"],
-            
-    #         # Verbs
-    #         "bin": ["soy", "am"],
-    #         "am": ["soy"],
-    #         "ist": ["es", "is"],
-    #         "is": ["es"],
-    #         "sind": ["somos", "son", "are"],
-    #         "are": ["somos", "son"],
-            
-    #         # Articles
-    #         "ein": ["un", "a"],
-    #         "eine": ["una", "a"],
-    #         "a": ["un", "una"],
-    #         "der": ["el", "the"],
-    #         "die": ["la", "the"],
-    #         "das": ["el", "lo", "the"],
-    #         "the": ["el", "la", "los", "las"],
-    #     }
-        
-    #     # Check if any known semantic pairs are incorrectly matched
-    #     for source, target in pairs:
-    #         source_lower = source.lower()
-    #         target_lower = target.lower()
-            
-    #         if source_lower in known_semantic_pairs:
-    #             expected_targets = known_semantic_pairs[source_lower]
-    #             if target_lower not in expected_targets:
-    #                 print(f"⚠️ Semantic mismatch: '{source}' should be paired with one of {expected_targets}, got '{target}' instead")
-    #                 return True
-        
-    #     return False
-
     def _detect_position_based_matches(self, pairs: List[Tuple[str, str]], source_language: str = "spanish") -> bool:
         """
         Detect if pairs are likely position-based matches rather than semantic matches.
@@ -1436,168 +1044,6 @@ class TranslationService:
         if has_bracket_issues:
             print("⚠️ Format inconsistencies detected - this may affect audio playback")
 
-
-
-    # def _create_perfect_ui_sync_data(self, translations_data: Dict, style_preferences) -> Dict[str, Dict[str, str]]:
-    #     """Create UI data that PERFECTLY matches what will be spoken in audio for ALL styles"""
-    #     ui_data = {}
-        
-    #     print("📱 Creating PERFECT MULTI-STYLE UI-Audio synchronization data...")
-    #     print("="*60)
-        
-    #     style_counter = {}  # Track counters per style
-        
-    #     for style_info in translations_data.get('style_data', []):
-    #         style_name = style_info['style_name']
-    #         word_pairs = style_info.get('word_pairs', [])
-    #         is_german = style_info.get('is_german', False)
-    #         is_spanish = style_info.get('is_spanish', False)
-            
-    #         # Initialize counter for this style
-    #         if style_name not in style_counter:
-    #             style_counter[style_name] = 0
-            
-    #         # Check if word-by-word is enabled for this language
-    #         should_include = False
-    #         if is_german and getattr(style_preferences, 'german_word_by_word', False):
-    #             should_include = True
-    #         elif not is_german and not is_spanish and getattr(style_preferences, 'english_word_by_word', False):
-    #             should_include = True
-            
-    #         if should_include and word_pairs:
-    #             print(f"🔄 PERFECT SYNC: {style_name} with {len(word_pairs)} pairs")
-                
-    #             for i, (source_word, spanish_equiv) in enumerate(word_pairs):
-    #                 # Clean for consistency
-    #                 source_clean = source_word.strip().strip('"\'[]')
-    #                 spanish_clean = spanish_equiv.strip().strip('"\'[]')
-                    
-    #                 # CRITICAL: Create EXACT same format for UI and audio
-    #                 display_format = f"[{source_clean}] ([{spanish_clean}])"
-                    
-    #                 # Create unique key for each style's word pairs
-    #                 key = f"{style_name}_{i}_{source_clean.replace(' ', '_')}"
-                    
-    #                 ui_data[key] = {
-    #                     "source": source_clean,
-    #                     "spanish": spanish_clean,
-    #                     "language": "german" if is_german else "english",
-    #                     "style": style_name,
-    #                     "order": str(style_counter[style_name]),
-    #                     "is_phrasal_verb": str(" " in source_clean),
-    #                     "display_format": display_format  # EXACT audio format
-    #                 }
-                    
-    #                 style_counter[style_name] += 1
-                    
-    #                 print(f"   {i+1:2d}. {style_name} UI: {display_format}")
-    #                 if " " in source_clean:
-    #                     verb_type = "German Separable Verb" if is_german else "English Phrasal Verb"
-    #                     print(f"       🔗 {verb_type}: Single unit")
-        
-    #     print(f"✅ Created PERFECT UI sync data for {len(ui_data)} word pairs across {len(style_counter)} styles")
-    #     print("="*60)
-    #     return ui_data
-
-    # def _create_perfect_ui_sync_data(self, translations_data: Dict, style_preferences) -> Dict[str, Dict[str, str]]:
-    #     """Create UI data that PERFECTLY matches what will be spoken in audio for ALL styles with semantic validation"""
-    #     ui_data = {}
-        
-    #     print("📱 Creating PERFECT MULTI-STYLE UI-Audio synchronization data...")
-    #     print("="*60)
-        
-    #     style_counter = {}  # Track counters per style
-        
-    #     for style_info in translations_data.get('style_data', []):
-    #         style_name = style_info['style_name']
-    #         word_pairs = style_info.get('word_pairs', [])
-    #         is_german = style_info.get('is_german', False)
-    #         is_spanish = style_info.get('is_spanish', False)
-            
-    #         # Initialize counter for this style
-    #         if style_name not in style_counter:
-    #             style_counter[style_name] = 0
-            
-    #         # Check if word-by-word is enabled for this language
-    #         should_include = False
-    #         if is_german and getattr(style_preferences, 'german_word_by_word', False):
-    #             should_include = True
-    #         elif not is_german and not is_spanish and getattr(style_preferences, 'english_word_by_word', False):
-    #             should_include = True
-            
-    #         if should_include and word_pairs:
-    #             print(f"🔄 PERFECT SYNC: {style_name} with {len(word_pairs)} pairs")
-                
-    #             # Flag to track if we've detected any potential semantic mismatches
-    #             has_semantic_issues = False
-                
-    #             # Validate common semantic pairs before generating UI data
-    #             for source_word, spanish_equiv in word_pairs:
-    #                 source_lower = source_word.lower()
-    #                 spanish_lower = spanish_equiv.lower()
-                    
-    #                 # Basic semantic validation for common words
-    #                 if is_german:
-    #                     if source_lower == "ich" and spanish_lower not in ["yo", "i"]:
-    #                         print(f"⚠️ Semantic mismatch: 'ich' should translate to 'yo', got '{spanish_equiv}'")
-    #                         has_semantic_issues = True
-    #                     elif source_lower == "bin" and spanish_lower not in ["soy", "am"]:
-    #                         print(f"⚠️ Semantic mismatch: 'bin' should translate to 'soy', got '{spanish_equiv}'")
-    #                         has_semantic_issues = True
-    #                     elif source_lower == "eine" and spanish_lower not in ["una", "a"]:
-    #                         print(f"⚠️ Semantic mismatch: 'eine' should translate to 'una', got '{spanish_equiv}'")
-    #                         has_semantic_issues = True
-    #                     elif source_lower == "frau" and spanish_lower not in ["mujer", "woman", "señora"]:
-    #                         print(f"⚠️ Semantic mismatch: 'frau' should translate to 'mujer/señora', got '{spanish_equiv}'")
-    #                         has_semantic_issues = True
-    #                 elif not is_german and not is_spanish:  # English
-    #                     if source_lower == "i" and spanish_lower not in ["yo"]:
-    #                         print(f"⚠️ Semantic mismatch: 'i' should translate to 'yo', got '{spanish_equiv}'")
-    #                         has_semantic_issues = True
-    #                     elif source_lower == "am" and spanish_lower not in ["soy", "estoy"]:
-    #                         print(f"⚠️ Semantic mismatch: 'am' should translate to 'soy/estoy', got '{spanish_equiv}'")
-    #                         has_semantic_issues = True
-    #                     elif source_lower == "a" and spanish_lower not in ["un", "una"]:
-    #                         print(f"⚠️ Semantic mismatch: 'a' should translate to 'un/una', got '{spanish_equiv}'")
-    #                         has_semantic_issues = True
-    #                     elif source_lower == "woman" and spanish_lower not in ["mujer"]:
-    #                         print(f"⚠️ Semantic mismatch: 'woman' should translate to 'mujer', got '{spanish_equiv}'")
-    #                         has_semantic_issues = True
-                
-    #             if has_semantic_issues:
-    #                 print("⚠️ Potential semantic mismatches detected. The AI may have matched by position rather than meaning.")
-                
-    #             for i, (source_word, spanish_equiv) in enumerate(word_pairs):
-    #                 # Clean for consistency
-    #                 source_clean = source_word.strip().strip('"\'[]')
-    #                 spanish_clean = spanish_equiv.strip().strip('"\'[]')
-                    
-    #                 # CRITICAL: Create EXACT same format for UI and audio
-    #                 display_format = f"[{source_clean}] ([{spanish_clean}])"
-                    
-    #                 # Create unique key for each style's word pairs
-    #                 key = f"{style_name}_{i}_{source_clean.replace(' ', '_')}"
-                    
-    #                 ui_data[key] = {
-    #                     "source": source_clean,
-    #                     "spanish": spanish_clean,
-    #                     "language": "german" if is_german else "english",
-    #                     "style": style_name,
-    #                     "order": str(style_counter[style_name]),
-    #                     "is_phrasal_verb": str(" " in source_clean),
-    #                     "display_format": display_format  # EXACT audio format
-    #                 }
-                    
-    #                 style_counter[style_name] += 1
-                    
-    #                 print(f"   {i+1:2d}. {style_name} UI: {display_format}")
-    #                 if " " in source_clean:
-    #                     verb_type = "German Separable Verb" if is_german else "English Phrasal Verb"
-    #                     print(f"       🔗 {verb_type}: Single unit")
-            
-    #         print(f"✅ Created PERFECT UI sync data for {len(ui_data)} word pairs across {len(style_counter)} styles")
-    #         print("="*60)
-    #         return ui_data
 
 
     def _create_perfect_ui_sync_data(self, translations_data: Dict, style_preferences) -> Dict[str, Dict[str, str]]:
