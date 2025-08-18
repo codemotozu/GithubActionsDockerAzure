@@ -89,6 +89,11 @@ class EnhancedTTSService:
         
         logger.info(f"🔧 Initializing TTS service with Azure region: {self.region}")
         logger.info(f"🔑 Azure Speech Key configured with length: {len(self.subscription_key) if self.subscription_key else 0} characters")
+        
+        # Set container-specific environment variables for Azure Speech SDK
+        os.environ["SPEECH_SYNTHESIS_PLATFORM_CONFIG"] = "container"
+        os.environ["AZURE_SPEECH_CONTAINER"] = "1"
+        logger.info("🐳 Container environment variables set for Azure Speech SDK")
 
 
         # Rate limiter to prevent 429 errors
@@ -220,16 +225,40 @@ class EnhancedTTSService:
                 
                 # Create synthesizer with explicit cleanup
                 logger.info(f"🎤 Creating new synthesizer instance (attempt {attempt + 1}/{max_retries})")
-                synthesizer = SpeechSynthesizer(
-                    speech_config=speech_config, audio_config=audio_config
-                )
+                
+                # Try multiple initialization approaches
+                try:
+                    synthesizer = SpeechSynthesizer(
+                        speech_config=speech_config, audio_config=audio_config
+                    )
+                except Exception as init_error:
+                    logger.warning(f"⚠️ Standard synthesizer init failed: {str(init_error)}")
+                    # Try with null audio config first
+                    try:
+                        synthesizer = SpeechSynthesizer(speech_config=speech_config)
+                    except Exception as fallback_error:
+                        logger.error(f"❌ Fallback synthesizer init also failed: {str(fallback_error)}")
+                        raise init_error  # Raise the original error
 
                 logger.info(f"🔍 Attempting speech synthesis (attempt {attempt + 1}/{max_retries})")
                 
                 # Synthesize with timeout
-                result = await asyncio.get_event_loop().run_in_executor(
-                    None, lambda: synthesizer.speak_ssml_async(ssml).get()
-                )
+                if hasattr(synthesizer, 'audio_config') and synthesizer.audio_config:
+                    # Standard synthesis to file
+                    result = await asyncio.get_event_loop().run_in_executor(
+                        None, lambda: synthesizer.speak_ssml_async(ssml).get()
+                    )
+                else:
+                    # Synthesis without file output, then save manually
+                    result = await asyncio.get_event_loop().run_in_executor(
+                        None, lambda: synthesizer.speak_ssml_async(ssml).get()
+                    )
+                    # Save audio data to file manually if synthesis succeeded
+                    if result.reason == ResultReason.SynthesizingAudioCompleted:
+                        audio_data = result.audio_data
+                        with open(output_path, 'wb') as f:
+                            f.write(audio_data)
+                        logger.info(f"✅ Manual audio file save completed: {len(audio_data)} bytes")
 
                 if result.reason == ResultReason.SynthesizingAudioCompleted:
                     logger.info(f"✅ Speech synthesis successful on attempt {attempt + 1}")

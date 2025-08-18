@@ -50,6 +50,9 @@ RUN mkdir -p /tmp/tts_audio && chmod 777 /tmp/tts_audio
 ENV PORT=8000
 ENV TTS_DEVICE=cpu
 ENV CONTAINER_ENV=true
+# Azure Speech SDK containerized environment variables
+ENV SPEECH_SYNTHESIS_PLATFORM_CONFIG=container
+ENV AZURE_SPEECH_CONTAINER=1
 
 EXPOSE 8000
 
