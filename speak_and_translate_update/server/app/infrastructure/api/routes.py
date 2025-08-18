@@ -14,7 +14,7 @@ from ...application.services.speech_service import SpeechService
 from ...application.services.translation_service import TranslationService
 from ...domain.entities.translation import Translation
 
-# Configure enhanced logging for perfect sync debugging-------------------
+# Configure enhanced logging for perfect sync debugging-----------------------
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s.%(msecs)03d - %(name)s - %(levelname)s - %(message)s',
