@@ -14,7 +14,6 @@ RUN apt-get update && apt-get install -y \
     libasound2-plugins \
     libsndfile1 \
     curl \
-    wget \
     # Additional dependencies for headless audio
     libpulse0 \
     libnss3 \
@@ -31,24 +30,6 @@ RUN apt-get update && apt-get install -y \
     libgstreamer-plugins-base1.0-dev \
     # ICU libraries for text processing
     libicu-dev \
-    # Azure Speech SDK HTTP dependencies
-    libcurl4-openssl-dev \
-    libcurl4 \
-    libc6-dev \
-    # Additional networking and HTTP libraries
-    libgssapi-krb5-2 \
-    libk5crypto3 \
-    libkrb5-3 \
-    libkrb5support0 \
-    zlib1g-dev \
-    # Azure Container Apps specific dependencies
-    libc-ares2 \
-    libnghttp2-14 \
-    librtmp1 \
-    libssh2-1 \
-    libldap-common \
-    # Additional SSL/TLS support
-    openssl \
     # Cleanup
     && rm -rf /var/lib/apt/lists/* \
     && update-ca-certificates

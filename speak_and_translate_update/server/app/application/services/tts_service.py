@@ -20,8 +20,6 @@ import re
 import logging
 import time
 import random
-import threading
-import subprocess
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -91,12 +89,6 @@ class EnhancedTTSService:
         # Rate limiter to prevent 429 errors
         self.rate_limiter = RateLimiter(max_requests_per_minute=12, max_requests_per_second=1)
 
-        # Initialize Azure Speech SDK for containerized environments
-        self._initialize_speech_sdk()
-        
-        # Force HTTP platform initialization with connectivity test
-        self._force_initialize_http_platform()
-
         # Speech configuration
         self.speech_config = SpeechConfig(
             subscription=self.subscription_key,
@@ -125,76 +117,6 @@ class EnhancedTTSService:
             },
         }
 
-    def _initialize_speech_sdk(self):
-        """Initialize Azure Speech SDK for Azure Container Apps to prevent Error 27"""
-        try:
-            # Critical environment variables for Azure Container Apps
-            os.environ['GRPC_VERBOSITY'] = 'ERROR'
-            os.environ['GRPC_TRACE'] = ''
-            
-            # Azure Container Apps specific HTTP settings
-            os.environ['AZURE_HTTP_USER_AGENT'] = 'SpeakAndTranslate-ACA/1.0'
-            os.environ['AZURE_CORE_PIPELINE_TIMEOUT'] = '60'
-            
-            # Force cURL backend for HTTP requests (critical for Container Apps)
-            os.environ['AZURE_CORE_USE_CURL'] = '1'
-            os.environ['CURL_CA_BUNDLE'] = '/etc/ssl/certs/ca-certificates.crt'
-            
-            # HTTP/2 and connection settings for Azure Container Apps
-            os.environ['AZURE_HTTP_DISABLE_HTTP2'] = '0'  # Enable HTTP/2
-            os.environ['AZURE_HTTP_MAX_CONNECTIONS'] = '10'
-            os.environ['AZURE_HTTP_CONNECTION_TIMEOUT'] = '30'
-            os.environ['AZURE_HTTP_READ_TIMEOUT'] = '60'
-            
-            # DNS and networking for Container Apps
-            os.environ['AZURE_DNS_TIMEOUT'] = '10'
-            os.environ['AZURE_FORCE_IPV4'] = '1'
-            
-            # SSL/TLS configuration
-            os.environ['SSL_CERT_FILE'] = '/etc/ssl/certs/ca-certificates.crt'
-            os.environ['REQUESTS_CA_BUNDLE'] = '/etc/ssl/certs/ca-certificates.crt'
-            
-            # Speech SDK specific settings for containers
-            os.environ['SPEECH_LOG_LEVEL'] = '1'  # Minimal logging
-            os.environ['SPEECH_SDK_ENABLE_LOGS'] = '0'
-            
-            logger.info("🔧 Azure Speech SDK initialized for Azure Container Apps environment")
-            
-        except Exception as e:
-            logger.warning(f"⚠️ Failed to set Azure SDK environment variables: {e}")
-
-    def _force_initialize_http_platform(self):
-        """Force initialize HTTP platform singleton for Azure Container Apps"""
-        try:
-            # Try to pre-initialize the HTTP platform by making a simple HTTP request
-            import requests
-            
-            # Simple connectivity test to Azure endpoints
-            test_url = f"https://{self.region}.api.cognitive.microsoft.com/sts/v1.0/issuetoken"
-            headers = {
-                'Ocp-Apim-Subscription-Key': self.subscription_key,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-            
-            logger.info("🔧 Testing Azure Speech Service connectivity...")
-            
-            # Short timeout test to initialize HTTP stack
-            response = requests.post(test_url, headers=headers, timeout=10, verify=True)
-            
-            if response.status_code in [200, 401, 403]:  # Any response means connectivity works
-                logger.info("✅ Azure Speech Service connectivity confirmed")
-                return True
-            else:
-                logger.warning(f"⚠️ Unexpected response from Azure: {response.status_code}")
-                return False
-                
-        except requests.exceptions.Timeout:
-            logger.warning("⚠️ Azure Speech Service connectivity timeout")
-            return False
-        except Exception as e:
-            logger.warning(f"⚠️ Failed to test Azure connectivity: {e}")
-            return False
-
     def _get_temp_directory(self) -> str:
         """Create and return the temporary directory path"""
         if os.name == "nt":  # Windows
@@ -206,23 +128,12 @@ class EnhancedTTSService:
 
     async def _synthesize_with_retry(self, ssml: str, output_path: str, max_retries: int = 3) -> bool:
         """Synthesize speech with retry logic and exponential backoff"""
-        
-        # In Azure Container Apps, try REST API first to avoid Error 27
-        if os.getenv('CONTAINER_APP_NAME'):
-            logger.info("🚀 Azure Container Apps detected - trying REST API first to bypass SDK Error 27")
-            rest_success = await self._rest_api_fallback(ssml, output_path)
-            if rest_success:
-                logger.info("✅ REST API synthesis successful on first try")
-                return True
-            else:
-                logger.warning("⚠️ REST API failed, falling back to SDK...")
-        
         for attempt in range(max_retries):
             try:
                 # Apply rate limiting before each attempt
                 await self.rate_limiter.wait_if_needed()
                 
-                # Create fresh synthesizer with comprehensive container configuration
+                # Create fresh synthesizer for each attempt
                 audio_config = AudioOutputConfig(filename=output_path)
                 speech_config = SpeechConfig(
                     subscription=self.subscription_key, region=self.region
@@ -230,24 +141,6 @@ class EnhancedTTSService:
                 speech_config.set_speech_synthesis_output_format(
                     SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3
                 )
-                
-                # Critical timeout and connection properties for Azure Container Apps
-                speech_config.set_property_by_name("SpeechServiceConnection_InitialSilenceTimeoutMs", "10000")
-                speech_config.set_property_by_name("SpeechServiceConnection_EndSilenceTimeoutMs", "10000")
-                speech_config.set_property_by_name("SpeechServiceConnection_RecoTimeoutMs", "60000")
-                
-                # HTTP platform configuration for container environments
-                speech_config.set_property_by_name("SPEECH_LOG_LEVEL", "1")
-                speech_config.set_property_by_name("SpeechServiceConnection_ConnectionTimeoutMs", "30000")
-                speech_config.set_property_by_name("SpeechServiceConnection_ReadTimeoutMs", "60000")
-                
-                # Force specific HTTP backend for Azure Container Apps
-                speech_config.set_property_by_name("SpeechServiceConnection_Url", f"wss://{self.region}.tts.speech.microsoft.com/cognitiveservices/websocket/v1")
-                speech_config.set_property_by_name("SpeechServiceConnection_Host", f"{self.region}.tts.speech.microsoft.com")
-                
-                # Retry policy for container environments
-                speech_config.set_property_by_name("SpeechServiceConnection_AutoReconnectIntervalInMs", "5000")
-                speech_config.set_property_by_name("SpeechServiceConnection_EnableAutoReconnect", "true")
 
                 synthesizer = SpeechSynthesizer(
                     speech_config=speech_config, audio_config=audio_config
@@ -300,27 +193,7 @@ class EnhancedTTSService:
                     return False
                     
             except Exception as e:
-                error_str = str(e)
-                logger.error(f"❌ Exception during synthesis attempt {attempt + 1}: {error_str}")
-                
-                # Handle specific container-related errors
-                if "Error: 27" in error_str or "HTTP platform singleton" in error_str:
-                    logger.info("🔧 Detected Azure SDK HTTP platform error, attempting comprehensive fix...")
-                    
-                    # Re-initialize SDK environment
-                    self._initialize_speech_sdk()
-                    
-                    # Force HTTP platform re-initialization
-                    http_success = self._force_initialize_http_platform()
-                    
-                    if http_success:
-                        logger.info("✅ HTTP platform re-initialized successfully")
-                    else:
-                        logger.warning("⚠️ HTTP platform re-initialization failed")
-                    
-                    # Add extra delay for initialization
-                    await asyncio.sleep(3.0)
-                
+                logger.error(f"❌ Exception during synthesis attempt {attempt + 1}: {str(e)}")
                 if attempt < max_retries - 1:
                     delay = (2 ** attempt) + random.uniform(0.1, 0.5)
                     logger.info(f"🔄 Retrying in {delay:.2f}s...")
@@ -330,72 +203,7 @@ class EnhancedTTSService:
                     return False
         
         logger.error(f"❌ All {max_retries} synthesis attempts failed")
-        
-        # Last resort: try REST API fallback
-        logger.info("🔄 Attempting REST API fallback for Azure Speech Service...")
-        fallback_success = await self._rest_api_fallback(ssml, output_path)
-        return fallback_success
-
-    async def _rest_api_fallback(self, ssml: str, output_path: str) -> bool:
-        """Fallback method using Azure Speech Service REST API when SDK fails"""
-        try:
-            import aiohttp
-            
-            logger.info(f"🔄 Starting REST API fallback - region: {self.region}")
-            logger.info(f"📝 SSML length: {len(ssml)} characters")
-            logger.info(f"📁 Output path: {output_path}")
-            
-            # Get access token first
-            token_url = f"https://{self.region}.api.cognitive.microsoft.com/sts/v1.0/issuetoken"
-            headers = {
-                'Ocp-Apim-Subscription-Key': self.subscription_key,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-            
-            logger.info("🔑 Getting access token for REST API fallback...")
-            
-            async with aiohttp.ClientSession() as session:
-                async with session.post(token_url, headers=headers, timeout=30) as token_response:
-                    if token_response.status != 200:
-                        error_text = await token_response.text()
-                        logger.error(f"❌ Failed to get access token: {token_response.status} - {error_text}")
-                        return False
-                    
-                    access_token = await token_response.text()
-                    logger.info(f"✅ Access token obtained (length: {len(access_token)})")
-                
-                # Now make TTS request
-                tts_url = f"https://{self.region}.tts.speech.microsoft.com/cognitiveservices/v1"
-                tts_headers = {
-                    'Authorization': f'Bearer {access_token}',
-                    'Content-Type': 'application/ssml+xml',
-                    'X-Microsoft-OutputFormat': 'audio-16khz-32kbitrate-mono-mp3',
-                    'User-Agent': 'SpeakAndTranslate-ACA-Fallback/1.0'
-                }
-                
-                logger.info(f"🎤 Making REST API TTS request to: {tts_url}")
-                logger.info(f"📝 Sending SSML data: {len(ssml.encode('utf-8'))} bytes")
-                
-                async with session.post(tts_url, headers=tts_headers, data=ssml.encode('utf-8'), timeout=60) as tts_response:
-                    logger.info(f"📊 TTS Response status: {tts_response.status}")
-                    
-                    if tts_response.status == 200:
-                        # Save audio data to file
-                        audio_data = await tts_response.read()
-                        with open(output_path, 'wb') as f:
-                            f.write(audio_data)
-                        
-                        logger.info(f"✅ REST API fallback successful: {len(audio_data)} bytes written to {output_path}")
-                        return True
-                    else:
-                        error_text = await tts_response.text()
-                        logger.error(f"❌ REST API TTS failed: {tts_response.status}")
-                        logger.error(f"❌ Error details: {error_text}")
-                        return False
-                        
-        except Exception as e:
-            logger.error(f"❌ REST API fallback failed: {e}")
-            return False
+        return False
 
     async def text_to_speech_word_pairs_v2(
         self,
@@ -465,14 +273,14 @@ class EnhancedTTSService:
             logger.info(f"📝 Generated MULTI-STYLE SSML ({len(ssml)} characters):")
             logger.info(f"   Preview: {ssml[:200]}...")
             
-            # Use retry logic for synthesis (includes REST API fallback)
+            # Use retry logic for synthesis
             success = await self._synthesize_with_retry(ssml, output_path, max_retries=3)
             
             if success:
                 logger.info(f"✅ MULTI-STYLE audio generated successfully: {os.path.basename(output_path)}")
                 return os.path.basename(output_path)
             else:
-                logger.error("❌ Failed to generate multi-style audio - both SDK and REST API failed")
+                logger.error("❌ Failed to generate multi-style audio after all retry attempts")
                 return None
 
         except Exception as e:
