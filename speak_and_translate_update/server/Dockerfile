@@ -41,6 +41,15 @@ RUN apt-get update && apt-get install -y \
     libkrb5-3 \
     libkrb5support0 \
     zlib1g-dev \
+    # Azure Container Apps specific dependencies
+    libc-ares2 \
+    libnghttp2-14 \
+    librtmp1 \
+    libssh2-1 \
+    libldap-2.4-2 \
+    # Additional SSL/TLS support
+    openssl \
+    libssl3 \
     # Cleanup
     && rm -rf /var/lib/apt/lists/* \
     && update-ca-certificates
