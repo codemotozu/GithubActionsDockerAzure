@@ -206,6 +206,17 @@ class EnhancedTTSService:
 
     async def _synthesize_with_retry(self, ssml: str, output_path: str, max_retries: int = 3) -> bool:
         """Synthesize speech with retry logic and exponential backoff"""
+        
+        # In Azure Container Apps, try REST API first to avoid Error 27
+        if os.getenv('CONTAINER_APP_NAME'):
+            logger.info("🚀 Azure Container Apps detected - trying REST API first to bypass SDK Error 27")
+            rest_success = await self._rest_api_fallback(ssml, output_path)
+            if rest_success:
+                logger.info("✅ REST API synthesis successful on first try")
+                return True
+            else:
+                logger.warning("⚠️ REST API failed, falling back to SDK...")
+        
         for attempt in range(max_retries):
             try:
                 # Apply rate limiting before each attempt
@@ -328,8 +339,11 @@ class EnhancedTTSService:
     async def _rest_api_fallback(self, ssml: str, output_path: str) -> bool:
         """Fallback method using Azure Speech Service REST API when SDK fails"""
         try:
-            import requests
             import aiohttp
+            
+            logger.info(f"🔄 Starting REST API fallback - region: {self.region}")
+            logger.info(f"📝 SSML length: {len(ssml)} characters")
+            logger.info(f"📁 Output path: {output_path}")
             
             # Get access token first
             token_url = f"https://{self.region}.api.cognitive.microsoft.com/sts/v1.0/issuetoken"
@@ -343,11 +357,12 @@ class EnhancedTTSService:
             async with aiohttp.ClientSession() as session:
                 async with session.post(token_url, headers=headers, timeout=30) as token_response:
                     if token_response.status != 200:
-                        logger.error(f"❌ Failed to get access token: {token_response.status}")
+                        error_text = await token_response.text()
+                        logger.error(f"❌ Failed to get access token: {token_response.status} - {error_text}")
                         return False
                     
                     access_token = await token_response.text()
-                    logger.info("✅ Access token obtained")
+                    logger.info(f"✅ Access token obtained (length: {len(access_token)})")
                 
                 # Now make TTS request
                 tts_url = f"https://{self.region}.tts.speech.microsoft.com/cognitiveservices/v1"
@@ -358,20 +373,24 @@ class EnhancedTTSService:
                     'User-Agent': 'SpeakAndTranslate-ACA-Fallback/1.0'
                 }
                 
-                logger.info("🎤 Making REST API TTS request...")
+                logger.info(f"🎤 Making REST API TTS request to: {tts_url}")
+                logger.info(f"📝 Sending SSML data: {len(ssml.encode('utf-8'))} bytes")
                 
                 async with session.post(tts_url, headers=tts_headers, data=ssml.encode('utf-8'), timeout=60) as tts_response:
+                    logger.info(f"📊 TTS Response status: {tts_response.status}")
+                    
                     if tts_response.status == 200:
                         # Save audio data to file
                         audio_data = await tts_response.read()
                         with open(output_path, 'wb') as f:
                             f.write(audio_data)
                         
-                        logger.info(f"✅ REST API fallback successful: {len(audio_data)} bytes written")
+                        logger.info(f"✅ REST API fallback successful: {len(audio_data)} bytes written to {output_path}")
                         return True
                     else:
                         error_text = await tts_response.text()
-                        logger.error(f"❌ REST API TTS failed: {tts_response.status} - {error_text}")
+                        logger.error(f"❌ REST API TTS failed: {tts_response.status}")
+                        logger.error(f"❌ Error details: {error_text}")
                         return False
                         
         except Exception as e:
@@ -446,14 +465,14 @@ class EnhancedTTSService:
             logger.info(f"📝 Generated MULTI-STYLE SSML ({len(ssml)} characters):")
             logger.info(f"   Preview: {ssml[:200]}...")
             
-            # Use retry logic for synthesis
+            # Use retry logic for synthesis (includes REST API fallback)
             success = await self._synthesize_with_retry(ssml, output_path, max_retries=3)
             
             if success:
                 logger.info(f"✅ MULTI-STYLE audio generated successfully: {os.path.basename(output_path)}")
                 return os.path.basename(output_path)
             else:
-                logger.error("❌ Failed to generate multi-style audio after all retry attempts")
+                logger.error("❌ Failed to generate multi-style audio - both SDK and REST API failed")
                 return None
 
         except Exception as e:
