@@ -33,7 +33,7 @@ class UTF8StreamHandler(logging.StreamHandler):
         except Exception:
             self.handleError(record)
 
-# Configure logging first to capture all events
+# Configure logging first to capture all events----
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s.%(msecs)03d - %(name)s - %(levelname)s - %(message)s',
