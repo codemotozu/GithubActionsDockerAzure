@@ -3,7 +3,14 @@
     "allow": [
       "Bash(python -m app.main)",
       "Bash(python test:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(timeout:*)",
+      "Bash(pip install:*)",
+      "Bash(pip uninstall:*)",
+      "Bash(taskkill:*)",
+      "Bash(set PORT=8002)",
+      "Bash(cmd /c:*)",
+      "Bash(PORT=8002 python -m app.main)"
     ],
     "deny": [],
     "ask": [],
