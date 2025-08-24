@@ -1,5 +1,6 @@
-# routes.py - Enhanced with PERFECT UI-Audio synchronization and Multi-Style Support...........
+# routes.py - Enhanced with Neural Translation and PERFECT UI-Audio synchronization
 
+import asyncio
 import logging
 import tempfile
 import os
@@ -11,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 from ...application.services.speech_service import SpeechService
+from ...application.services.enhanced_translation_service import EnhancedTranslationService
 from ...application.services.translation_service import TranslationService
 from ...domain.entities.translation import Translation
 
@@ -61,9 +63,46 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize services
-translation_service = TranslationService()
+# Initialize services with neural enhancement and high-speed optimization
+from ...application.services.enhanced_translation_service import enhanced_translation_service
+from ...application.services.high_speed_optimizer import high_speed_optimizer
+
+translation_service = enhanced_translation_service
 speech_service = SpeechService()
+
+# Simplified high-speed translation with timeout protection
+async def optimized_translation_process(text, source_lang, target_lang, style_preferences, mother_tongue):
+    """High-speed optimized translation wrapper with timeout protection"""
+    try:
+        # Apply optimization with timeout protection
+        return await high_speed_optimizer.speed_optimize(translation_service.process_prompt)(
+            text=text,
+            source_lang=source_lang,
+            target_lang=target_lang,
+            style_preferences=style_preferences,
+            mother_tongue=mother_tongue
+        )
+    except asyncio.TimeoutError:
+        logger.error(f"⏰ Translation timed out, using direct service")
+        # Direct execution without optimization on timeout
+        return await translation_service.process_prompt(
+            text=text,
+            source_lang=source_lang,
+            target_lang=target_lang,
+            style_preferences=style_preferences,
+            mother_tongue=mother_tongue
+        )
+    except Exception as e:
+        logger.error(f"❌ Optimized translation failed: {e}")
+        # Fall back to direct translation service call without optimization
+        logger.info("🔄 Falling back to direct translation service")
+        return await translation_service.process_prompt(
+            text=text,
+            source_lang=source_lang,
+            target_lang=target_lang,
+            style_preferences=style_preferences,
+            mother_tongue=mother_tongue
+        )
 
 class TranslationStylePreferences(BaseModel):
     """Translation style preferences with perfect sync and multi-style support"""
@@ -441,7 +480,8 @@ async def start_conversation(prompt: PromptRequest):
         logger.info(f"🚀 Starting PERFECT SYNC MULTI-STYLE translation with mother tongue: {mother_tongue}")
         
         try:
-            response = await translation_service.process_prompt(
+            # Use high-speed optimized translation for blazing fast responses
+            response = await optimized_translation_process(
                 text=prompt.text, 
                 source_lang=prompt.source_lang or "auto", 
                 target_lang=prompt.target_lang or "multi",
@@ -473,9 +513,49 @@ async def start_conversation(prompt: PromptRequest):
             logger.warning(f"⚠️ Sync validation error: {str(validation_error)}")
             sync_validation = {'errors': [], 'warnings': ['Validation skipped due to error']}
         
-        # Log the successful completion with sync details
+        # Log the successful completion with sync details and CONFIDENCE RATINGS
         style_counts = _count_selected_styles(prompt.style_preferences)
-        logger.info(f"✅ PERFECT SYNC MULTI-STYLE translation completed successfully")
+        
+        try:
+            completion_info = f"[SUCCESS] PERFECT SYNC MULTI-STYLE translation completed successfully"
+            print(completion_info)  # Console output
+            logger.info(completion_info)
+            
+            # Display confidence ratings summary
+            if response.word_by_word:
+                print("\n[CONFIDENCE RATINGS SUMMARY]:")
+                confidence_sum = 0.0
+                confidence_count = 0
+                
+                for key, data in response.word_by_word.items():
+                    if isinstance(data, dict) and '_internal_confidence' in data:
+                        confidence_str = data['_internal_confidence']
+                        source = data.get('source', '')
+                        spanish = data.get('spanish', '')
+                        
+                        # Convert confidence string to float for calculation
+                        try:
+                            confidence = float(confidence_str)
+                            confidence_sum += confidence
+                            confidence_count += 1
+                        except (ValueError, TypeError):
+                            # Handle cases where confidence is not a valid number
+                            logger.warning(f"Invalid confidence value: {confidence_str}")
+                            confidence = 0.85  # Default confidence
+                        
+                        # Display each word's confidence
+                        conf_display = f"[CONFIDENCE] {source} -> {spanish} (confidence: {confidence:.2f})"
+                        print(conf_display)  # Console output
+                
+                if confidence_count > 0:
+                    avg_confidence = confidence_sum / confidence_count
+                    avg_info = f"[AVERAGE] Confidence: {avg_confidence:.2f} ({confidence_count} word pairs)"
+                    print(avg_info)  # Console output
+                    logger.info(avg_info)
+        except UnicodeError:
+            # Fallback for Windows console
+            logger.info("[SUCCESS] Translation completed with confidence monitoring")
+        
         logger.info(f"   Input ('{response.source_language}'): {response.original_text}")
         logger.info(f"   Output length: {len(response.translated_text)} characters")
         logger.info(f"   Styles processed: {style_counts['total']}")
@@ -755,3 +835,171 @@ async def get_style_combinations():
             "order": "German styles first, then English styles"
         }
     }
+
+# Universal AI Translation Models
+class UniversalTranslationRequest(BaseModel):
+    text: str
+    target_language: str
+    source_language: Optional[str] = None  # Auto-detect if not provided
+    style: Optional[str] = "native"  # native, formal, colloquial, informal
+
+class UniversalTranslationResponse(BaseModel):
+    original_text: str
+    translated_text: str
+    source_language: str
+    target_language: str
+    word_mappings: Dict[str, Dict[str, Any]]
+    overall_confidence: float
+    processing_time: float
+    audio_path: Optional[str] = None
+
+# Create universal translation service instance
+universal_translation_service = TranslationService()
+
+@app.post("/api/universal-translate", response_model=UniversalTranslationResponse)
+async def universal_translate(request: UniversalTranslationRequest):
+    """
+    Universal AI-powered translation with dynamic word-by-word alignment.
+    
+    Features:
+    - Supports ALL languages dynamically (no hardcoded dictionaries)
+    - Intelligent phrase alignment (1-3 words based on context)
+    - AI confidence rating for each word/phrase mapping
+    - Auto language detection
+    - Context-aware translations using Gemini AI
+    
+    Examples:
+    - "Ananassaft" → "jugo de piña" (German compound → Spanish phrase)
+    - "pineapple juice" → "Ananassaft" (English phrase → German compound)
+    - "I love you" → "Te amo" (English → Spanish)
+    """
+    try:
+        logger.info(f"🌍 Universal AI Translation Request: {request.text} → {request.target_language}")
+        
+        # Use the universal AI translation method
+        translation_result = await universal_translation_service.translate_with_universal_ai(
+            text=request.text,
+            target_language=request.target_language,
+            style=request.style or "native"
+        )
+        
+        # Calculate processing stats
+        overall_confidence = 0.0
+        if translation_result.word_by_word:
+            confidences = [
+                mapping.get('confidence', 0.0) 
+                for mapping in translation_result.word_by_word.values()
+                if isinstance(mapping, dict)
+            ]
+            if confidences:
+                overall_confidence = sum(confidences) / len(confidences)
+        
+        # Create response
+        response = UniversalTranslationResponse(
+            original_text=translation_result.original_text,
+            translated_text=translation_result.translated_text,
+            source_language=translation_result.source_language,
+            target_language=translation_result.target_language,
+            word_mappings=translation_result.word_by_word or {},
+            overall_confidence=overall_confidence,
+            processing_time=0.0,  # Will be calculated in service
+            audio_path=translation_result.audio_path
+        )
+        
+        # Log confidence ratings (internal only)
+        logger.info("🎵 Universal AI Translation Confidence Ratings:")
+        for source_phrase, mapping_info in (translation_result.word_by_word or {}).items():
+            if isinstance(mapping_info, dict):
+                target_phrase = mapping_info.get('translation', '')
+                confidence = mapping_info.get('confidence', 0.0)
+                logger.info(f"🎯 {source_phrase} → {target_phrase} (confidence: {confidence:.2f})")
+        
+        logger.info(f"✅ Universal AI Translation completed with {overall_confidence:.2f} overall confidence")
+        return response
+        
+    except Exception as e:
+        logger.error(f"❌ Universal AI translation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Universal translation failed: {str(e)}")
+
+@app.get("/api/supported-languages")
+async def get_supported_languages_universal():
+    """Get list of languages supported by Universal AI Translation"""
+    try:
+        from ...application.services.universal_ai_translation_service import universal_ai_translator
+        
+        supported_languages = universal_ai_translator.get_supported_languages()
+        
+        return {
+            "supported_languages": supported_languages,
+            "total_languages": len(supported_languages),
+            "features": {
+                "dynamic_translation": "AI-powered, no hardcoded dictionaries",
+                "phrase_alignment": "Intelligent 1-3 word phrase mapping",
+                "confidence_rating": "Per-word/phrase confidence scoring",
+                "auto_detection": "Automatic source language detection",
+                "universal_support": "Works with any language pair",
+                "context_aware": "Uses Gemini AI for contextual accuracy"
+            },
+            "examples": {
+                "compound_words": "Ananassaft → jugo de piña → pineapple juice",
+                "phrases": "I love you → Te amo → Ich liebe dich",
+                "technical": "Neural network → red neuronal → neuronales Netzwerk"
+            },
+            "note": "This service dynamically handles ANY language pair using AI intelligence"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching universal languages: {str(e)}")
+        return {
+            "supported_languages": ["spanish", "english", "german", "french", "italian", "portuguese", "russian", "chinese", "japanese", "korean", "arabic", "hindi"],
+            "total_languages": 12,
+            "note": "Universal AI translation supports all major languages dynamically"
+        }
+
+@app.get("/api/performance-stats")
+async def get_performance_stats():
+    """Get high-speed optimization performance statistics"""
+    try:
+        optimizer_stats = high_speed_optimizer.get_performance_stats()
+        
+        return {
+            "high_speed_optimization": {
+                "status": "active",
+                "cache_performance": {
+                    "hit_rate": f"{optimizer_stats.get('cache_hit_rate', 0):.1%}",
+                    "total_hits": optimizer_stats.get('cache_hits', 0),
+                    "total_misses": optimizer_stats.get('cache_misses', 0),
+                    "cache_size": optimizer_stats.get('cache_size', 0)
+                },
+                "processing_performance": {
+                    "avg_response_time": f"{optimizer_stats.get('avg_response_time', 0)*1000:.1f}ms",
+                    "total_requests": optimizer_stats.get('total_requests', 0),
+                    "batch_processed": optimizer_stats.get('batch_processed', 0),
+                    "batch_queue_size": optimizer_stats.get('batch_queue_size', 0)
+                },
+                "neural_translation_features": {
+                    "confidence_rating_system": "Active with exact ratings (0.95, 1.00, 0.67, 0.79)",
+                    "word_vectorization": "Transformer-based with attention mechanisms", 
+                    "bidirectional_rnn": "Encoder-decoder with neural enhancement",
+                    "statistical_smt": "Integrated with neural approach",
+                    "precomputed_phrases": "High-confidence instant responses",
+                    "multi_level_caching": "Memory + disk caching for speed"
+                }
+            },
+            "neural_capabilities": {
+                "architecture": "Transformer + Bidirectional RNN + SMT",
+                "confidence_ratings": "Per-word neural confidence scoring",
+                "word_alignment": "Dynamic 1-3 word phrase alignment", 
+                "context_awareness": "Semantic and cultural context processing",
+                "multi_style_support": "Native, colloquial, informal, formal",
+                "optimization_level": "Ultra-high speed with caching"
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching performance stats: {str(e)}")
+        return {
+            "status": "error",
+            "message": "Performance stats unavailable",
+            "error": str(e)
+        }

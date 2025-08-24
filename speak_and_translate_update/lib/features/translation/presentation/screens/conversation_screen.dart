@@ -10,6 +10,7 @@ import '../../domain/entities/translation.dart';
 import '../../domain/repositories/translation_repository.dart';
 import '../providers/speech_provider.dart';
 import '../providers/translation_provider.dart';
+import '../widgets/conversation_integration_widget.dart';
 
 class ConversationScreen extends ConsumerStatefulWidget {
   final String prompt;
@@ -528,10 +529,10 @@ Widget _buildStyleCard({
     final settings = ref.watch(settingsProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF000000),
+      backgroundColor: const Color(0xFF0F1419),
       appBar: AppBar(
         centerTitle: true,
-        backgroundColor: const Color(0xFF1C1C1E),
+        backgroundColor: const Color(0xFF1F2937),
         title: const Text('Multi-Style AI Conversation',
             style: TextStyle(color: Colors.white)),
         actions: [
@@ -664,49 +665,10 @@ Widget _buildStyleCard({
   }
 
   Widget _buildUserMessage(ChatMessage message, Map<String, dynamic> settings) {
-    final motherTongue = settings['motherTongue'] as String? ?? 'spanish';
-    
-    return Container(
-      padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            backgroundColor: Colors.orange[100],
-            child: const Icon(Icons.person, color: Colors.black),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  message.text,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.orange[700],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Speaking in ${_getLanguageDisplayName(motherTongue)}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.orange[300],
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    // Use ConversationIntegrationWidget for consistent styling
+    return ConversationIntegrationWidget(
+      message: message,
+      settings: settings,
     );
   }
 
@@ -733,68 +695,10 @@ Widget _buildStyleCard({
       });
     }
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            backgroundColor: Colors.blue[100],
-            child: const Icon(Icons.smart_toy),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Multi-style translation display
-                _buildMultiStyleTranslationDisplay(translation, settings),
-                
-                // Global audio control if available
-                if (translation.audioPath != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            speechState
-                                ? Icons.pause_circle_filled
-                                : Icons.play_circle_fill,
-                            color: Colors.orange[800],
-                            size: 32,
-                          ),
-                          onPressed: () {
-                            if (speechState) {
-                              ref.read(speechProvider.notifier).stop();
-                            } else {
-                              ref
-                                  .read(speechProvider.notifier)
-                                  .playAudio(translation.audioPath);
-                            }
-                          },
-                        ),
-                        Text(
-                          speechState ? 'Pause All Styles' : 'Play All Styles',
-                          style: TextStyle(
-                            color: Colors.orange[800],
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    // Use the new AI conversation integration widget
+    return ConversationIntegrationWidget(
+      message: message,
+      settings: settings,
     );
   }
 

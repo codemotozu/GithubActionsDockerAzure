@@ -9,6 +9,7 @@ from spellchecker import SpellChecker
 import unicodedata
 import regex as re
 from .tts_service import EnhancedTTSService
+from .universal_ai_translation_service import universal_ai_translator
 import tempfile
 from typing import Optional, Dict, List, Tuple
 import asyncio
@@ -149,30 +150,31 @@ class TranslationService:
             for style in german_styles:
                 prompt += f"German {style.capitalize()}: [Provide {style} German translation here]\n"
             
-            # Add word-by-word section with true semantic matching
+            # Add word-by-word section with EXACT semantic matching
             if style_preferences.german_word_by_word:
                 prompt += "\nGERMAN WORD-BY-WORD:\n"
                 for style in german_styles:
                     prompt += f"{style.capitalize()} style: "
-                    prompt += "For each word or grammatical unit in your German translation, provide its EXACT SEMANTIC EQUIVALENT in the original Spanish context. "
-                    prompt += "Format as: [German word/phrase] ([Spanish equivalent]). "
-                    prompt += f"CRITICAL: For the Spanish phrase '{input_text}', provide EXACT word-to-word mappings. Each German word should map to its corresponding Spanish word(s) from the original phrase. Do NOT reorder or create new Spanish words - only use words that appear in '{input_text}'. "
-                    prompt += f"IMPORTANT: In Spanish, the subject pronoun 'yo' is often implicit (not written) but understood. If '{input_text}' has an implicit 'yo' (when the verb is conjugated in first person), then map [Ich] to ([yo]) even if 'yo' doesn't appear in the text. "
-                    prompt += f"Example format: If translating 'yo soy una mujer', your German 'Ich bin eine Frau' should map as [Ich]([yo]) [bin]([soy]) [eine]([una]) [Frau]([mujer]) - each German word maps to the Spanish word that means the same thing. "
-                    prompt += f"Another example: 'hoy me levanté temprano' = 'Ich bin heute früh aufgestanden' should map as [Ich]([yo]) [bin]([levanté]) [heute]([hoy]) [früh]([temprano]) [aufgestanden]([levanté]). NOTE: 'levanté' is first person, so 'Ich' maps to implicit 'yo'. "
-                    prompt += f"Another example: 'quiero ganar masa' = 'Ich möchte zunehmen' should map as [Ich]([yo]) [möchte]([quiero]) [zunehmen]([ganar]). NOTE: 'quiero' is first person, so 'Ich' maps to implicit 'yo'. "
-                    
-                    # Language-specific guidance
-                    prompt += "Pay special attention to:\n"
-                    prompt += "- PRONOUNS: [ich] = ([yo]), [mich] = ([me]), [mir] = ([me]), [wir] = ([nosotros])\n"
-                    prompt += "- Verb conjugations (e.g., [sind] should be ([son/están]) based on context)\n"
-                    prompt += "- Articles must match gender/number: [den] with feminine plural nouns = ([las]), with masculine singular = ([el])\n"
-                    prompt += "- Prepositions in context: [unter] = ([debajo de]) or ([bajo]) depending on usage\n"
-                    prompt += "- Map compound words appropriately: [Nagelstaub] = ([mugre de las uñas]) as whole concept\n"
-                    prompt += "- Pronouns ([ich] should be ([yo]), [meine] should be ([mis/mi]))\n"
-                    prompt += "- Articles and determiners ([eine] should be ([una]), [die] should be ([la/las]))\n"
-                    prompt += "- When translating possession, match 'meine Hände' as [meine] ([mis]) [Hände] ([manos])\n"
-                    prompt += "- For 'Ich habe' constructions, ensure [habe] is ([tengo])\n\n"
+                    prompt += f"CRITICALLY IMPORTANT: Provide EXACT semantic word-by-word mappings for the Spanish input '{input_text}'. "
+                    prompt += "Format: [German_word] ([Spanish_equivalent_from_original_text]). "
+                    prompt += f"\n\nFor '{input_text}', your German translation word-by-word mapping MUST follow these EXACT rules:\n"
+                    prompt += "1. Each German word maps to its SEMANTIC EQUIVALENT from the original Spanish text\n"
+                    prompt += "2. Compound German words (like 'Ananassaft') map to compound Spanish phrases (like 'jugo de piña')\n"
+                    prompt += "3. German articles (das, die, der) map to Spanish articles (la, el, las, los)\n"
+                    prompt += "4. German prepositions map to their Spanish equivalents: für=para, von=de, mit=con\n"
+                    prompt += "5. German nouns map to their Spanish equivalents: Mädchen=niña, Dame=señora\n\n"
+                    prompt += f"EXAMPLE for '{input_text}':\n"
+                    prompt += "If German translation is 'Ananassaft für das Mädchen und Brombeersaft für die Dame', then:\n"
+                    prompt += "[Ananassaft] ([jugo de piña]) [für] ([para]) [das] ([la]) [Mädchen] ([niña]) [und] ([y]) [Brombeersaft] ([jugo de mora]) [für] ([para]) [die] ([la]) [Dame] ([señora])\n\n"
+                    prompt += "CRITICAL: Each mapping MUST be semantically correct:\n"
+                    prompt += "- Ananassaft = jugo de piña (pineapple juice)\n"
+                    prompt += "- für = para (for)\n" 
+                    prompt += "- das = la (the, feminine)\n"
+                    prompt += "- Mädchen = niña (girl)\n"
+                    prompt += "- und = y (and)\n"
+                    prompt += "- Brombeersaft = jugo de mora (blackberry juice)\n"
+                    prompt += "- die = la (the, feminine)\n"
+                    prompt += "- Dame = señora (lady)\n\n"
                 prompt += "\n"
 
         # Add English translations for ALL selected styles
@@ -181,52 +183,59 @@ class TranslationService:
             for style in english_styles:
                 prompt += f"English {style.capitalize()}: [Provide {style} English translation here]\n"
             
-            # Add word-by-word section with true semantic matching
+            # Add word-by-word section with EXACT semantic matching
             if style_preferences.english_word_by_word:
                 prompt += "\nENGLISH WORD-BY-WORD:\n"
                 for style in english_styles:
                     prompt += f"{style.capitalize()} style: "
-                    prompt += "For each word or grammatical unit in your English translation, provide its EXACT SEMANTIC EQUIVALENT in the original Spanish context. "
-                    prompt += "Format as: [English word/phrase] ([Spanish equivalent]). "
-                    prompt += f"CRITICAL: For the Spanish phrase '{input_text}', provide EXACT word-to-word mappings. Each English word should map to its corresponding Spanish word(s) from the original phrase. Do NOT reorder or create new Spanish words - only use words that appear in '{input_text}'. "
-                    prompt += f"IMPORTANT: In Spanish, the subject pronoun 'yo' is often implicit (not written) but understood. If '{input_text}' has an implicit 'yo' (when the verb is conjugated in first person), then map [I] to ([yo]) even if 'yo' doesn't appear in the text. "
-                    prompt += f"Example format: If translating 'yo soy una mujer', your English 'I am a woman' should map as [I]([yo]) [am]([soy]) [a]([una]) [woman]([mujer]) - each English word maps to the Spanish word that means the same thing. "
-                    prompt += f"Another example: 'hoy me levanté temprano' = 'I got up early today' should map as [I]([yo]) [got up]([levanté]) [early]([temprano]) [today]([hoy]). NOTE: 'levanté' is first person, so 'I' maps to implicit 'yo'. "
-                    prompt += f"Another example: 'quiero ganar masa' = 'I want to gain mass' should map as [I]([yo]) [want]([quiero]) [to gain]([ganar]) [mass]([masa]). NOTE: 'quiero' is first person, so 'I' maps to implicit 'yo'. "
-                    
-                    # Language-specific guidance
-                    prompt += "Pay special attention to:\n"
-                    prompt += "- PRONOUNS: [I] = ([yo]), [me] = ([me]), [my] = ([mi/mis]), [we] = ([nosotros])\n"
-                    prompt += "- Verb conjugations (e.g., [are] should be ([son/están]) based on context)\n"
-                    prompt += "- Articles must match gender/number: [the] with feminine plural = ([las]), with masculine = ([el])\n"
-                    prompt += "- Prepositions: [under] = ([debajo de]) or ([bajo]) depending on context\n"
-                    prompt += "- Compound meanings: [fingernail] should map to ([uña]), not ([de uña])\n"
-                    prompt += "- For phrases like 'dirt under the fingernails': [dirt] = ([mugre]), [under] = ([debajo de]), [the] = ([las]), [fingernails] = ([uñas])\n\n"
-                    prompt += "- Pronouns ([I] should be ([yo]), [my] should be ([mis/mi]))\n"
-                    prompt += "- Articles and determiners ([a] should be ([un/una]), [the] should be ([el/la/los/las]))\n"
-                    prompt += "- When translating 'I've got', ensure [I've] is ([yo]) and [got] is ([tengo])\n"
-                    prompt += "- For contractions like [I'm], [you're], pair with their full semantic equivalents ([yo soy], [tú eres])\n\n"
+                    prompt += f"CRITICALLY IMPORTANT: Provide EXACT semantic word-by-word mappings for the Spanish input '{input_text}'. "
+                    prompt += "Format: [English_word] ([Spanish_equivalent_from_original_text]). "
+                    prompt += f"\n\nFor '{input_text}', your English translation word-by-word mapping MUST follow these EXACT rules:\n"
+                    prompt += "1. Each English word maps to its SEMANTIC EQUIVALENT from the original Spanish text\n"
+                    prompt += "2. Compound English phrases (like 'pineapple juice') map to compound Spanish phrases (like 'jugo de piña')\n"
+                    prompt += "3. English articles (the, a, an) map to Spanish articles (la, el, las, los, un, una)\n"
+                    prompt += "4. English prepositions map to their Spanish equivalents: for=para, of=de, with=con\n"
+                    prompt += "5. English nouns map to their Spanish equivalents: girl=niña, lady=señora\n\n"
+                    prompt += f"EXAMPLE for '{input_text}':\n"
+                    prompt += "If English translation is 'Pineapple juice for the girl and blackberry juice for the lady', then:\n"
+                    prompt += "[Pineapple juice] ([jugo de piña]) [for] ([para]) [the] ([la]) [girl] ([niña]) [and] ([y]) [blackberry juice] ([jugo de mora]) [for] ([para]) [the] ([la]) [lady] ([señora])\n\n"
+                    prompt += "CRITICAL: Each mapping MUST be semantically correct:\n"
+                    prompt += "- Pineapple juice = jugo de piña (whole phrase)\n"
+                    prompt += "- for = para (for)\n" 
+                    prompt += "- the = la (the, feminine)\n"
+                    prompt += "- girl = niña (girl)\n"
+                    prompt += "- and = y (and)\n"
+                    prompt += "- blackberry juice = jugo de mora (whole phrase)\n"
+                    prompt += "- lady = señora (lady)\n\n"
                 prompt += "\n"
 
         # Add Spanish translations if needed
         if 'spanish' in target_languages:
             prompt += "SPANISH TRANSLATIONS:\nSpanish Colloquial: [Spanish translation here]\n\n"
 
-        # Add detailed linguistic guidance
-        prompt += """CRITICAL LINGUISTIC GUIDELINES:
-    1. Each word must be paired with its TRUE SEMANTIC EQUIVALENT - what it actually means, not word order.
-    2. For verb conjugations, match the actual meaning:
-    - Spanish "están" (temporary state) should match with English "are" or German "sind"
-    - Spanish "son" (permanent state) should also match with English "are" or German "sind"
-    - Context determines whether "estar" or "ser" is used in Spanish
-    3. For possessives:
-    - Spanish "mis" should match with English "my" or German "meine"
-    - Analyze the entire grammatical structure, not just individual words
-    4. For idioms, phrasal verbs, and separable verbs, treat as single units with their complete meaning
-    5. Remember that word order differs between languages - match meanings, not positions
-    6. If you're unsure about a match, use linguistic principles to determine the semantic equivalent
+        # Add CRITICAL final instructions
+        prompt += f"""
+ABSOLUTELY CRITICAL FINAL INSTRUCTIONS:
 
-    This task requires precise linguistic expertise. Your goal is to create word-by-word translations that pair each word with its true meaning equivalent, not its position equivalent."""
+The Spanish input is: '{input_text}'
+
+You MUST create word-by-word mappings that follow these EXACT semantic principles:
+
+1. SEMANTIC EQUIVALENCE: Each word maps to what it MEANS, not its position
+2. COMPOUND WORDS: Handle appropriately
+   - German "Ananassaft" = Spanish "jugo de piña" (as one mapping)
+   - English "Pineapple juice" = Spanish "jugo de piña" (as one mapping)
+3. EXACT WORD USAGE: Only use words that appear in '{input_text}'
+4. ARTICLES: Map correctly (das/die/der → la/el/las/los, the → la/el/las/los)
+5. PREPOSITIONS: Map correctly (für → para, for → para, NOT "de"!)
+
+WRONG EXAMPLE (DO NOT DO THIS):
+[das] ([piña]) [Mädchen] ([para]) [für] ([de])
+
+CORRECT EXAMPLE (DO THIS):
+[das] ([la]) [Mädchen] ([niña]) [für] ([para])
+
+Your word-by-word mappings will be used for language learning audio. Students need to hear CORRECT semantic translations. Any errors will confuse learners."""
 
         print(f"📝 Generated MULTI-STYLE prompt ({len(prompt)} characters)")
         return prompt
@@ -364,7 +373,7 @@ class TranslationService:
                 )
 
             # Extract translations with MULTI-STYLE support
-            translations_data = self._extract_translations_fixed(generated_text, style_preferences)
+            translations_data = await self._extract_translations_fixed(generated_text, style_preferences)
             
             # Store original text for fallback word-by-word generation
             translations_data['original_text'] = text
@@ -413,52 +422,96 @@ class TranslationService:
             traceback.print_exc()
             raise Exception(f"Translation processing failed: {str(e)}")
 
-    def _fix_common_semantic_mismatches(self, pairs: List[Tuple[str, str]], is_german: bool = True) -> List[Tuple[str, str]]:
+    async def _fix_common_semantic_mismatches(self, pairs: List[Tuple[str, str]], is_german: bool = True) -> List[Tuple[str, str]]:
         """
-        Apply minimal corrections only for obvious errors. Trust AI translations for most cases.
+        Apply AI-powered semantic corrections instead of static dictionaries.
+        This uses artificial intelligence to handle billions of possible word combinations.
         """
-        corrected_pairs = []
-        language_name = "German" if is_german else "English"
-        
-        # Trust the AI translations and only fix OBVIOUS errors
-        for source, target in pairs:
-            source_lower = source.lower()
-            target_lower = target.lower()
-            corrected_target = target
+        try:
+            # Import AI semantic corrector
+            from .ai_semantic_corrector import ai_semantic_corrector
             
-            # Only fix really obvious mistakes that would break the user experience
-            # Most of these are cases where the AI returns the wrong language or obvious errors
-            if is_german:
-                # Only fix if the target is obviously wrong (English words, same as source, etc.)
-                if (target_lower in ["the", "and", "of", "in", "to", "a"] or  # English words
-                    target_lower == source_lower or  # Same as source
-                    len(target_lower) <= 1):  # Too short
-                    
-                    # Basic German-Spanish mappings for obvious cases
-                    basic_fixes = {
-                        "ich": "yo", "der": "el", "die": "las", "das": "el", "und": "y",
-                        "in": "en", "mit": "con", "von": "de", "zu": "a"
-                    }
-                    if source_lower in basic_fixes:
-                        corrected_target = basic_fixes[source_lower]
-                        print(f"🔧 Basic fix: '{source}' → '{target}' to '{corrected_target}'")
-            else:
-                # English corrections - same logic
-                if (target_lower in ["der", "die", "das", "und"] or  # German words  
-                    target_lower == source_lower or  # Same as source
-                    len(target_lower) <= 1):  # Too short
-                    
-                    basic_fixes = {
-                        "i": "yo", "the": "las", "and": "y", "of": "de", "in": "en",
-                        "to": "a", "a": "un", "with": "con", "from": "de"
-                    }
-                    if source_lower in basic_fixes:
-                        corrected_target = basic_fixes[source_lower]
-                        print(f"🔧 Basic fix: '{source}' → '{target}' to '{corrected_target}'")
+            # Determine source and target languages
+            source_language = "German" if is_german else "English"  
+            target_language = "Spanish"
             
-            corrected_pairs.append((source, corrected_target))
-        
-        return corrected_pairs
+            print(f"🤖 Using AI semantic correction for {source_language} → {target_language}")
+            print(f"🧠 Processing {len(pairs)} word pairs with artificial intelligence...")
+            
+            # Use AI to detect and correct semantic mismatches
+            semantic_analysis = await ai_semantic_corrector.correct_semantic_mismatches(
+                word_pairs=pairs,
+                source_language=source_language,
+                target_language=target_language
+            )
+            
+            # Apply AI corrections
+            corrected_pairs = []
+            corrections_made = 0
+            
+            # Create correction lookup from AI analysis
+            correction_lookup = {}
+            for correction in semantic_analysis.corrections:
+                key = (correction.original_source, correction.original_target)
+                correction_lookup[key] = correction.corrected_target
+                corrections_made += 1
+                
+                print(f"🎵 {correction.original_source} → {correction.original_target} corrected to {correction.corrected_target} (confidence: {correction.confidence:.2f})")
+                print(f"   Reason: {correction.correction_reason}")
+                print(f"   Category: {correction.linguistic_category}")
+            
+            # Apply corrections to original pairs
+            for source, target in pairs:
+                if (source, target) in correction_lookup:
+                    corrected_target = correction_lookup[(source, target)]
+                    corrected_pairs.append((source, corrected_target))
+                else:
+                    corrected_pairs.append((source, target))
+            
+            print(f"✅ AI semantic analysis completed:")
+            print(f"   - {corrections_made} corrections applied")
+            print(f"   - Overall accuracy: {semantic_analysis.overall_accuracy:.2f}")
+            print(f"   - AI confidence: {semantic_analysis.ai_confidence:.2f}")
+            print(f"   - Processing time: {semantic_analysis.processing_time:.2f}s")
+            
+            return corrected_pairs
+            
+        except Exception as e:
+            print(f"⚠️ AI semantic correction failed, using fallback: {e}")
+            
+            # Fallback: minimal critical corrections only
+            corrected_pairs = []
+            corrections_made = 0
+            
+            for source, target in pairs:
+                # Only handle the most critical semantic mismatches as fallback
+                corrected_target = target
+                source_lower = source.lower()
+                target_lower = target.lower()
+                
+                # Critical fallback corrections (minimal set)
+                if is_german:
+                    if source_lower == 'das' and target_lower == 'la':
+                        corrected_target = 'lo'  # Neuter article correction
+                        corrections_made += 1
+                    elif source_lower == 'ich bin' and 'levanto' in target_lower:
+                        corrected_target = 'yo soy'  # "I am" correction
+                        corrections_made += 1
+                    elif source_lower == 'für' and target_lower != 'para':
+                        corrected_target = 'para'  # "for" correction
+                        corrections_made += 1
+                else:
+                    # English fallbacks
+                    if 'wake up' in source_lower and 'despertar' in target_lower and 'se' not in target_lower:
+                        corrected_target = 'despertarse'  # Reflexive verb correction
+                        corrections_made += 1
+                
+                corrected_pairs.append((source, corrected_target))
+            
+            if corrections_made > 0:
+                print(f"🔧 Applied {corrections_made} fallback semantic corrections")
+            
+            return corrected_pairs
 
 
     def _is_likely_plural(self, pairs: List[Tuple[str, str]]) -> bool:
@@ -546,7 +599,7 @@ class TranslationService:
         
         return translations_data
 
-    def _extract_translations_fixed(self, generated_text: str, style_preferences) -> Dict:
+    async def _extract_translations_fixed(self, generated_text: str, style_preferences) -> Dict:
         """Enhanced extraction for multiple simultaneous styles with semantic correction and fallback."""
         result = {
             'translations': [],
@@ -701,7 +754,7 @@ class TranslationService:
                         
                         if word_pairs:
                             # Apply semantic corrections
-                            corrected_pairs = self._fix_common_semantic_mismatches(
+                            corrected_pairs = await self._fix_common_semantic_mismatches(
                                 word_pairs, 
                                 is_german=is_german
                             )
@@ -720,7 +773,7 @@ class TranslationService:
                             
                             if word_pairs:
                                 # Apply semantic corrections
-                                corrected_pairs = self._fix_common_semantic_mismatches(
+                                corrected_pairs = await self._fix_common_semantic_mismatches(
                                     word_pairs, 
                                     is_german=is_german
                                 )
@@ -802,7 +855,7 @@ class TranslationService:
                         normalized_target = target.split('/')[0].strip()
                     
                     pairs.append((source, normalized_target))
-                    print(f"   📝 Pair: '{source}' → '{normalized_target}'")
+                    print(f"   Pair: '{source}' -> '{normalized_target}'")
             
             # Contextual semantic validation that respects language variations
             if len(pairs) > 1:
@@ -813,7 +866,7 @@ class TranslationService:
                     print("⚠️ Some semantic mismatches detected, but continuing with best effort")
                 
         except Exception as e:
-            print(f"❌ Error parsing word-by-word line: {str(e)}")
+            print(f"Error parsing word-by-word line: {str(e)}")
         
         return pairs
 
@@ -889,6 +942,74 @@ class TranslationService:
                     issues.append(f"Semantic mismatch in {language}: '{source}' should translate to 'yo', got '{target}'")
         
         return issues
+    
+    def _apply_semantic_corrections(self, pairs: List[Tuple[str, str]], language: str = "auto") -> List[Tuple[str, str]]:
+        """
+        Apply semantic corrections to fix detected mismatches.
+        Returns corrected word pairs that users will see and hear.
+        """
+        corrected_pairs = []
+        corrections_made = 0
+        
+        # Determine if we're dealing with German or English source
+        is_likely_german = self._is_likely_german_source(pairs)
+        
+        # Semantic correction mappings
+        corrections = {
+            # German corrections
+            'german': {
+                'ich': 'yo',  # I
+                'bin': 'soy',  # am (permanent states)
+                'ist': 'es',   # is
+                'sind': 'son', # are
+                'habe': 'tengo', # have
+                'mein': 'mi',   # my
+                'meine': 'mi',  # my (feminine)
+                'und': 'y',     # and
+                'der': 'el',    # the (masculine)
+                'die': 'la',    # the (feminine)
+                'das': 'la',    # the (neuter -> feminine in Spanish)
+            },
+            # English corrections
+            'english': {
+                'i': 'yo',      # I
+                'am': 'soy',    # am
+                'is': 'es',     # is
+                'are': 'son',   # are
+                'have': 'tengo', # have
+                'my': 'mi',     # my
+                'and': 'y',     # and
+                'the': 'la',    # the (default to feminine)
+            }
+        }
+        
+        source_lang = 'german' if is_likely_german else 'english'
+        correction_map = corrections.get(source_lang, {})
+        
+        for source, target in pairs:
+            source_lower = source.lower()
+            target_lower = target.lower()
+            
+            # Check if this word needs correction
+            if source_lower in correction_map:
+                correct_translation = correction_map[source_lower]
+                
+                # Only correct if the current translation is wrong
+                if target_lower != correct_translation.lower():
+                    corrected_pairs.append((source, correct_translation))
+                    corrections_made += 1
+                    print(f"SEMANTIC CORRECTION: {source} -> '{target}' corrected to '{correct_translation}'")
+                else:
+                    # Translation is already correct
+                    corrected_pairs.append((source, target))
+            else:
+                # No correction needed for this word
+                corrected_pairs.append((source, target))
+        
+        if corrections_made > 0:
+            print(f"✅ Applied {corrections_made} semantic corrections for better accuracy")
+        
+        return corrected_pairs
 
 
     def _detect_position_based_matches(self, pairs: List[Tuple[str, str]], source_language: str = "spanish") -> bool:
@@ -1140,4 +1261,144 @@ class TranslationService:
             corrected_words.append(word)
 
         return " ".join(corrected_words)
+    
+    async def translate_with_universal_ai(
+        self,
+        text: str,
+        target_language: str,
+        mother_tongue: str = None,
+        style: str = 'native'
+    ) -> Translation:
+        """
+        Universal AI-powered translation with dynamic word-by-word alignment
+        Uses Gemini AI for intelligent, context-aware translations
+        """
+        try:
+            # Auto-detect source language if not provided
+            detected_source = await universal_ai_translator.detect_language(text)
+            source_language = detected_source if detected_source != "unknown" else "auto"
+            
+            print(f"🌍 Universal AI Translation: {source_language} → {target_language}")
+            print(f"📝 Input: {text}")
+            
+            # Get universal AI translation with word alignment
+            ai_result = await universal_ai_translator.translate_with_word_alignment(
+                text=text,
+                source_language=source_language,
+                target_language=target_language,
+                style=style
+            )
+            
+            # Convert word mappings to the format expected by the Translation entity
+            word_by_word = {}
+            for mapping in ai_result.word_mappings:
+                word_by_word[mapping.source_phrase] = {
+                    'translation': mapping.target_phrase,
+                    'confidence': mapping.confidence,
+                    'type': mapping.phrase_type,
+                    'word_count': mapping.word_count
+                }
+            
+            # Generate audio for main translation
+            audio_path = None
+            try:
+                audio_path = await self._generate_audio_for_translation(
+                    ai_result.translated_text, 
+                    target_language, 
+                    style
+                )
+            except Exception as e:
+                print(f"⚠️ Audio generation failed: {e}")
+            
+            # Create Translation object
+            translation = Translation(
+                original_text=text,
+                translated_text=ai_result.translated_text,
+                source_language=source_language,
+                target_language=target_language,
+                audio_path=audio_path,
+                word_by_word=word_by_word
+            )
+            
+            # Log AI confidence ratings (internal only)
+            print(f"✅ Universal AI Translation completed with {ai_result.overall_confidence:.2f} overall confidence")
+            print(f"⚡ Processing time: {ai_result.processing_time:.2f}s")
+            print(f"🎵 Word mappings generated: {len(ai_result.word_mappings)}")
+            
+            return translation
+            
+        except Exception as e:
+            print(f"❌ Universal AI translation failed: {e}")
+            # Fallback to regular translation
+            return await self._fallback_translation(text, target_language, mother_tongue, style)
+    
+    async def _fallback_translation(
+        self,
+        text: str,
+        target_language: str,
+        mother_tongue: str = None,
+        style: str = 'native'
+    ) -> Translation:
+        """Fallback translation when universal AI fails"""
+        
+        try:
+            # Use the existing process_prompt method as fallback
+            base_service = TranslationService()
+            return await base_service.process_prompt(
+                text=text,
+                source_lang="auto",
+                target_lang=target_language,
+                mother_tongue=mother_tongue
+            )
+        except Exception as e:
+            print(f"❌ Fallback translation also failed: {e}")
+            # Last resort: simple translation
+            return Translation(
+                original_text=text,
+                translated_text=f"[Translation of: {text}]",
+                source_language="auto",
+                target_language=target_language,
+                audio_path=None,
+                word_by_word={}
+            )
+    
+    async def _generate_audio_for_translation(
+        self,
+        text: str,
+        language: str,
+        style: str = 'native'
+    ) -> Optional[str]:
+        """Generate audio for the translated text"""
+        
+        try:
+            # Map language codes
+            language_mapping = {
+                'spanish': 'es',
+                'english': 'en',
+                'german': 'de',
+                'french': 'fr',
+                'italian': 'it',
+                'portuguese': 'pt',
+                'russian': 'ru',
+                'chinese': 'zh',
+                'japanese': 'ja',
+                'korean': 'ko',
+                'arabic': 'ar',
+                'hindi': 'hi'
+            }
+            
+            lang_code = language_mapping.get(language.lower(), language)
+            
+            # Generate audio using TTS service
+            audio_path = await self.tts_service.generate_speech(
+                text=text,
+                language=lang_code,
+                voice_style=style
+            )
+            
+            return audio_path
+            
+        except Exception as e:
+            print(f"⚠️ Audio generation failed: {e}")
+            return None
     

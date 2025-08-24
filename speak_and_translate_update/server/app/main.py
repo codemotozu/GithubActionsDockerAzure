@@ -33,7 +33,7 @@ class UTF8StreamHandler(logging.StreamHandler):
         except Exception:
             self.handleError(record)
 
-# Configure logging first to capture all events----
+# Configure logging first to capture all events
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s.%(msecs)03d - %(name)s - %(levelname)s - %(message)s',
@@ -100,6 +100,23 @@ if __name__ == "__main__":
     logger.info(f"Azure Region: {os.getenv('AZURE_SPEECH_REGION', 'not configured')}")
     logger.info(f"TTS Device: {os.getenv('TTS_DEVICE', 'cpu')}")
     logger.info(f"Container Env: {os.getenv('CONTAINER_ENV', 'false')}")
+
+    # Initialize high-speed neural translation optimization (simplified to avoid timeout issues)
+    logger.info(get_log_message("🧠 Initializing High-Speed Neural Translation System", 
+                                "[NEURAL] Initializing High-Speed Neural Translation System"))
+    
+    try:
+        # Import the high-speed optimizer (initialization only, no complex startup)
+        from app.application.services.high_speed_optimizer import high_speed_optimizer
+        
+        # Simple initialization without complex batching to avoid timeout issues
+        logger.info(get_log_message("🚀 Neural translation optimizer ready (simplified mode)", 
+                                  "[NEURAL] Neural translation optimizer ready (simplified mode)"))
+        
+    except Exception as e:
+        logger.warning(get_log_message(f"⚠️ High-speed optimizer initialization failed: {e}", 
+                                     f"[WARN] High-speed optimizer initialization failed: {e}"))
+        logger.info("Continuing with standard translation service...")
 
     # Start the server with detailed UVicorn configuration
     uvicorn.run(

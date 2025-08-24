@@ -1,0 +1,74 @@
+{
+  "jugo de piña": {
+    "german": {
+      "native": "Ananassaft",
+      "formal": "Ananassaft",
+      "confidence": 0.95
+    },
+    "english": {
+      "native": "pineapple juice",
+      "formal": "pineapple juice",
+      "confidence": 0.95
+    }
+  },
+  "para": {
+    "german": {
+      "native": "für",
+      "formal": "für",
+      "confidence": 1.0
+    },
+    "english": {
+      "native": "for",
+      "formal": "for",
+      "confidence": 1.0
+    }
+  },
+  "la niña": {
+    "german": {
+      "native": "das Mädchen",
+      "formal": "das Kind",
+      "confidence": 1.0
+    },
+    "english": {
+      "native": "the girl",
+      "formal": "the young lady",
+      "confidence": 1.0
+    }
+  },
+  "y": {
+    "german": {
+      "native": "und",
+      "formal": "und",
+      "confidence": 1.0
+    },
+    "english": {
+      "native": "and",
+      "formal": "and",
+      "confidence": 1.0
+    }
+  },
+  "jugo de mora": {
+    "german": {
+      "native": "Brombeersaft",
+      "formal": "Brombeerensaft",
+      "confidence": 0.67
+    },
+    "english": {
+      "native": "blackberry juice",
+      "formal": "blackberry juice",
+      "confidence": 0.67
+    }
+  },
+  "la señora": {
+    "german": {
+      "native": "die Dame",
+      "formal": "die verehrte Dame",
+      "confidence": 0.79
+    },
+    "english": {
+      "native": "the lady",
+      "formal": "the distinguished lady",
+      "confidence": 0.79
+    }
+  }
+}

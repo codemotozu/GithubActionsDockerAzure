@@ -16,3 +16,23 @@ azure-core==1.29.5
 aiohttp==3.9.1
 requests==2.31.0
 PyAudio==0.2.13
+
+# Neural Machine Translation Dependencies
+tensorflow==2.15.0
+numpy==1.24.3
+scikit-learn==1.3.0
+torch==2.1.0
+transformers==4.35.0
+sentence-transformers==2.2.2
+nltk==3.8.1
+spacy==3.7.2
+
+# High-Performance Computing
+numba==0.58.1
+faiss-cpu==1.7.4
+cython==3.0.5
+
+# Additional ML utilities
+joblib==1.3.2
+tqdm==4.66.1
+matplotlib==3.7.2
