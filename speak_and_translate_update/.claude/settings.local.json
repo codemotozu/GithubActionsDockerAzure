@@ -21,7 +21,9 @@
       "Bash(SET PORT=8001)",
       "Bash(touch:*)",
       "Bash(grep:*)",
-      "Bash(pip show:*)"
+      "Bash(pip show:*)",
+      "Bash(del:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": [],
