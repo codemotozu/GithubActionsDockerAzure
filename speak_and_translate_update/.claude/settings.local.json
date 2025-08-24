@@ -23,7 +23,8 @@
       "Bash(grep:*)",
       "Bash(pip show:*)",
       "Bash(del:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": [],
