@@ -9,7 +9,6 @@ from spellchecker import SpellChecker
 import unicodedata
 import regex as re
 from .tts_service import EnhancedTTSService
-from .universal_ai_translation_service import universal_ai_translator
 import tempfile
 from typing import Optional, Dict, List, Tuple
 import asyncio
@@ -1275,55 +1274,22 @@ Your word-by-word mappings will be used for language learning audio. Students ne
         """
         try:
             # Auto-detect source language if not provided
-            detected_source = await universal_ai_translator.detect_language(text)
-            source_language = detected_source if detected_source != "unknown" else "auto"
+            detected_source = self._detect_input_language(text, mother_tongue)
+            source_language = detected_source if detected_source else "auto"
             
             print(f"🌍 Universal AI Translation: {source_language} → {target_language}")
             print(f"📝 Input: {text}")
             
-            # Get universal AI translation with word alignment
-            ai_result = await universal_ai_translator.translate_with_word_alignment(
+            # Use existing process_prompt method as the main translation logic
+            translation = await self.process_prompt(
                 text=text,
-                source_language=source_language,
-                target_language=target_language,
-                style=style
+                source_lang=source_language,
+                target_lang=target_language,
+                mother_tongue=mother_tongue,
+                style_preferences=[style] if style else ['native']
             )
             
-            # Convert word mappings to the format expected by the Translation entity
-            word_by_word = {}
-            for mapping in ai_result.word_mappings:
-                word_by_word[mapping.source_phrase] = {
-                    'translation': mapping.target_phrase,
-                    'confidence': mapping.confidence,
-                    'type': mapping.phrase_type,
-                    'word_count': mapping.word_count
-                }
-            
-            # Generate audio for main translation
-            audio_path = None
-            try:
-                audio_path = await self._generate_audio_for_translation(
-                    ai_result.translated_text, 
-                    target_language, 
-                    style
-                )
-            except Exception as e:
-                print(f"⚠️ Audio generation failed: {e}")
-            
-            # Create Translation object
-            translation = Translation(
-                original_text=text,
-                translated_text=ai_result.translated_text,
-                source_language=source_language,
-                target_language=target_language,
-                audio_path=audio_path,
-                word_by_word=word_by_word
-            )
-            
-            # Log AI confidence ratings (internal only)
-            print(f"✅ Universal AI Translation completed with {ai_result.overall_confidence:.2f} overall confidence")
-            print(f"⚡ Processing time: {ai_result.processing_time:.2f}s")
-            print(f"🎵 Word mappings generated: {len(ai_result.word_mappings)}")
+            print(f"✅ Universal AI Translation completed successfully")
             
             return translation
             
