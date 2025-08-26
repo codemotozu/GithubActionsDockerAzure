@@ -336,11 +336,38 @@ class TranslationStyle {
   factory TranslationStyle.fromJson(Map<String, dynamic> json) {
     final pairs = <WordPair>[];
     
+    print('[STYLE_JSON] Parsing TranslationStyle: ${json['name']}');
+    print('[STYLE_JSON] Translation: ${json['translation']}');
+    print('[STYLE_JSON] Word pairs type: ${json['word_pairs']?.runtimeType}');
+    
     if (json['word_pairs'] != null && json['word_pairs'] is List) {
-      pairs.addAll(
-        (json['word_pairs'] as List).map((pairJson) => WordPair.fromJson(pairJson))
-      );
+      final wordPairsList = json['word_pairs'] as List;
+      print('[STYLE_JSON] Found ${wordPairsList.length} word pairs to parse');
+      
+      for (int i = 0; i < wordPairsList.length; i++) {
+        final pairData = wordPairsList[i];
+        print('[STYLE_JSON] Parsing word pair $i: ${pairData.runtimeType} - $pairData');
+        
+        try {
+          if (pairData is Map<String, dynamic>) {
+            // New AI format from neural optimizer - direct Map
+            print('[AI_DATA] Using AI Map format: source=${pairData['source']}, spanish=${pairData['spanish']}');
+            pairs.add(WordPair.fromJson(pairData));
+          } else if (pairData is Map) {
+            // Convert other Map types to String dynamic Map
+            final convertedData = Map<String, dynamic>.from(pairData);
+            print('[AI_DATA] Converted Map format: source=${convertedData['source']}, spanish=${convertedData['spanish']}');
+            pairs.add(WordPair.fromJson(convertedData));
+          } else {
+            print('[STYLE_JSON] Unknown word pair format: ${pairData.runtimeType} - $pairData');
+          }
+        } catch (e) {
+          print('[STYLE_JSON] Error parsing word pair $i: $e');
+        }
+      }
     }
+    
+    print('[STYLE_JSON] Successfully parsed ${pairs.length} word pairs for ${json['name']}');
     
     return TranslationStyle(
       name: json['name'] as String,
@@ -409,11 +436,26 @@ class WordPair {
   });
   
   factory WordPair.fromJson(Map<String, dynamic> json) {
+    // Handle AI neural optimizer format
+    final sourceWord = json['source']?.toString() ?? '';
+    final spanishWord = json['spanish']?.toString() ?? '';
+    final order = int.tryParse(json['order']?.toString() ?? '0') ?? 0;
+    final isPhrasalVerb = json['is_phrasal_verb'] == true || json['is_phrasal_verb'] == 'true';
+    
+    print('[WORD_PAIR] Creating WordPair: "$sourceWord" → "$spanishWord" (order: $order, phrasal: $isPhrasalVerb)');
+    
+    // Check if we have real AI data or placeholder data
+    if (spanishWord.contains('_es') || spanishWord == 'EMERGENCY_FALLBACK') {
+      print('[WORD_PAIR_ERROR] Placeholder data detected: $spanishWord - AI sync issue!');
+    } else if (spanishWord.isNotEmpty && sourceWord.isNotEmpty) {
+      print('[WORD_PAIR_SUCCESS] Real AI data: $sourceWord → $spanishWord');
+    }
+    
     return WordPair(
-      sourceWord: json['source'] as String,
-      spanishEquivalent: json['spanish'] as String,
-      order: json['order'] as int? ?? 0,
-      isPhrasalVerb: json['is_phrasal_verb'] as bool? ?? false,
+      sourceWord: sourceWord,
+      spanishEquivalent: spanishWord,
+      order: order,
+      isPhrasalVerb: isPhrasalVerb,
     );
   }
   

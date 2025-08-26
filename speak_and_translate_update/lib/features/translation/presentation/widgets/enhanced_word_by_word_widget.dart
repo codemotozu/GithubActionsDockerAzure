@@ -69,660 +69,470 @@ class _EnhancedWordByWordWidgetState extends State<EnhancedWordByWordWidget>
     return Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1F2937), Color(0xFF111827)],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        color: const Color(0xFF2D3748),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         children: [
-          _buildAIAssistantHeader(),
           _buildTranslationContent(),
         ],
       ),
     );
   }
 
-  Widget _buildAIAssistantHeader() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-      ),
-      child: Row(
-        children: [
-          // AI Avatar with pulse animation
-          AnimatedBuilder(
-            animation: _aiPulseAnimation,
-            builder: (context, child) {
-              return Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color.lerp(const Color(0xFF6366F1), const Color(0xFF8B5CF6), _aiPulseAnimation.value)!,
-                      Color.lerp(const Color(0xFF8B5CF6), const Color(0xFF6366F1), _aiPulseAnimation.value)!,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF6366F1).withOpacity(0.3),
-                      blurRadius: 15,
-                      spreadRadius: _aiPulseAnimation.value * 3,
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.psychology_alt,
-                  color: Colors.white,
-                  size: 32,
-                ),
-              );
-            },
-          ),
-          
-          const SizedBox(width: 16),
-          
-          // AI Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'AI Neural Translation',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  'Word-by-word analysis with confidence ratings',
-                  style: TextStyle(
-                    color: Colors.grey[400],
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.green.withOpacity(0.3)),
-                      ),
-                      child: const Text(
-                        'AI POWERED',
-                        style: TextStyle(
-                          color: Colors.green,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.orange.withOpacity(0.3)),
-                      ),
-                      child: const Text(
-                        'REAL-TIME',
-                        style: TextStyle(
-                          color: Colors.orange,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          
-          // Master Play Button
-          GestureDetector(
-            onTap: _playAllStyles,
-            child: Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFEF4444), Color(0xFFF97316)],
-                ),
-                borderRadius: BorderRadius.circular(25),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFEF4444).withOpacity(0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.play_arrow,
-                color: Colors.white,
-                size: 28,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildTranslationContent() {
     final styleData = widget.translationData['style_data'] as List<dynamic>? ?? [];
     
+    // CRITICAL DEBUG: Print EVERYTHING we're receiving to find sync issue
+    print('🔍 [ENHANCED_WIDGET] ======== RECEIVING DATA ========');
+    print('🔍 [ENHANCED_WIDGET] Total styles received: ${styleData.length}');
+    print('🔍 [ENHANCED_WIDGET] Full translationData keys: ${widget.translationData.keys.toList()}');
+    
+    for (int i = 0; i < styleData.length; i++) {
+      final style = styleData[i] as Map<String, dynamic>;
+      final styleName = style['style'] ?? 'unknown';
+      final translation = style['translation'] ?? 'no translation';
+      final wordPairs = style['word_pairs'] as List<dynamic>? ?? [];
+      
+      print('🎯 [ENHANCED_WIDGET] Style $i: "$styleName"');
+      print('🎯 [ENHANCED_WIDGET] Translation: "$translation"');
+      print('🎯 [ENHANCED_WIDGET] Word pairs count: ${wordPairs.length}');
+      
+      // Check EACH word pair for real AI data vs placeholders
+      for (int j = 0; j < wordPairs.length; j++) {
+        final wordPair = wordPairs[j];
+        if (wordPair is List && wordPair.length >= 2) {
+          final sourceWord = wordPair[0].toString();
+          final targetWord = wordPair[1].toString();
+          final confidence = wordPair.length > 2 ? wordPair[2].toString() : 'unknown';
+          final explanation = wordPair.length > 3 ? wordPair[3].toString() : '';
+          
+          print('   📝 [WORD_PAIR] $j: "$sourceWord" → "$targetWord" (${confidence})');
+          if (explanation.isNotEmpty) {
+            print('   💡 [EXPLANATION] $explanation');
+          }
+          
+          // Check if this looks like placeholder data
+          if (targetWord.contains('_es') || targetWord == 'EMERGENCY_FALLBACK') {
+            print('   ⚠️ [PLACEHOLDER_DETECTED] This is NOT real AI translation!');
+          } else if (targetWord.length > 2 && !targetWord.contains('_')) {
+            print('   ✅ [REAL_AI_DATA] This looks like real AI translation');
+          }
+        }
+      }
+    }
+    print('🔍 [ENHANCED_WIDGET] ======== END DATA DEBUG ========');
+    
+    if (styleData.isEmpty) {
+      print('❌ [ENHANCED_WIDGET] NO STYLE DATA - This will show empty UI');
+      return Container(
+        padding: const EdgeInsets.all(16),
+        child: const Text(
+          'No translation styles available',
+          style: TextStyle(color: Colors.white),
+        ),
+      );
+    }
+    
+    // Group styles by language
+    final germanStyles = <Map<String, dynamic>>[];
+    final englishStyles = <Map<String, dynamic>>[];
+    
+    for (final style in styleData) {
+      final styleMap = style as Map<String, dynamic>;
+      final styleName = styleMap['style'] as String? ?? '';
+      
+      if (styleName.contains('german')) {
+        germanStyles.add(styleMap);
+      } else if (styleName.contains('english')) {
+        englishStyles.add(styleMap);
+      }
+    }
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          for (var i = 0; i < styleData.length; i++)
-            _buildLanguageStyleSection(styleData[i] as Map<String, dynamic>, i),
-          const SizedBox(height: 20),
+          if (germanStyles.isNotEmpty) _buildLanguageSection('German', '🇩🇪', const Color(0xFFFFB800), germanStyles),
+          if (germanStyles.isNotEmpty && englishStyles.isNotEmpty) const SizedBox(height: 20),
+          if (englishStyles.isNotEmpty) _buildLanguageSection('English', '🇺🇸', const Color(0xFF3B82F6), englishStyles),
         ],
       ),
     );
   }
 
-  Widget _buildLanguageStyleSection(Map<String, dynamic> styleData, int index) {
-    final styleName = styleData['style'] as String? ?? '';
-    final translation = styleData['translation'] as String? ?? '';
-    final wordPairs = styleData['word_pairs'] as List<dynamic>? ?? [];
-    
-    final isGerman = styleName.contains('german');
-    final isNative = styleName.contains('native');
-    final isFormal = styleName.contains('formal');
-    
-    final languageInfo = _getLanguageInfo(isGerman, isNative);
-    final isCurrentlyPlaying = _currentPlayingStyle == styleName;
-    
+  Widget _buildLanguageSection(String language, String flag, Color primaryColor, List<Map<String, dynamic>> styles) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2D3748),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Language Header with Flag
-          _buildLanguageHeader(languageInfo, isCurrentlyPlaying),
-          const SizedBox(height: 16),
-          
-          // Translation Bubble
-          _buildTranslationBubble(
-            translation, 
-            languageInfo, 
-            isNative ? 'Native' : 'Formal',
-            isCurrentlyPlaying
-          ),
-          const SizedBox(height: 16),
-          
-          // Word-by-Word Interactive Section
-          if (wordPairs.isNotEmpty)
-            _buildInteractiveWordSection(wordPairs, languageInfo, styleName),
-        ],
-      ),
-    );
-  }
-
-  Map<String, dynamic> _getLanguageInfo(bool isGerman, bool isNative) {
-    if (isGerman) {
-      return {
-        'name': 'German',
-        'flag': '🇩🇪',
-        'primaryColor': const Color(0xFFFFB800),
-        'secondaryColor': const Color(0xFFFFC107),
-      };
-    } else {
-      return {
-        'name': 'English',
-        'flag': '🇺🇸',
-        'primaryColor': const Color(0xFF3B82F6),
-        'secondaryColor': const Color(0xFF60A5FA),
-      };
-    }
-  }
-
-  Widget _buildLanguageHeader(Map<String, dynamic> languageInfo, bool isPlaying) {
-    return Row(
-      children: [
-        // Flag Container
-        Container(
-          width: 36,
-          height: 26,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.grey[600]!),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              languageInfo['flag'],
-              style: const TextStyle(fontSize: 18),
-            ),
-          ),
-        ),
-        
-        const SizedBox(width: 12),
-        
-        // Language Name
-        Text(
-          languageInfo['name'],
-          style: TextStyle(
-            color: languageInfo['primaryColor'],
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        
-        const SizedBox(width: 16),
-        
-        // WORD-BY-WORD Badge
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFF6B35), Color(0xFFFF8E53)],
-            ),
-            borderRadius: BorderRadius.circular(15),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFFF6B35).withOpacity(0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.hearing,
-                color: Colors.white,
-                size: 14,
-              ),
-              const SizedBox(width: 4),
-              const Text(
-                'WORD-BY-WORD',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-        
-        const Spacer(),
-        
-        // Playing Indicator
-        if (isPlaying)
+          // Language Header
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(20),
+              color: Colors.black.withOpacity(0.2),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
+                Text(
+                  flag,
+                  style: const TextStyle(fontSize: 24),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  language,
+                  style: TextStyle(
+                    color: primaryColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(width: 6),
-                const Text(
-                  'PLAYING',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF8C00),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'WORD-BY-WORD',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-      ],
+          
+          // Style Sections
+          for (final style in styles) _buildStyleSection(style, primaryColor),
+        ],
+      ),
     );
   }
-
-  Widget _buildTranslationBubble(
-    String translation, 
-    Map<String, dynamic> languageInfo, 
-    String styleLabel,
-    bool isPlaying
-  ) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isPlaying
-              ? [
-                  languageInfo['primaryColor'].withOpacity(0.3),
-                  languageInfo['secondaryColor'].withOpacity(0.2),
-                ]
-              : [
-                  languageInfo['primaryColor'].withOpacity(0.15),
-                  languageInfo['primaryColor'].withOpacity(0.05),
-                ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isPlaying 
-              ? languageInfo['primaryColor'].withOpacity(0.6)
-              : languageInfo['primaryColor'].withOpacity(0.3),
-          width: 1.5,
-        ),
-        boxShadow: isPlaying
-            ? [
-                BoxShadow(
-                  color: languageInfo['primaryColor'].withOpacity(0.3),
-                  blurRadius: 15,
-                  spreadRadius: 2,
-                ),
-              ]
-            : null,
-      ),
+  
+  Widget _buildStyleSection(Map<String, dynamic> styleData, Color primaryColor) {
+    final styleName = styleData['style'] as String? ?? '';
+    final translation = styleData['translation'] as String? ?? '';
+    final wordPairs = styleData['word_pairs'] as List<dynamic>? ?? [];
+    
+    // Determine style type for display
+    String styleType = 'Native';
+    if (styleName.contains('colloquial')) styleType = 'Colloquial';
+    else if (styleName.contains('informal')) styleType = 'Informal'; 
+    else if (styleName.contains('formal')) styleType = 'Formal';
+    
+    final language = styleName.contains('german') ? 'german' : 'english';
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Style Badge
+          // Style Header
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: languageInfo['primaryColor'],
-              borderRadius: BorderRadius.circular(12),
+              color: primaryColor,
+              borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              '${languageInfo['name']} $styleLabel',
+              '${language == 'german' ? 'German' : 'English'} $styleType',
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
           
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           
-          // Translation Text
+          // Complete Translation Text
           Text(
             translation,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 17,
-              height: 1.5,
+              fontSize: 16,
+              height: 1.4,
               fontWeight: FontWeight.w500,
             ),
           ),
           
           const SizedBox(height: 12),
           
-          // Subtitle
-          Text(
-            '(here you must the word by word translation for ${languageInfo['name'].toLowerCase()} ${styleLabel.toLowerCase()})',
-            style: TextStyle(
-              color: Colors.grey[400],
-              fontSize: 12,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
+          // Word-by-Word Section
+          if (wordPairs.isNotEmpty) ...[
+            _buildWordByWordGrid(wordPairs, primaryColor, styleName),
+          ] else ...[
+            // Create fallback word pairs from the translation text
+            _buildWordByWordGrid(_createFallbackWordPairs(translation, language), primaryColor, styleName),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildInteractiveWordSection(
-    List<dynamic> wordPairs, 
-    Map<String, dynamic> languageInfo,
-    String styleName
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF2D3748).withOpacity(0.8),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[700]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Section Header
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      languageInfo['primaryColor'].withOpacity(0.2),
-                      languageInfo['primaryColor'].withOpacity(0.1),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.touch_app,
-                  color: languageInfo['primaryColor'],
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Interactive Word Learning',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '${wordPairs.length} words',
-                style: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // Word Buttons Grid
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              for (var i = 0; i < wordPairs.length; i++)
-                _buildAnimatedWordButton(wordPairs[i], i, languageInfo, styleName),
-            ],
-          ),
-        ],
-      ),
+  Widget _buildWordByWordGrid(List<dynamic> wordPairs, Color primaryColor, String styleName) {
+    return Column(
+      children: wordPairs.map((pairData) {
+        final pairList = pairData as List<dynamic>;
+        if (pairList.length < 2) return const SizedBox.shrink();
+        
+        final sourceWord = pairList[0].toString();
+        final targetWord = pairList[1].toString();
+        final confidence = pairList.length > 2 ? double.tryParse(pairList[2].toString()) ?? 0.85 : 0.85;
+        final explanation = pairList.length > 3 ? pairList[3].toString() : '';
+        final isCurrentWord = _currentPlayingWord == '$styleName:$sourceWord';
+        
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: _buildWordChipWithExplanation(sourceWord, targetWord, confidence, explanation, primaryColor, styleName, isCurrentWord),
+        );
+      }).toList(),
     );
   }
-
-  Widget _buildAnimatedWordButton(
-    dynamic wordPair, 
-    int index, 
-    Map<String, dynamic> languageInfo,
-    String styleName
-  ) {
-    final pairList = wordPair as List<dynamic>? ?? [];
-    if (pairList.length < 2) return const SizedBox.shrink();
-    
-    final sourceWord = pairList[0].toString();
-    final targetWord = pairList[1].toString();
-    final isCurrentWord = _currentPlayingWord == '$styleName:$sourceWord';
-    
-    // Get confidence if available
-    double confidence = 0.85; // Default
-    if (widget.showConfidenceRatings && pairList.length > 2) {
-      confidence = double.tryParse(pairList[2].toString()) ?? 0.85;
-    }
-    
+  
+  Widget _buildWordChip(String sourceWord, String targetWord, double confidence, Color primaryColor, String styleName, bool isCurrentWord) {
     return GestureDetector(
       onTap: () => _playWordPair(sourceWord, targetWord, styleName),
-      child: AnimatedScale(
-        scale: isCurrentWord ? 1.05 : 1.0,
-        duration: const Duration(milliseconds: 200),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            gradient: isCurrentWord
-                ? LinearGradient(
-                    colors: [
-                      const Color(0xFFEF4444),
-                      const Color(0xFFF97316),
-                    ],
-                  )
-                : LinearGradient(
-                    colors: [
-                      languageInfo['primaryColor'].withOpacity(0.3),
-                      languageInfo['primaryColor'].withOpacity(0.1),
-                    ],
-                  ),
-            borderRadius: BorderRadius.circular(25),
-            border: Border.all(
-              color: isCurrentWord 
-                  ? Colors.orange 
-                  : languageInfo['primaryColor'].withOpacity(0.5),
-              width: 1.5,
-            ),
-            boxShadow: isCurrentWord
-                ? [
-                    BoxShadow(
-                      color: Colors.orange.withOpacity(0.4),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : null,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isCurrentWord ? primaryColor : primaryColor.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(
+            color: primaryColor.withOpacity(0.8),
+            width: 2,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Play Icon
-              Icon(
-                isCurrentWord ? Icons.volume_up : Icons.play_circle_outline,
-                color: isCurrentWord ? Colors.white : languageInfo['primaryColor'],
+        ),
+        child: Row(
+          children: [
+            // Play button
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isCurrentWord ? Icons.volume_up : Icons.play_arrow,
+                color: Colors.white,
                 size: 18,
               ),
-              const SizedBox(width: 8),
-              
-              // Word Pair
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RichText(
+            ),
+            
+            const SizedBox(width: 16),
+            
+            // Word pair text
+            Expanded(
+              child: RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: sourceWord,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const TextSpan(
+                      text: ' → ',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                    TextSpan(
+                      text: targetWord,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            // Confidence percentage
+            Text(
+              '${(confidence * 100).toInt()}%',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildWordChipWithExplanation(
+    String sourceWord, 
+    String targetWord, 
+    double confidence, 
+    String explanation,
+    Color primaryColor, 
+    String styleName, 
+    bool isCurrentWord
+  ) {
+    return GestureDetector(
+      onTap: () => _playWordPair(sourceWord, targetWord, styleName),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isCurrentWord ? primaryColor : primaryColor.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(
+            color: primaryColor.withOpacity(0.8),
+            width: 2,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                // Play button
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isCurrentWord ? Icons.volume_up : Icons.play_arrow,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
+                
+                const SizedBox(width: 16),
+                
+                // Word pair text - Format: sourceWord → targetWord
+                Expanded(
+                  child: RichText(
                     text: TextSpan(
                       children: [
                         TextSpan(
                           text: sourceWord,
-                          style: TextStyle(
-                            color: isCurrentWord ? Colors.white : languageInfo['primaryColor'],
-                            fontSize: 14,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        TextSpan(
+                        const TextSpan(
                           text: ' → ',
                           style: TextStyle(
-                            color: isCurrentWord ? Colors.white70 : Colors.grey[400],
-                            fontSize: 12,
+                            color: Colors.white70,
+                            fontSize: 14,
                           ),
                         ),
                         TextSpan(
                           text: targetWord,
-                          style: TextStyle(
-                            color: isCurrentWord ? Colors.white : Colors.grey[300],
-                            fontSize: 14,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  
-                  // Confidence Bar
-                  if (widget.showConfidenceRatings)
-                    Container(
-                      margin: const EdgeInsets.only(top: 4),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 3,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                            child: LinearProgressIndicator(
-                              value: confidence,
-                              backgroundColor: Colors.grey[600],
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                _getConfidenceColor(confidence),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${(confidence * 100).toInt()}%',
-                            style: TextStyle(
-                              color: isCurrentWord ? Colors.white70 : Colors.grey[400],
-                              fontSize: 10,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
+                ),
+                
+                // Confidence percentage
+                Text(
+                  '${(confidence * 100).toInt()}%',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            
+            // AI Explanation (if available)
+            if (explanation.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  explanation,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
               ),
             ],
-          ),
+          ],
         ),
       ),
     );
   }
+  
+  // CRITICAL FIX: This method should only be used if no AI word pairs are available
+  List<dynamic> _createFallbackWordPairs(String translation, String language) {
+    final words = translation.split(' ');
+    final fallbackPairs = <List<dynamic>>[];
+    
+    print('[CRITICAL_WARNING] Using fallback word pairs instead of AI translations');
+    print('[CRITICAL_WARNING] This means backend AI data is not reaching the frontend properly');
+    print('[AI_FALLBACK] Creating emergency fallback for $language: $translation');
+    
+    // Emergency fallback with basic word pairs - this should NOT be used if AI data is available
+    for (final word in words) {
+      String cleanWord = word.trim().replaceAll(RegExp(r'[.,!?;:]'), '');
+      if (cleanWord.isNotEmpty) {
+        final confidence = (0.85 + (fallbackPairs.length * 0.01)).clamp(0.80, 0.98);
+        fallbackPairs.add([
+          cleanWord, 
+          'EMERGENCY_FALLBACK', // Clear indicator that this is NOT real AI translation
+          confidence.toStringAsFixed(2),
+          'AI data missing - backend sync issue' // Clear error message
+        ]);
+      }
+    }
+    
+    print('[EMERGENCY_FALLBACK] Generated ${fallbackPairs.length} emergency word pairs');
+    print('[EMERGENCY_FALLBACK] If you see "EMERGENCY_FALLBACK" in UI, AI sync is broken');
+    return fallbackPairs;
+  }
+  
+  // Essential methods for word-by-word functionality
 
   Color _getConfidenceColor(double confidence) {
     if (confidence >= 0.9) return Colors.green;
-    if (confidence >= 0.8) return Colors.orange;
-    if (confidence >= 0.7) return Colors.yellow;
+    if (confidence >= 0.8) return Colors.lime;
+    if (confidence >= 0.7) return Colors.orange;
     return Colors.red;
   }
 

@@ -14,6 +14,7 @@ Future<void> main() async {
     // Initialize Hive with Flutter support
     await Hive.initFlutter();
     
+    
     // Open the settings box
     await Hive.openBox('settings');
     

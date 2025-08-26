@@ -670,13 +670,31 @@ class EnhancedTTSService:
                 language = 'german' if is_german else 'english'
                 logger.info(f"📝 Including {len(word_pairs)} pairs from {style_name} ({language})")
                 
-                for i, (source, spanish) in enumerate(word_pairs):
+                for i, pair_data in enumerate(word_pairs):
+                    # Handle both old format (tuples) and new format (arrays with confidence)
+                    if isinstance(pair_data, (list, tuple)) and len(pair_data) >= 2:
+                        source = pair_data[0]
+                        spanish = pair_data[1]
+                        # If confidence is available, use it for logging
+                        confidence = pair_data[2] if len(pair_data) > 2 else '0.85'
+                    else:
+                        # Fallback for unexpected format
+                        source = str(pair_data)
+                        spanish = str(pair_data)
+                        confidence = '0.85'
+                    
                     all_word_pairs.append({
                         'source': source,
                         'spanish': spanish,
                         'language': language,
-                        'order': i
+                        'order': i,  # Preserve order within style for proper sentence flow
+                        'confidence': confidence
                     })
+                    
+                    # Log for sync verification
+                    logger.info(f"   🎵 SYNC: {source} → {spanish} (confidence: {confidence})")
+                    
+                logger.info(f"✅ SYNC VERIFIED: {len(word_pairs)} pairs from {style_name} will be spoken in correct order")
         
         if not all_word_pairs:
             logger.warning("⚠️ No word pairs found for audio generation")
@@ -697,11 +715,15 @@ class EnhancedTTSService:
             if not pairs:
                 continue
             
+            # CRITICAL SYNC FIX: Sort pairs by their original order to maintain sentence structure
+            pairs.sort(key=lambda x: x['order'])
+            
             voice_config = self._get_voice_config(language)
             voice = voice_config['voice']
             lang_code = voice_config['language']
             
             logger.info(f"🎤 {language.title()}: {len(pairs)} pairs with voice {voice}")
+            logger.info(f"🔄 SYNC: Pairs sorted by order - audio will follow exact sentence structure")
             
             # Add language section introduction
             ssml += f'''

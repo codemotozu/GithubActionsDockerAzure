@@ -1,6 +1,6 @@
 
 # server/app/domain/entities/translation.py
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Any
 from pydantic import BaseModel, Field
 from datetime import datetime
 
@@ -13,5 +13,6 @@ class Translation(BaseModel):
     translations: Optional[Dict[str, str]] = None
     word_by_word: Optional[Dict[str, Dict[str, str]]] = None
     grammar_explanations: Optional[Dict[str, str]] = None
+    styles: Optional[List[Dict[str, Any]]] = None
     created_at: datetime = Field(default_factory=datetime.now)
 
