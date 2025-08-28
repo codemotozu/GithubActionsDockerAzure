@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/chat_message_model.dart';
 import '../../domain/entities/translation.dart';
+import '../../domain/repositories/translation_repository.dart';
 import 'enhanced_word_by_word_widget.dart';
 
 class ConversationIntegrationWidget extends ConsumerWidget {
@@ -83,14 +84,8 @@ class ConversationIntegrationWidget extends ConsumerWidget {
   Widget _buildAIResponse(BuildContext context, WidgetRef ref) {
     final translation = message.translation!;
     
-    // Check if user has word-by-word enabled
-    final hasWordByWordEnabled = _hasWordByWordEnabled(settings);
-    
-    if (!hasWordByWordEnabled) {
-      return _buildSimpleTranslationDisplay(translation);
-    }
-
-    // Use the new AI conversation interface for word-by-word
+    // ALWAYS use the enhanced display - audio settings only control audio behavior
+    // User should see all translation styles and visual word-by-word regardless of audio preferences
     return _buildEnhancedAITranslationDisplay(translation, ref);
   }
 
@@ -152,6 +147,14 @@ class ConversationIntegrationWidget extends ConsumerWidget {
         translationData: translationData,
         audioFilename: translation.audioPath,
         showConfidenceRatings: true,
+        germanWordByWordAudio: settings['germanWordByWord'] ?? false,
+        englishWordByWordAudio: settings['englishWordByWord'] ?? false,
+        onPlaySentenceAudio: (audioPath) {
+          // Play the complete sentence audio - ALWAYS available
+          debugPrint('🎵 Playing sentence audio: $audioPath');
+          // Integrate with the audio repository to play sentence audio
+          ref.read(translationRepositoryProvider).playAudio(audioPath);
+        },
         onWordTap: (word) {
           // Handle word tap - could trigger specific word audio
           debugPrint('Word tapped: $word');
