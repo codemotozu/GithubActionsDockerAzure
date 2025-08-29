@@ -72,7 +72,7 @@ class RateLimiter:
         
         # Ensure minimum gap between requests
         time_since_last = current_time - self.last_request_time
-        min_gap = 0.5  # Minimum 500ms between requests
+        min_gap = 2.0  # Minimum 2 seconds between requests (very conservative)
         if time_since_last < min_gap:
             wait_time = min_gap - time_since_last
             logger.info(f"⏳ Rate limiting: minimum gap wait {wait_time:.2f}s")
@@ -105,8 +105,8 @@ class EnhancedTTSService:
         logger.info("🐳 Container environment variables set for Azure Speech SDK")
 
 
-        # Rate limiter to prevent 429 errors
-        self.rate_limiter = RateLimiter(max_requests_per_minute=12, max_requests_per_second=1)
+        # Rate limiter to prevent 429 errors (very conservative settings)
+        self.rate_limiter = RateLimiter(max_requests_per_minute=8, max_requests_per_second=1)
 
         # Speech configuration
         self.speech_config = SpeechConfig(
@@ -333,9 +333,9 @@ class EnhancedTTSService:
                             
                         # Handle rate limiting errors
                         elif "429" in error_details or "Too many requests" in error_details:
-                            # Exponential backoff for rate limiting
-                            base_delay = 5 ** attempt
-                            jitter = random.uniform(0.1, 0.5)
+                            # Much more conservative exponential backoff for rate limiting
+                            base_delay = min(60, 10 * (2 ** attempt))  # Cap at 60 seconds
+                            jitter = random.uniform(1.0, 3.0)  # Larger jitter
                             delay = base_delay + jitter
                             
                             logger.info(f"🔄 Rate limit hit, retrying in {delay:.2f}s...")
@@ -492,12 +492,20 @@ class EnhancedTTSService:
             style_name = style_info.get('style_name', 'unknown')
             translation_text = style_info.get('translation', '')
             
-            # Check if this language/style should be included
-            should_include = False
+            # FIXED: Always include all styles for sentence audio and visual word-by-word
+            # Individual word audio generation is controlled separately
+            should_include = True  # Always generate sentence audio and word-by-word structure
+            
+            # Determine if individual word audio should be included
+            include_word_audio = False
             if is_german and style_preferences.german_word_by_word:
-                should_include = True
+                include_word_audio = True
             elif not is_german and not is_spanish and style_preferences.english_word_by_word:
-                should_include = True
+                include_word_audio = True
+                
+            # Log the decision for this style
+            language = 'german' if is_german else 'english'
+            logger.info(f"🎯 {style_name} ({language}): Sentence audio=✅ | Word-by-word audio={'✅' if include_word_audio else '❌'}")
             
             if should_include:
                 language = 'german' if is_german else 'english'
@@ -513,7 +521,7 @@ class EnhancedTTSService:
         </prosody>
     </voice>'''
                 
-                # First read the full translation
+                # ALWAYS read the full translation sentence (regardless of word-by-word audio setting)
                 ssml += f'''
     <voice name="{voice_config['voice']}">
         <prosody rate="1.0">
@@ -522,8 +530,8 @@ class EnhancedTTSService:
         </prosody>
     </voice>'''
                 
-                # Then add word-by-word if available
-                if word_pairs:
+                # Only add individual word-by-word audio if enabled for this language
+                if word_pairs and include_word_audio:
                     logger.info(f"🎤 {style_name}: {len(word_pairs)} pairs with voice {voice_config['voice']}")
                     
                     # Add word-by-word announcement
@@ -659,12 +667,20 @@ class EnhancedTTSService:
             is_spanish = style_info.get('is_spanish', False)
             style_name = style_info.get('style_name', 'unknown')
             
-            # Check if this language should be included
-            should_include = False
+            # FIXED: Always include all styles for sentence audio and visual word-by-word
+            # Individual word audio generation is controlled separately
+            should_include = True  # Always generate sentence audio and word-by-word structure
+            
+            # Determine if individual word audio should be included
+            include_word_audio = False
             if is_german and getattr(style_preferences, 'german_word_by_word', False):
-                should_include = True
+                include_word_audio = True
             elif not is_german and not is_spanish and getattr(style_preferences, 'english_word_by_word', False):
-                should_include = True
+                include_word_audio = True
+                
+            # Log the decision for this style
+            language = 'german' if is_german else 'english'
+            logger.info(f"🎯 {style_name} ({language}): Sentence audio=✅ | Word-by-word audio={'✅' if include_word_audio else '❌'}")
             
             if should_include and word_pairs:
                 language = 'german' if is_german else 'english'

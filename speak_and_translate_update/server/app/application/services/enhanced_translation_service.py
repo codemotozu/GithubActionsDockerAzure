@@ -831,27 +831,31 @@ class EnhancedTranslationService(TranslationService):
             # Sort by order to maintain correct sentence structure
             word_data.sort(key=lambda x: x['order'])
             
-            # CRITICAL FIX: Extract TARGET words (Spanish translations) instead of source words
-            # This ensures the user sees the SPANISH sentence that matches the word-by-word audio
+            # Extract Spanish translations for word-by-word audio generation
+            # The main translation will remain in the target language (German/English)
             target_words = [item['spanish'] for item in word_data if item['spanish']]
             
             if target_words:
-                # Reconstruct the complete SPANISH sentence from word-by-word Spanish translations
-                reconstructed_sentence = ' '.join(target_words)
-                synchronized_translations[style] = reconstructed_sentence
+                # Keep the original target language translation (German/English) for display
+                # The word-by-word data will be used for the breakdown, not for the main translation
+                original_translation = original_translations.get(style, '')
+                if original_translation:
+                    synchronized_translations[style] = original_translation
+                else:
+                    # Fallback: if no original translation, keep the style as-is
+                    pass
                 
-                logger.info(f"🎯 CRITICAL SYNC FIX: Reconstructed '{style}' from TARGET words:")
-                logger.info(f"   Original: {original_translations.get(style, 'N/A')}")
-                logger.info(f"   Synchronized SPANISH: {reconstructed_sentence}")
-                logger.info(f"   Word count: {len(target_words)} words")
-                logger.info(f"   🎵 Audio will break down this EXACT Spanish sentence word-by-word")
+                logger.info(f"🎯 CRITICAL SYNC FIX: Keeping original '{style}' translation for display:")
+                logger.info(f"   Original {style.split('_')[0].title()}: {original_translation}")
+                logger.info(f"   Spanish word-by-word pairs: {len(target_words)} words")
+                logger.info(f"   🎵 Audio will break down the {style.split('_')[0]} words with Spanish equivalents")
                 
                 # Log first few word pairs to verify consistency
                 for i, item in enumerate(word_data[:3]):
                     logger.info(f"      {i+1}. {item['source']} → {item['spanish']}")
                 
                 # Additional verification: show what user will see vs hear
-                logger.info(f"   👁️ USER SEES: {reconstructed_sentence}")
+                logger.info(f"   👁️ USER SEES: {original_translation} ({style.split('_')[0]} translation)")
                 
                 # Show first 3 word pairs for verification
                 word_pairs_preview = []

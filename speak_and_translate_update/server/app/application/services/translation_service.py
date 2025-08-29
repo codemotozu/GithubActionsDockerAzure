@@ -92,6 +92,15 @@ class TranslationService:
         """Create enhanced prompt for multiple simultaneous styles with true semantic matching."""
         
         print(f"🎯 Creating MULTI-STYLE context prompt for: {mother_tongue.upper()}")
+        print(f"🔍 DEBUG STYLE PREFERENCES:")
+        print(f"    german_native: {style_preferences.german_native}")
+        print(f"    german_colloquial: {style_preferences.german_colloquial}")
+        print(f"    german_informal: {style_preferences.german_informal}")
+        print(f"    german_formal: {style_preferences.german_formal}")
+        print(f"    english_native: {style_preferences.english_native}")
+        print(f"    english_colloquial: {style_preferences.english_colloquial}")
+        print(f"    english_informal: {style_preferences.english_informal}")
+        print(f"    english_formal: {style_preferences.english_formal}")
         
         target_languages = []
         german_styles = []
@@ -150,22 +159,26 @@ class TranslationService:
             for style in german_styles:
                 prompt += f"German {style.capitalize()}: [Provide {style} German translation here]\n"
             
-            # Add word-by-word section with EXACT semantic matching
-            if style_preferences.german_word_by_word:
+            # FIXED: Always add word-by-word section for ALL languages (for visual display)
+            # Audio settings only control audio generation, not visual structure generation
+            if german_styles:  # If German translations are requested, always provide word-by-word structure
                 prompt += "\nGERMAN WORD-BY-WORD:\n"
                 for style in german_styles:
                     prompt += f"{style.capitalize()} style: "
-                    prompt += f"CRITICALLY IMPORTANT: Provide EXACT semantic word-by-word mappings for the Spanish input '{input_text}'. "
-                    prompt += "Format: [German_word] ([Spanish_equivalent_from_original_text]). "
-                    prompt += f"\n\nFor '{input_text}', your German translation word-by-word mapping MUST follow these EXACT rules:\n"
-                    prompt += "1. Each German word maps to its SEMANTIC EQUIVALENT from the original Spanish text\n"
+                    prompt += f"CRITICALLY IMPORTANT: Break down YOUR SPECIFIC {style.upper()} German translation into word-by-word mappings. "
+                    prompt += f"CRITICAL: Use the EXACT words from your {style} translation above. Each style must reflect its specific vocabulary choices. "
+                    prompt += "Format: [German_word_from_your_translation] ([SIMPLE_Spanish_word_ONLY]). "
+                    prompt += "CRITICAL: Spanish equivalents must be SINGLE WORDS or SIMPLE PHRASES only. NO explanations, NO 'implied', NO complex descriptions. "
+                    prompt += f"\n\nFor your German translation, the word-by-word mapping MUST follow these EXACT rules:\n"
+                    prompt += "1. Each German word FROM YOUR TRANSLATION maps to its SEMANTIC EQUIVALENT from the original Spanish text\n"
                     prompt += "2. Compound German words (like 'Ananassaft') map to compound Spanish phrases (like 'jugo de piña')\n"
                     prompt += "3. German articles (das, die, der) map to Spanish articles (la, el, las, los)\n"
                     prompt += "4. German prepositions map to their Spanish equivalents: für=para, von=de, mit=con\n"
                     prompt += "5. German nouns map to their Spanish equivalents: Mädchen=niña, Dame=señora\n\n"
-                    prompt += f"EXAMPLE for '{input_text}':\n"
-                    prompt += "If German translation is 'Ananassaft für das Mädchen und Brombeersaft für die Dame', then:\n"
+                    prompt += f"EXAMPLE:\n"
+                    prompt += "If your German translation is 'Ananassaft für das Mädchen und Brombeersaft für die Dame', then break it down word-by-word:\n"
                     prompt += "[Ananassaft] ([jugo de piña]) [für] ([para]) [das] ([la]) [Mädchen] ([niña]) [und] ([y]) [Brombeersaft] ([jugo de mora]) [für] ([para]) [die] ([la]) [Dame] ([señora])\n\n"
+                    prompt += "CRITICAL: Start with YOUR German translation words, NOT the Spanish input words!\n\n"
                     prompt += "CRITICAL: Each mapping MUST be semantically correct:\n"
                     prompt += "- Ananassaft = jugo de piña (pineapple juice)\n"
                     prompt += "- für = para (for)\n" 
@@ -183,22 +196,26 @@ class TranslationService:
             for style in english_styles:
                 prompt += f"English {style.capitalize()}: [Provide {style} English translation here]\n"
             
-            # Add word-by-word section with EXACT semantic matching
-            if style_preferences.english_word_by_word:
+            # FIXED: Always add word-by-word section for ALL languages (for visual display)
+            # Audio settings only control audio generation, not visual structure generation
+            if english_styles:  # If English translations are requested, always provide word-by-word structure
                 prompt += "\nENGLISH WORD-BY-WORD:\n"
                 for style in english_styles:
                     prompt += f"{style.capitalize()} style: "
-                    prompt += f"CRITICALLY IMPORTANT: Provide EXACT semantic word-by-word mappings for the Spanish input '{input_text}'. "
-                    prompt += "Format: [English_word] ([Spanish_equivalent_from_original_text]). "
-                    prompt += f"\n\nFor '{input_text}', your English translation word-by-word mapping MUST follow these EXACT rules:\n"
-                    prompt += "1. Each English word maps to its SEMANTIC EQUIVALENT from the original Spanish text\n"
+                    prompt += f"CRITICALLY IMPORTANT: Break down YOUR SPECIFIC {style.upper()} English translation into word-by-word mappings. "
+                    prompt += f"CRITICAL: Use the EXACT words from your {style} translation above. Each style must reflect its specific vocabulary choices. "
+                    prompt += "Format: [English_word_from_your_translation] ([SIMPLE_Spanish_word_ONLY]). "
+                    prompt += "CRITICAL: Spanish equivalents must be SINGLE WORDS or SIMPLE PHRASES only. NO explanations, NO 'implied', NO complex descriptions. "
+                    prompt += f"\n\nFor your English translation, the word-by-word mapping MUST follow these EXACT rules:\n"
+                    prompt += "1. Each English word FROM YOUR TRANSLATION maps to its SEMANTIC EQUIVALENT from the original Spanish text\n"
                     prompt += "2. Compound English phrases (like 'pineapple juice') map to compound Spanish phrases (like 'jugo de piña')\n"
                     prompt += "3. English articles (the, a, an) map to Spanish articles (la, el, las, los, un, una)\n"
                     prompt += "4. English prepositions map to their Spanish equivalents: for=para, of=de, with=con\n"
                     prompt += "5. English nouns map to their Spanish equivalents: girl=niña, lady=señora\n\n"
-                    prompt += f"EXAMPLE for '{input_text}':\n"
-                    prompt += "If English translation is 'Pineapple juice for the girl and blackberry juice for the lady', then:\n"
+                    prompt += f"EXAMPLE:\n"
+                    prompt += "If your English translation is 'Pineapple juice for the girl and blackberry juice for the lady', then break it down word-by-word:\n"
                     prompt += "[Pineapple juice] ([jugo de piña]) [for] ([para]) [the] ([la]) [girl] ([niña]) [and] ([y]) [blackberry juice] ([jugo de mora]) [for] ([para]) [the] ([la]) [lady] ([señora])\n\n"
+                    prompt += "CRITICAL: Start with YOUR English translation words, NOT the Spanish input words!\n\n"
                     prompt += "CRITICAL: Each mapping MUST be semantically correct:\n"
                     prompt += "- Pineapple juice = jugo de piña (whole phrase)\n"
                     prompt += "- for = para (for)\n" 
@@ -235,7 +252,28 @@ WRONG EXAMPLE (DO NOT DO THIS):
 CORRECT EXAMPLE (DO THIS):
 [das] ([la]) [Mädchen] ([niña]) [für] ([para])
 
-Your word-by-word mappings will be used for language learning audio. Students need to hear CORRECT semantic translations. Any errors will confuse learners."""
+Your word-by-word mappings will be used for language learning audio. Students need to hear CORRECT semantic translations. Any errors will confuse learners.
+
+MANDATORY FORMAT RULES:
+- GOOD: [ich] ([yo])
+- GOOD: [have] ([tener])  
+- GOOD: [got up] ([me levanté])
+- BAD: [ich] ([yo - implied in 'levanté'])
+- BAD: [I] ([yo - implied])
+- BAD: [word] ([explanation of why this maps])
+
+CRITICAL EXAMPLE - Different styles MUST use their specific words:
+If German Native uses "weil" and German Formal uses "da":
+- Native: [weil] ([porque])
+- Formal: [da] ([porque])
+Both map to "porque" but show the different German words used!
+
+If English Native uses "want" and English Formal uses "desire":
+- Native: [want] ([quiero])
+- Formal: [desire] ([quiero])
+Both map to "quiero" but show the different English words used!
+
+Keep Spanish translations SIMPLE and DIRECT."""
 
         print(f"📝 Generated MULTI-STYLE prompt ({len(prompt)} characters)")
         return prompt
@@ -261,9 +299,14 @@ Your word-by-word mappings will be used for language learning audio. Students ne
             ]
             has_enabled_styles = any(style_checks)
         
-        word_by_word_requested = False
+        # FIXED: Always generate word-by-word structure for visual display
+        # Audio settings only control audio generation, not visual word-by-word structure
+        word_by_word_requested = has_enabled_styles  # If styles enabled, always generate word-by-word for UI
+        
+        # Separate flags for actual audio generation
+        word_by_word_audio_requested = False
         if style_preferences:
-            word_by_word_requested = (
+            word_by_word_audio_requested = (
                 style_preferences.german_word_by_word or 
                 style_preferences.english_word_by_word
             )
@@ -273,9 +316,11 @@ Your word-by-word mappings will be used for language learning audio. Students ne
         print(f"🎵 Audio Generation Decision:")
         print(f"   Translations available: {has_translations}")
         print(f"   Translation styles enabled: {has_enabled_styles}")
-        print(f"   Word-by-word audio requested: {word_by_word_requested}")
+        print(f"   Word-by-word structure (for UI): {word_by_word_requested}")
+        print(f"   Word-by-word audio requested: {word_by_word_audio_requested}")
         print(f"   🎯 Will generate audio: {should_generate}")
-        print(f"   🎯 Audio type: {'Word-by-word breakdown' if word_by_word_requested else 'Simple translation reading'}")
+        print(f"   🎯 Audio type: {'Word-by-word breakdown' if word_by_word_audio_requested else 'Simple translation reading'}")
+        print(f"   🎯 Visual display: {'ALWAYS show word-by-word structure' if word_by_word_requested else 'No word-by-word structure'}")
         
         return should_generate
 
@@ -554,9 +599,13 @@ Your word-by-word mappings will be used for language learning audio. Students ne
         english_word_by_word = getattr(style_preferences, 'english_word_by_word', False)
         any_word_by_word_requested = german_word_by_word or english_word_by_word
         
-        if not any_word_by_word_requested:
-            # No word-by-word requested, no need to check or generate
-            return translations_data
+        # FIXED: Always check and generate word-by-word structure for visual display
+        # Word-by-word structure should ALWAYS be available for learning purposes
+        print(f"🎯 FIXED LOGIC: Word-by-word structure generation:")
+        print(f"   German word-by-word audio: {german_word_by_word}")
+        print(f"   English word-by-word audio: {english_word_by_word}")
+        print(f"   🎯 Will ALWAYS generate word-by-word structure for UI (regardless of audio settings)")
+        print(f"   🎯 Audio settings only control individual word audio, not visual structure")
         
         # Check if we have any styles with word-by-word data
         has_word_by_word_data = False
@@ -735,7 +784,7 @@ Your word-by-word mappings will be used for language learning audio. Students ne
             word_by_word_text = {}
             all_word_by_word_data = {}  # Store word-by-word for ALL styles
             
-            for line in lines:
+            for line_index, line in enumerate(lines):
                 line = line.strip()
                 if not line:
                     continue
@@ -826,18 +875,37 @@ Your word-by-word mappings will be used for language learning audio. Students ne
                 
                 # Handle word-by-word sections for multiple styles
                 elif current_language == 'german_wbw':
-                    # Check if this line specifies a style
+                    # Check if this line specifies a style - improved pattern matching with multi-line support
+                    style_found = False
                     for style in ['Native', 'Colloquial', 'Informal', 'Formal']:
-                        if f'{style} style:' in line:
-                            style_key = f'german_{style.lower()}'
-                            # Extract the word-by-word part
-                            wbw_start = line.find('[')
-                            if wbw_start >= 0:
-                                all_word_by_word_data[style_key] = line[wbw_start:]
-                                print(f"📝 German {style} word-by-word: {line[wbw_start:200]}...")
-                                print(f"🔍 Full line for debugging: {line}")
+                        # More flexible pattern matching
+                        patterns = [f'{style} style:', f'{style}:', style.lower() + ' style:', style.lower() + ':']
+                        for pattern in patterns:
+                            if pattern in line:
+                                style_key = f'german_{style.lower()}'
+                                # Extract the word-by-word part - check current line first
+                                wbw_start = line.find('[')
+                                if wbw_start >= 0:
+                                    all_word_by_word_data[style_key] = line[wbw_start:]
+                                    print(f"📝 German {style} SPECIFIC word-by-word: {line[wbw_start:200]}...")
+                                    print(f"🔍 Full line for debugging: {line}")
+                                else:
+                                    # NEW: Look ahead at next few lines for word-by-word data
+                                    for look_ahead in range(1, 4):  # Check next 3 lines
+                                        if line_index + look_ahead < len(lines):
+                                            next_line = lines[line_index + look_ahead].strip()
+                                            if '[' in next_line and ']' in next_line and '(' in next_line and ')' in next_line:
+                                                all_word_by_word_data[style_key] = next_line
+                                                print(f"📝 German {style} SPECIFIC word-by-word (multi-line): {next_line[:200]}...")
+                                                print(f"🔍 Found on line {look_ahead + 1} after style label: {next_line}")
+                                                break
+                                style_found = True
+                                break
+                        if style_found:
                             break
-                    else:
+                    
+                    # Only fall back to general if no specific style was found
+                    if not style_found:
                         # If line contains brackets, might be general word-by-word
                         if '[' in line and ']' in line and '(' in line and ')' in line:
                             if 'german' not in word_by_word_text:
@@ -845,18 +913,37 @@ Your word-by-word mappings will be used for language learning audio. Students ne
                                 print(f"📝 German general word-by-word: {line[:100]}...")
                 
                 elif current_language == 'english_wbw':
-                    # Check if this line specifies a style
+                    # Check if this line specifies a style - improved pattern matching with multi-line support
+                    style_found = False
                     for style in ['Native', 'Colloquial', 'Informal', 'Formal']:
-                        if f'{style} style:' in line:
-                            style_key = f'english_{style.lower()}'
-                            # Extract the word-by-word part
-                            wbw_start = line.find('[')
-                            if wbw_start >= 0:
-                                all_word_by_word_data[style_key] = line[wbw_start:]
-                                print(f"📝 English {style} word-by-word: {line[wbw_start:200]}...")
-                                print(f"🔍 Full line for debugging: {line}")
+                        # More flexible pattern matching
+                        patterns = [f'{style} style:', f'{style}:', style.lower() + ' style:', style.lower() + ':']
+                        for pattern in patterns:
+                            if pattern in line:
+                                style_key = f'english_{style.lower()}'
+                                # Extract the word-by-word part - check current line first
+                                wbw_start = line.find('[')
+                                if wbw_start >= 0:
+                                    all_word_by_word_data[style_key] = line[wbw_start:]
+                                    print(f"📝 English {style} SPECIFIC word-by-word: {line[wbw_start:200]}...")
+                                    print(f"🔍 Full line for debugging: {line}")
+                                else:
+                                    # NEW: Look ahead at next few lines for word-by-word data
+                                    for look_ahead in range(1, 4):  # Check next 3 lines
+                                        if line_index + look_ahead < len(lines):
+                                            next_line = lines[line_index + look_ahead].strip()
+                                            if '[' in next_line and ']' in next_line and '(' in next_line and ')' in next_line:
+                                                all_word_by_word_data[style_key] = next_line
+                                                print(f"📝 English {style} SPECIFIC word-by-word (multi-line): {next_line[:200]}...")
+                                                print(f"🔍 Found on line {look_ahead + 1} after style label: {next_line}")
+                                                break
+                                style_found = True
+                                break
+                        if style_found:
                             break
-                    else:
+                    
+                    # Only fall back to general if no specific style was found
+                    if not style_found:
                         # If line contains brackets, might be general word-by-word
                         if '[' in line and ']' in line and '(' in line and ')' in line:
                             if 'english' not in word_by_word_text:
@@ -882,13 +969,30 @@ Your word-by-word mappings will be used for language learning audio. Students ne
                 style_name = style_entry['style_name']
                 is_german = style_entry['is_german']
                 
-                # Check if we have specific word-by-word for this style
+                # FIXED: Check if we have specific word-by-word for this style
                 if style_name in all_word_by_word_data:
-                    # Use style-specific word-by-word
-                    if (is_german and style_preferences.german_word_by_word) or \
-                    (not is_german and not style_entry['is_spanish'] and style_preferences.english_word_by_word):
+                    # ALWAYS process word-by-word structure for visual display
+                    # Extract the initial word pairs
+                    word_pairs = self._parse_word_by_word_line(all_word_by_word_data[style_name])
+                    
+                    if word_pairs:
+                        # Apply semantic corrections
+                        corrected_pairs = await self._fix_common_semantic_mismatches(
+                            word_pairs, 
+                            is_german=is_german
+                        )
+                        
+                        # Store the corrected pairs
+                        style_entry['word_pairs'] = corrected_pairs
+                        print(f"✅ Added {len(corrected_pairs)} semantically-corrected word pairs to {style_name}")
+                        print(f"🎯 {style_name} ({('German' if is_german else 'English')}): Word-by-word structure ALWAYS available for UI display")
+                else:
+                    # FIXED: Fall back to general word-by-word if available
+                    language = 'german' if is_german else 'english'
+                    if language in word_by_word_text:
+                        # ALWAYS process word-by-word structure for visual display
                         # Extract the initial word pairs
-                        word_pairs = self._parse_word_by_word_line(all_word_by_word_data[style_name])
+                        word_pairs = self._parse_word_by_word_line(word_by_word_text[language])
                         
                         if word_pairs:
                             # Apply semantic corrections
@@ -899,26 +1003,8 @@ Your word-by-word mappings will be used for language learning audio. Students ne
                             
                             # Store the corrected pairs
                             style_entry['word_pairs'] = corrected_pairs
-                            print(f"✅ Added {len(corrected_pairs)} semantically-corrected word pairs to {style_name}")
-                else:
-                    # Fall back to general word-by-word if available
-                    language = 'german' if is_german else 'english'
-                    if language in word_by_word_text:
-                        if (is_german and style_preferences.german_word_by_word) or \
-                        (not is_german and style_preferences.english_word_by_word):
-                            # Extract the initial word pairs
-                            word_pairs = self._parse_word_by_word_line(word_by_word_text[language])
-                            
-                            if word_pairs:
-                                # Apply semantic corrections
-                                corrected_pairs = await self._fix_common_semantic_mismatches(
-                                    word_pairs, 
-                                    is_german=is_german
-                                )
-                                
-                                # Store the corrected pairs
-                                style_entry['word_pairs'] = corrected_pairs
-                                print(f"✅ Added {len(corrected_pairs)} semantically-corrected general word pairs to {style_name}")
+                            print(f"✅ Added {len(corrected_pairs)} semantically-corrected general word pairs to {style_name}")
+                            print(f"🎯 {style_name} ({('German' if is_german else 'English')}): Word-by-word structure ALWAYS available for UI display")
 
             print(f"✅ Extracted {len(result['translations'])} translations")
             print(f"✅ Extracted {len(result['style_data'])} style entries")
@@ -997,11 +1083,13 @@ Your word-by-word mappings will be used for language learning audio. Students ne
                     source = source.strip('[]')
                     target = target.strip('[]')
                     
+                    # FIXED: Clean up malformed Spanish translations
+                    normalized_target = self._clean_malformed_translation(target)
+                    
                     # Normalize the target - handle slash-separated alternatives
-                    normalized_target = target
-                    if '/' in target:
+                    if '/' in normalized_target:
                         # Take first alternative by default, could be enhanced to take most appropriate
-                        normalized_target = target.split('/')[0].strip()
+                        normalized_target = normalized_target.split('/')[0].strip()
                     
                     pairs.append((source, normalized_target))
                     print(f"   Pair: '{source}' -> '{normalized_target}'")
@@ -1019,7 +1107,32 @@ Your word-by-word mappings will be used for language learning audio. Students ne
         
         return pairs
 
-
+    def _clean_malformed_translation(self, target: str) -> str:
+        """Clean up malformed Spanish translations like 'yo - implied in levanté' to just 'yo'"""
+        # Remove common malformed patterns
+        cleaned = target
+        
+        # Pattern 1: "yo - implied in 'word'" -> "yo"
+        if " - implied in " in cleaned:
+            cleaned = cleaned.split(" - implied in ")[0].strip()
+        
+        # Pattern 2: "word - implied" -> "word" 
+        if " - implied" in cleaned:
+            cleaned = cleaned.split(" - implied")[0].strip()
+            
+        # Pattern 3: "word (explanation)" -> "word"
+        if " (" in cleaned and ")" in cleaned:
+            cleaned = cleaned.split(" (")[0].strip()
+            
+        # Pattern 4: Remove any trailing quotes or special chars
+        cleaned = cleaned.strip('\'"')
+        
+        # Pattern 5: If it contains complex explanations, extract the first simple word
+        if " - " in cleaned and len(cleaned.split()) > 3:
+            # Take the first word before the dash
+            cleaned = cleaned.split(" - ")[0].strip()
+            
+        return cleaned
 
     def _validate_semantic_integrity(self, pairs: List[Tuple[str, str]]) -> List[str]:
         """
@@ -1235,14 +1348,11 @@ Your word-by-word mappings will be used for language learning audio. Students ne
             if style_name not in style_counter:
                 style_counter[style_name] = 0
             
-            # Check if word-by-word is enabled for this language
-            should_include = False
-            if is_german and getattr(style_preferences, 'german_word_by_word', False):
-                should_include = True
-            elif not is_german and not is_spanish and getattr(style_preferences, 'english_word_by_word', False):
-                should_include = True
+            # FIXED: Word-by-word translations ALWAYS show in UI regardless of audio settings
+            # Only filter out Spanish mother tongue style (not needed for visual display)
+            should_include = not is_spanish and word_pairs
             
-            if should_include and word_pairs:
+            if should_include:
                 print(f"🔄 PERFECT SYNC: {style_name} with {len(word_pairs)} pairs")
                 
                 for i, (source_word, spanish_equiv) in enumerate(word_pairs):

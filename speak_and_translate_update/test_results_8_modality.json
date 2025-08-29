@@ -1,0 +1,2938 @@
+{
+  "test_metadata": {
+    "timestamp": 1756278066.320707,
+    "total_configurations": 48,
+    "total_phrases": 5,
+    "system": "8_modality_translation_system"
+  },
+  "configurations": [
+    {
+      "config_id": 1,
+      "description": "German Native | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_native"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 2,
+      "description": "German Native | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_native"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 3,
+      "description": "German Colloquial | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_colloquial"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 4,
+      "description": "German Colloquial | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_colloquial"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 5,
+      "description": "German Informal | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_informal"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 6,
+      "description": "German Informal | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_informal"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 7,
+      "description": "German Formal | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_formal"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 8,
+      "description": "German Formal | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_formal"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 9,
+      "description": "English Native | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "english_native"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 10,
+      "description": "English Native | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "english_native"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 11,
+      "description": "English Colloquial | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "english_colloquial"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 12,
+      "description": "English Colloquial | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "english_colloquial"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 13,
+      "description": "English Informal | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "english_informal"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 14,
+      "description": "English Informal | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "english_informal"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 15,
+      "description": "English Formal | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "english_formal"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 16,
+      "description": "English Formal | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "english_formal"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 17,
+      "description": "German Native + English Native | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_native",
+        "english_native"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 18,
+      "description": "German Native + English Native | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_native",
+        "english_native"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 19,
+      "description": "German Native + English Colloquial | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_native",
+        "english_colloquial"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 20,
+      "description": "German Native + English Colloquial | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_native",
+        "english_colloquial"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 21,
+      "description": "German Native + English Informal | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_native",
+        "english_informal"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 22,
+      "description": "German Native + English Informal | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_native",
+        "english_informal"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 23,
+      "description": "German Native + English Formal | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_native",
+        "english_formal"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 24,
+      "description": "German Native + English Formal | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_native",
+        "english_formal"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 25,
+      "description": "German Colloquial + English Native | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_colloquial",
+        "english_native"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 26,
+      "description": "German Colloquial + English Native | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_colloquial",
+        "english_native"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 27,
+      "description": "German Colloquial + English Colloquial | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_colloquial",
+        "english_colloquial"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 28,
+      "description": "German Colloquial + English Colloquial | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_colloquial",
+        "english_colloquial"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 29,
+      "description": "German Colloquial + English Informal | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_colloquial",
+        "english_informal"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 30,
+      "description": "German Colloquial + English Informal | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_colloquial",
+        "english_informal"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 31,
+      "description": "German Colloquial + English Formal | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_colloquial",
+        "english_formal"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 32,
+      "description": "German Colloquial + English Formal | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_colloquial",
+        "english_formal"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 33,
+      "description": "German Informal + English Native | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_informal",
+        "english_native"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 34,
+      "description": "German Informal + English Native | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_informal",
+        "english_native"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 35,
+      "description": "German Informal + English Colloquial | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_informal",
+        "english_colloquial"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 36,
+      "description": "German Informal + English Colloquial | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_informal",
+        "english_colloquial"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 37,
+      "description": "German Informal + English Informal | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_informal",
+        "english_informal"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 38,
+      "description": "German Informal + English Informal | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_informal",
+        "english_informal"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 39,
+      "description": "German Informal + English Formal | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_informal",
+        "english_formal"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 40,
+      "description": "German Informal + English Formal | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_informal",
+        "english_formal"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 41,
+      "description": "German Formal + English Native | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_formal",
+        "english_native"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 42,
+      "description": "German Formal + English Native | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_formal",
+        "english_native"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 43,
+      "description": "German Formal + English Colloquial | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_formal",
+        "english_colloquial"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 44,
+      "description": "German Formal + English Colloquial | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_formal",
+        "english_colloquial"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 45,
+      "description": "German Formal + English Informal | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_formal",
+        "english_informal"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 46,
+      "description": "German Formal + English Informal | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_formal",
+        "english_informal"
+      ],
+      "word_by_word": false
+    },
+    {
+      "config_id": 47,
+      "description": "German Formal + English Formal | Word by Word: ON",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_formal",
+        "english_formal"
+      ],
+      "word_by_word": true
+    },
+    {
+      "config_id": 48,
+      "description": "German Formal + English Formal | Word by Word: OFF",
+      "mother_tongue": "spanish",
+      "modalities": [
+        "german_formal",
+        "english_formal"
+      ],
+      "word_by_word": false
+    }
+  ],
+  "analysis": {
+    "success_rate": 100.0,
+    "total_tests": 240,
+    "successful_tests": 240,
+    "failed_tests": 0,
+    "configs_meeting_30s_target": 48,
+    "total_configurations": 48,
+    "average_response_time_ms": 107.33729898929596,
+    "max_response_time_ms": 116.26648902893066,
+    "min_response_time_ms": 100.10933876037598,
+    "average_confidence": 0.94625,
+    "config_success_rates": {
+      "1": 100.0,
+      "2": 100.0,
+      "3": 100.0,
+      "4": 100.0,
+      "5": 100.0,
+      "6": 100.0,
+      "7": 100.0,
+      "8": 100.0,
+      "9": 100.0,
+      "10": 100.0,
+      "11": 100.0,
+      "12": 100.0,
+      "13": 100.0,
+      "14": 100.0,
+      "15": 100.0,
+      "16": 100.0,
+      "17": 100.0,
+      "18": 100.0,
+      "19": 100.0,
+      "20": 100.0,
+      "21": 100.0,
+      "22": 100.0,
+      "23": 100.0,
+      "24": 100.0,
+      "25": 100.0,
+      "26": 100.0,
+      "27": 100.0,
+      "28": 100.0,
+      "29": 100.0,
+      "30": 100.0,
+      "31": 100.0,
+      "32": 100.0,
+      "33": 100.0,
+      "34": 100.0,
+      "35": 100.0,
+      "36": 100.0,
+      "37": 100.0,
+      "38": 100.0,
+      "39": 100.0,
+      "40": 100.0,
+      "41": 100.0,
+      "42": 100.0,
+      "43": 100.0,
+      "44": 100.0,
+      "45": 100.0,
+      "46": 100.0,
+      "47": 100.0,
+      "48": 100.0
+    }
+  },
+  "detailed_results": [
+    {
+      "config_id": 1,
+      "success": true,
+      "processing_time_ms": 107.71822929382324,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 1,
+      "success": true,
+      "processing_time_ms": 100.57902336120605,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 1,
+      "success": true,
+      "processing_time_ms": 113.3565902709961,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 1,
+      "success": true,
+      "processing_time_ms": 110.65983772277832,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 1,
+      "success": true,
+      "processing_time_ms": 112.00809478759766,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 2,
+      "success": true,
+      "processing_time_ms": 111.04702949523926,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 2,
+      "success": true,
+      "processing_time_ms": 111.5720272064209,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 2,
+      "success": true,
+      "processing_time_ms": 111.31596565246582,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 2,
+      "success": true,
+      "processing_time_ms": 109.17425155639648,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 2,
+      "success": true,
+      "processing_time_ms": 114.04109001159668,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 3,
+      "success": true,
+      "processing_time_ms": 110.88228225708008,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 3,
+      "success": true,
+      "processing_time_ms": 109.29393768310547,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 3,
+      "success": true,
+      "processing_time_ms": 114.24422264099121,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 3,
+      "success": true,
+      "processing_time_ms": 113.72017860412598,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 3,
+      "success": true,
+      "processing_time_ms": 110.70036888122559,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 4,
+      "success": true,
+      "processing_time_ms": 107.81693458557129,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 4,
+      "success": true,
+      "processing_time_ms": 101.2723445892334,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 4,
+      "success": true,
+      "processing_time_ms": 101.20296478271484,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 4,
+      "success": true,
+      "processing_time_ms": 112.90621757507324,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 4,
+      "success": true,
+      "processing_time_ms": 101.6993522644043,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 5,
+      "success": true,
+      "processing_time_ms": 114.81118202209473,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 5,
+      "success": true,
+      "processing_time_ms": 102.10371017456055,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 5,
+      "success": true,
+      "processing_time_ms": 100.10933876037598,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 5,
+      "success": true,
+      "processing_time_ms": 113.45529556274414,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 5,
+      "success": true,
+      "processing_time_ms": 100.5403995513916,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 6,
+      "success": true,
+      "processing_time_ms": 115.01836776733398,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 6,
+      "success": true,
+      "processing_time_ms": 100.30770301818848,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 6,
+      "success": true,
+      "processing_time_ms": 100.2802848815918,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 6,
+      "success": true,
+      "processing_time_ms": 113.6026382446289,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 6,
+      "success": true,
+      "processing_time_ms": 101.104736328125,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 7,
+      "success": true,
+      "processing_time_ms": 100.24023056030273,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 7,
+      "success": true,
+      "processing_time_ms": 101.0899543762207,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 7,
+      "success": true,
+      "processing_time_ms": 102.22363471984863,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 7,
+      "success": true,
+      "processing_time_ms": 115.0205135345459,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 7,
+      "success": true,
+      "processing_time_ms": 102.08940505981445,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 8,
+      "success": true,
+      "processing_time_ms": 113.56973648071289,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 8,
+      "success": true,
+      "processing_time_ms": 102.51569747924805,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 8,
+      "success": true,
+      "processing_time_ms": 110.68367958068848,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 8,
+      "success": true,
+      "processing_time_ms": 106.34469985961914,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 8,
+      "success": true,
+      "processing_time_ms": 113.38448524475098,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.98,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 9,
+      "success": true,
+      "processing_time_ms": 107.24663734436035,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.99,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 9,
+      "success": true,
+      "processing_time_ms": 105.1170825958252,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.99,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 9,
+      "success": true,
+      "processing_time_ms": 107.98764228820801,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.99,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 9,
+      "success": true,
+      "processing_time_ms": 108.46519470214844,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.99,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 9,
+      "success": true,
+      "processing_time_ms": 113.71016502380371,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.99,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 10,
+      "success": true,
+      "processing_time_ms": 101.165771484375,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.99,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 10,
+      "success": true,
+      "processing_time_ms": 108.08300971984863,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.99,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 10,
+      "success": true,
+      "processing_time_ms": 100.62503814697266,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.99,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 10,
+      "success": true,
+      "processing_time_ms": 104.69436645507812,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.99,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 10,
+      "success": true,
+      "processing_time_ms": 109.64727401733398,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.99,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 11,
+      "success": true,
+      "processing_time_ms": 114.6230697631836,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.92,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 11,
+      "success": true,
+      "processing_time_ms": 111.22632026672363,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.92,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 11,
+      "success": true,
+      "processing_time_ms": 100.5411148071289,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.92,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 11,
+      "success": true,
+      "processing_time_ms": 102.49638557434082,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.92,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 11,
+      "success": true,
+      "processing_time_ms": 109.82942581176758,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.92,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 12,
+      "success": true,
+      "processing_time_ms": 101.78613662719727,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.92,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 12,
+      "success": true,
+      "processing_time_ms": 100.71372985839844,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.92,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 12,
+      "success": true,
+      "processing_time_ms": 100.28505325317383,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.92,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 12,
+      "success": true,
+      "processing_time_ms": 112.41531372070312,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.92,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 12,
+      "success": true,
+      "processing_time_ms": 101.22537612915039,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.92,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 13,
+      "success": true,
+      "processing_time_ms": 103.4080982208252,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.93,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 13,
+      "success": true,
+      "processing_time_ms": 112.00475692749023,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.93,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 13,
+      "success": true,
+      "processing_time_ms": 100.54636001586914,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.93,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 13,
+      "success": true,
+      "processing_time_ms": 100.26049613952637,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.93,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 13,
+      "success": true,
+      "processing_time_ms": 101.84979438781738,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.93,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 14,
+      "success": true,
+      "processing_time_ms": 100.82268714904785,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.93,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 14,
+      "success": true,
+      "processing_time_ms": 115.06319046020508,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.93,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 14,
+      "success": true,
+      "processing_time_ms": 100.9209156036377,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.93,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 14,
+      "success": true,
+      "processing_time_ms": 100.23260116577148,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.93,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 14,
+      "success": true,
+      "processing_time_ms": 114.7763729095459,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.93,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 15,
+      "success": true,
+      "processing_time_ms": 107.2847843170166,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.97,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 15,
+      "success": true,
+      "processing_time_ms": 112.66183853149414,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.97,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 15,
+      "success": true,
+      "processing_time_ms": 112.77413368225098,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.97,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 15,
+      "success": true,
+      "processing_time_ms": 111.88244819641113,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.97,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 15,
+      "success": true,
+      "processing_time_ms": 102.44441032409668,
+      "modalities_generated": 1,
+      "word_by_word_count": 1,
+      "average_confidence": 0.97,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 16,
+      "success": true,
+      "processing_time_ms": 101.70388221740723,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.97,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 16,
+      "success": true,
+      "processing_time_ms": 115.25511741638184,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.97,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 16,
+      "success": true,
+      "processing_time_ms": 100.74925422668457,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.97,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 16,
+      "success": true,
+      "processing_time_ms": 115.34595489501953,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.97,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 16,
+      "success": true,
+      "processing_time_ms": 114.82977867126465,
+      "modalities_generated": 1,
+      "word_by_word_count": 0,
+      "average_confidence": 0.97,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 17,
+      "success": true,
+      "processing_time_ms": 101.3498306274414,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 17,
+      "success": true,
+      "processing_time_ms": 107.32913017272949,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 17,
+      "success": true,
+      "processing_time_ms": 111.69099807739258,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 17,
+      "success": true,
+      "processing_time_ms": 102.01430320739746,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 17,
+      "success": true,
+      "processing_time_ms": 109.36284065246582,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 18,
+      "success": true,
+      "processing_time_ms": 108.68191719055176,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 18,
+      "success": true,
+      "processing_time_ms": 114.94779586791992,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 18,
+      "success": true,
+      "processing_time_ms": 106.23884201049805,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 18,
+      "success": true,
+      "processing_time_ms": 107.70082473754883,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 18,
+      "success": true,
+      "processing_time_ms": 109.80844497680664,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 19,
+      "success": true,
+      "processing_time_ms": 100.68511962890625,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 19,
+      "success": true,
+      "processing_time_ms": 114.5777702331543,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 19,
+      "success": true,
+      "processing_time_ms": 101.01056098937988,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 19,
+      "success": true,
+      "processing_time_ms": 100.23880004882812,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 19,
+      "success": true,
+      "processing_time_ms": 100.65340995788574,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 20,
+      "success": true,
+      "processing_time_ms": 113.83914947509766,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 20,
+      "success": true,
+      "processing_time_ms": 100.52824020385742,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 20,
+      "success": true,
+      "processing_time_ms": 115.5400276184082,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 20,
+      "success": true,
+      "processing_time_ms": 100.36158561706543,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 20,
+      "success": true,
+      "processing_time_ms": 114.99953269958496,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 21,
+      "success": true,
+      "processing_time_ms": 100.43168067932129,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 21,
+      "success": true,
+      "processing_time_ms": 100.28982162475586,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 21,
+      "success": true,
+      "processing_time_ms": 115.78869819641113,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 21,
+      "success": true,
+      "processing_time_ms": 116.26648902893066,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 21,
+      "success": true,
+      "processing_time_ms": 101.65238380432129,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 22,
+      "success": true,
+      "processing_time_ms": 100.37469863891602,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 22,
+      "success": true,
+      "processing_time_ms": 115.49043655395508,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 22,
+      "success": true,
+      "processing_time_ms": 115.33975601196289,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 22,
+      "success": true,
+      "processing_time_ms": 100.66699981689453,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 22,
+      "success": true,
+      "processing_time_ms": 115.1876449584961,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 23,
+      "success": true,
+      "processing_time_ms": 101.4702320098877,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 23,
+      "success": true,
+      "processing_time_ms": 113.8448715209961,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 23,
+      "success": true,
+      "processing_time_ms": 114.75133895874023,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 23,
+      "success": true,
+      "processing_time_ms": 101.15313529968262,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 23,
+      "success": true,
+      "processing_time_ms": 100.82674026489258,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 24,
+      "success": true,
+      "processing_time_ms": 114.9435043334961,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 24,
+      "success": true,
+      "processing_time_ms": 100.9969711303711,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 24,
+      "success": true,
+      "processing_time_ms": 115.30852317810059,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 24,
+      "success": true,
+      "processing_time_ms": 100.79360008239746,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 24,
+      "success": true,
+      "processing_time_ms": 113.71159553527832,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 25,
+      "success": true,
+      "processing_time_ms": 101.42159461975098,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 25,
+      "success": true,
+      "processing_time_ms": 100.24070739746094,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 25,
+      "success": true,
+      "processing_time_ms": 115.29088020324707,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 25,
+      "success": true,
+      "processing_time_ms": 100.52323341369629,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 25,
+      "success": true,
+      "processing_time_ms": 102.22673416137695,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 26,
+      "success": true,
+      "processing_time_ms": 112.16545104980469,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 26,
+      "success": true,
+      "processing_time_ms": 100.23331642150879,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 26,
+      "success": true,
+      "processing_time_ms": 100.21209716796875,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 26,
+      "success": true,
+      "processing_time_ms": 100.44050216674805,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 26,
+      "success": true,
+      "processing_time_ms": 113.75069618225098,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9450000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 27,
+      "success": true,
+      "processing_time_ms": 101.6995906829834,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 27,
+      "success": true,
+      "processing_time_ms": 100.52156448364258,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 27,
+      "success": true,
+      "processing_time_ms": 115.17214775085449,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 27,
+      "success": true,
+      "processing_time_ms": 106.0020923614502,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 27,
+      "success": true,
+      "processing_time_ms": 114.91608619689941,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 28,
+      "success": true,
+      "processing_time_ms": 101.02176666259766,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 28,
+      "success": true,
+      "processing_time_ms": 110.03613471984863,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 28,
+      "success": true,
+      "processing_time_ms": 109.54833030700684,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 28,
+      "success": true,
+      "processing_time_ms": 112.70475387573242,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 28,
+      "success": true,
+      "processing_time_ms": 102.83732414245605,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.91,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 29,
+      "success": true,
+      "processing_time_ms": 102.76055335998535,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 29,
+      "success": true,
+      "processing_time_ms": 113.50250244140625,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 29,
+      "success": true,
+      "processing_time_ms": 107.24163055419922,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 29,
+      "success": true,
+      "processing_time_ms": 105.23200035095215,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 29,
+      "success": true,
+      "processing_time_ms": 110.85057258605957,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 30,
+      "success": true,
+      "processing_time_ms": 100.87895393371582,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 30,
+      "success": true,
+      "processing_time_ms": 113.72661590576172,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 30,
+      "success": true,
+      "processing_time_ms": 101.2272834777832,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 30,
+      "success": true,
+      "processing_time_ms": 100.69656372070312,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 30,
+      "success": true,
+      "processing_time_ms": 105.34358024597168,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.915,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 31,
+      "success": true,
+      "processing_time_ms": 104.02560234069824,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 31,
+      "success": true,
+      "processing_time_ms": 109.49420928955078,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 31,
+      "success": true,
+      "processing_time_ms": 110.46361923217773,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 31,
+      "success": true,
+      "processing_time_ms": 100.4784107208252,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 31,
+      "success": true,
+      "processing_time_ms": 100.83246231079102,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 32,
+      "success": true,
+      "processing_time_ms": 114.89510536193848,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 32,
+      "success": true,
+      "processing_time_ms": 101.02558135986328,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 32,
+      "success": true,
+      "processing_time_ms": 100.38185119628906,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 32,
+      "success": true,
+      "processing_time_ms": 102.68783569335938,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 32,
+      "success": true,
+      "processing_time_ms": 112.4732494354248,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.935,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 33,
+      "success": true,
+      "processing_time_ms": 115.966796875,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 33,
+      "success": true,
+      "processing_time_ms": 114.26234245300293,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 33,
+      "success": true,
+      "processing_time_ms": 103.37090492248535,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 33,
+      "success": true,
+      "processing_time_ms": 114.14265632629395,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 33,
+      "success": true,
+      "processing_time_ms": 103.00397872924805,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 34,
+      "success": true,
+      "processing_time_ms": 114.41254615783691,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 34,
+      "success": true,
+      "processing_time_ms": 113.36517333984375,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 34,
+      "success": true,
+      "processing_time_ms": 102.5230884552002,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 34,
+      "success": true,
+      "processing_time_ms": 114.86172676086426,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 34,
+      "success": true,
+      "processing_time_ms": 101.86409950256348,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 35,
+      "success": true,
+      "processing_time_ms": 101.73797607421875,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 35,
+      "success": true,
+      "processing_time_ms": 115.60225486755371,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 35,
+      "success": true,
+      "processing_time_ms": 101.07421875,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 35,
+      "success": true,
+      "processing_time_ms": 114.65144157409668,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 35,
+      "success": true,
+      "processing_time_ms": 100.49819946289062,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 36,
+      "success": true,
+      "processing_time_ms": 113.6772632598877,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 36,
+      "success": true,
+      "processing_time_ms": 105.81660270690918,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 36,
+      "success": true,
+      "processing_time_ms": 101.68313980102539,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 36,
+      "success": true,
+      "processing_time_ms": 115.84115028381348,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 36,
+      "success": true,
+      "processing_time_ms": 113.0375862121582,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 37,
+      "success": true,
+      "processing_time_ms": 103.87969017028809,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 37,
+      "success": true,
+      "processing_time_ms": 100.9056568145752,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 37,
+      "success": true,
+      "processing_time_ms": 106.81605339050293,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 37,
+      "success": true,
+      "processing_time_ms": 114.83383178710938,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 37,
+      "success": true,
+      "processing_time_ms": 101.2415885925293,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 38,
+      "success": true,
+      "processing_time_ms": 114.13145065307617,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 38,
+      "success": true,
+      "processing_time_ms": 113.4023666381836,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 38,
+      "success": true,
+      "processing_time_ms": 104.57468032836914,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 38,
+      "success": true,
+      "processing_time_ms": 105.03077507019043,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 38,
+      "success": true,
+      "processing_time_ms": 115.75675010681152,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 39,
+      "success": true,
+      "processing_time_ms": 114.8216724395752,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 39,
+      "success": true,
+      "processing_time_ms": 108.26587677001953,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 39,
+      "success": true,
+      "processing_time_ms": 110.17131805419922,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 39,
+      "success": true,
+      "processing_time_ms": 101.27997398376465,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 39,
+      "success": true,
+      "processing_time_ms": 109.18617248535156,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 40,
+      "success": true,
+      "processing_time_ms": 106.15301132202148,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 40,
+      "success": true,
+      "processing_time_ms": 110.23664474487305,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 40,
+      "success": true,
+      "processing_time_ms": 115.1576042175293,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 40,
+      "success": true,
+      "processing_time_ms": 101.59492492675781,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 40,
+      "success": true,
+      "processing_time_ms": 106.6436767578125,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 41,
+      "success": true,
+      "processing_time_ms": 112.53929138183594,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 41,
+      "success": true,
+      "processing_time_ms": 102.29754447937012,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 41,
+      "success": true,
+      "processing_time_ms": 104.84027862548828,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 41,
+      "success": true,
+      "processing_time_ms": 111.13691329956055,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 41,
+      "success": true,
+      "processing_time_ms": 107.39564895629883,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 42,
+      "success": true,
+      "processing_time_ms": 103.66702079772949,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 42,
+      "success": true,
+      "processing_time_ms": 114.79449272155762,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 42,
+      "success": true,
+      "processing_time_ms": 100.96335411071777,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 42,
+      "success": true,
+      "processing_time_ms": 113.8606071472168,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 42,
+      "success": true,
+      "processing_time_ms": 106.8265438079834,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.985,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 43,
+      "success": true,
+      "processing_time_ms": 101.59778594970703,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 43,
+      "success": true,
+      "processing_time_ms": 111.01937294006348,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 43,
+      "success": true,
+      "processing_time_ms": 107.63001441955566,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 43,
+      "success": true,
+      "processing_time_ms": 104.5534610748291,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 43,
+      "success": true,
+      "processing_time_ms": 103.11698913574219,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 44,
+      "success": true,
+      "processing_time_ms": 114.48359489440918,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 44,
+      "success": true,
+      "processing_time_ms": 100.98409652709961,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 44,
+      "success": true,
+      "processing_time_ms": 115.09037017822266,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 44,
+      "success": true,
+      "processing_time_ms": 101.28259658813477,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 44,
+      "success": true,
+      "processing_time_ms": 114.80307579040527,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.95,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 45,
+      "success": true,
+      "processing_time_ms": 101.24874114990234,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 45,
+      "success": true,
+      "processing_time_ms": 110.60619354248047,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 45,
+      "success": true,
+      "processing_time_ms": 103.78813743591309,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 45,
+      "success": true,
+      "processing_time_ms": 104.39801216125488,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 45,
+      "success": true,
+      "processing_time_ms": 104.6457290649414,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 46,
+      "success": true,
+      "processing_time_ms": 106.72855377197266,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 46,
+      "success": true,
+      "processing_time_ms": 101.26447677612305,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 46,
+      "success": true,
+      "processing_time_ms": 113.45243453979492,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 46,
+      "success": true,
+      "processing_time_ms": 112.6556396484375,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 46,
+      "success": true,
+      "processing_time_ms": 105.6976318359375,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.9550000000000001,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 47,
+      "success": true,
+      "processing_time_ms": 114.73274230957031,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 47,
+      "success": true,
+      "processing_time_ms": 101.50790214538574,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 47,
+      "success": true,
+      "processing_time_ms": 115.13829231262207,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 47,
+      "success": true,
+      "processing_time_ms": 101.42874717712402,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 47,
+      "success": true,
+      "processing_time_ms": 115.36121368408203,
+      "modalities_generated": 2,
+      "word_by_word_count": 2,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 48,
+      "success": true,
+      "processing_time_ms": 100.62694549560547,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 48,
+      "success": true,
+      "processing_time_ms": 101.95326805114746,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 48,
+      "success": true,
+      "processing_time_ms": 111.62281036376953,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 48,
+      "success": true,
+      "processing_time_ms": 100.96621513366699,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    },
+    {
+      "config_id": 48,
+      "success": true,
+      "processing_time_ms": 114.32909965515137,
+      "modalities_generated": 2,
+      "word_by_word_count": 0,
+      "average_confidence": 0.975,
+      "meets_30s_target": true,
+      "error": ""
+    }
+  ]
+}

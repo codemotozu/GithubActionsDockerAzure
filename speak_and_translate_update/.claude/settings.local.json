@@ -24,7 +24,11 @@
       "Bash(pip show:*)",
       "Bash(del:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(cmd //c:*)",
+      "Bash(PYTHONPATH=. python app/main.py)",
+      "Bash(PORT=8001 PYTHONPATH=. python app/main.py)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": [],

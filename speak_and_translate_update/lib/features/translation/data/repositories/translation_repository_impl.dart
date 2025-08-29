@@ -68,15 +68,15 @@ class TranslationStylePreferences {
 
   factory TranslationStylePreferences.fromSettings(Map<String, dynamic> settings) {
     return TranslationStylePreferences(
-      germanNative: settings['germanNative'] as bool? ?? false,
+      germanNative: settings['germanNative'] as bool? ?? true,
       germanColloquial: settings['germanColloquial'] as bool? ?? false,
       germanInformal: settings['germanInformal'] as bool? ?? false,
-      germanFormal: settings['germanFormal'] as bool? ?? false,
-      englishNative: settings['englishNative'] as bool? ?? false,
+      germanFormal: settings['germanFormal'] as bool? ?? true,
+      englishNative: settings['englishNative'] as bool? ?? true,
       englishColloquial: settings['englishColloquial'] as bool? ?? false,
       englishInformal: settings['englishInformal'] as bool? ?? false,
-      englishFormal: settings['englishFormal'] as bool? ?? false,
-      germanWordByWord: settings['germanWordByWord'] as bool? ?? true,
+      englishFormal: settings['englishFormal'] as bool? ?? true,
+      germanWordByWord: settings['germanWordByWord'] as bool? ?? false,
       englishWordByWord: settings['englishWordByWord'] as bool? ?? false,
       motherTongue: settings['motherTongue'] as String? ?? 'spanish', // NEW: Extract mother tongue
     );
@@ -85,8 +85,8 @@ class TranslationStylePreferences {
 
 class TranslationRepositoryImpl implements TranslationRepository {
   // final String baseUrl = 'http://10.0.2.2:8000'; // here you can hear the translaion in my local machine dont forget to update main.py
-  final String baseUrl = 'http://192.168.0.2:8000'; // android cellphone ...
-  // final String baseUrl = 'https://speak-translate-docker-and-azure.thankfulisland-32dcba80.francecentral.azurecontainerapps.io';
+  // final String baseUrl = 'http://192.168.0.2:8000'; // android cellphone ...
+  final String baseUrl = 'https://speak-translate-docker-and-azure.thankfulisland-32dcba80.francecentral.azurecontainerapps.io';
   static const timeoutDuration = Duration(seconds: 240);
   late AudioPlayer _audioPlayer = AudioPlayer();
   final AudioPlayer _soundPlayer = AudioPlayer(); // For completion sound

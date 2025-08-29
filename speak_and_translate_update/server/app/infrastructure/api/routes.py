@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
 from ...application.services.speech_service import SpeechService
 from ...application.services.enhanced_translation_service import EnhancedTranslationService
@@ -107,29 +107,33 @@ async def optimized_translation_process(text, source_lang, target_lang, style_pr
 class TranslationStylePreferences(BaseModel):
     """Translation style preferences with perfect sync and multi-style support"""
     # German styles - ALL can be selected simultaneously
-    german_native: bool = False
-    german_colloquial: bool = False
-    german_informal: bool = False
-    german_formal: bool = False
+    german_native: bool = Field(False, alias="germanNative")
+    german_colloquial: bool = Field(False, alias="germanColloquial")
+    german_informal: bool = Field(False, alias="germanInformal")
+    german_formal: bool = Field(False, alias="germanFormal")
     
     # English styles - ALL can be selected simultaneously
-    english_native: bool = False
-    english_colloquial: bool = False
-    english_informal: bool = False
-    english_formal: bool = False
+    english_native: bool = Field(False, alias="englishNative")
+    english_colloquial: bool = Field(False, alias="englishColloquial")
+    english_informal: bool = Field(False, alias="englishInformal")
+    english_formal: bool = Field(False, alias="englishFormal")
     
     # CRITICAL: Word-by-word audio preferences for perfect sync
-    german_word_by_word: bool = False
-    english_word_by_word: bool = False
+    german_word_by_word: bool = Field(False, alias="germanWordByWord")
+    english_word_by_word: bool = Field(False, alias="englishWordByWord")
     
     # Mother tongue for dynamic translation
-    mother_tongue: Optional[str] = "spanish"
+    mother_tongue: Optional[str] = Field("spanish", alias="motherTongue")
+    
+    model_config = {"populate_by_name": True}
 
 class PromptRequest(BaseModel):
     text: str
     source_lang: Optional[str] = "auto"
     target_lang: Optional[str] = "multi"
-    style_preferences: Optional[TranslationStylePreferences] = None
+    style_preferences: Optional[TranslationStylePreferences] = Field(None, alias="stylePreferences")
+    
+    model_config = {"populate_by_name": True}
 
 def _validate_mother_tongue(mother_tongue: str) -> str:
     """Validate and normalize mother tongue input"""
@@ -171,6 +175,15 @@ def _apply_intelligent_defaults(style_preferences: TranslationStylePreferences) 
     # Count selected styles
     style_counts = _count_selected_styles(style_preferences)
     
+    logger.info(f"🔍 DEFAULTS DEBUG: Before processing:")
+    logger.info(f"   Total styles: {style_counts['total']}")
+    logger.info(f"   German native: {style_preferences.german_native}")
+    logger.info(f"   German formal: {style_preferences.german_formal}")
+    logger.info(f"   German colloquial: {style_preferences.german_colloquial}")
+    logger.info(f"   English native: {style_preferences.english_native}")
+    logger.info(f"   English formal: {style_preferences.english_formal}")
+    logger.info(f"   English colloquial: {style_preferences.english_colloquial}")
+    
     # Apply defaults only if NO styles are selected
     if style_counts['total'] == 0:
         logger.info(f"🎯 No styles selected - applying defaults for mother tongue: {mother_tongue}")
@@ -195,6 +208,14 @@ def _apply_intelligent_defaults(style_preferences: TranslationStylePreferences) 
             logger.info(f"   🇩🇪 German: {style_counts['german']} styles")
         if style_counts['english'] > 0:
             logger.info(f"   🇺🇸 English: {style_counts['english']} styles")
+    
+    logger.info(f"🔍 DEFAULTS DEBUG: After processing:")
+    logger.info(f"   German native: {style_preferences.german_native}")
+    logger.info(f"   German formal: {style_preferences.german_formal}")
+    logger.info(f"   German colloquial: {style_preferences.german_colloquial}")
+    logger.info(f"   English native: {style_preferences.english_native}")
+    logger.info(f"   English formal: {style_preferences.english_formal}")
+    logger.info(f"   English colloquial: {style_preferences.english_colloquial}")
     
     return style_preferences
 
@@ -241,6 +262,7 @@ def _log_perfect_sync_setup(text: str, style_preferences: TranslationStylePrefer
     
     # Detailed style breakdown
     logger.info(f"🇩🇪 German Styles Selected:")
+    logger.info(f"   🔍 RAW VALUES: native={style_preferences.german_native}, colloquial={style_preferences.german_colloquial}, informal={style_preferences.german_informal}, formal={style_preferences.german_formal}")
     if style_preferences.german_native:
         logger.info(f"   ✅ Native")
     if style_preferences.german_colloquial:
@@ -251,6 +273,7 @@ def _log_perfect_sync_setup(text: str, style_preferences: TranslationStylePrefer
         logger.info(f"   ✅ Formal")
     
     logger.info(f"🇺🇸 English Styles Selected:")
+    logger.info(f"   🔍 RAW VALUES: native={style_preferences.english_native}, colloquial={style_preferences.english_colloquial}, informal={style_preferences.english_informal}, formal={style_preferences.english_formal}")
     if style_preferences.english_native:
         logger.info(f"   ✅ Native")
     if style_preferences.english_colloquial:
@@ -458,6 +481,17 @@ async def start_conversation(prompt: PromptRequest):
     Main conversation endpoint with PERFECT UI-Audio synchronization and multi-style support.
     """
     try:
+        # DEBUG: Log exactly what we received
+        logger.info("🔍 RAW REQUEST DEBUG:")
+        logger.info(f"   style_preferences is None: {prompt.style_preferences is None}")
+        if prompt.style_preferences is not None:
+            logger.info(f"   RAW german_native: {prompt.style_preferences.german_native}")
+            logger.info(f"   RAW german_formal: {prompt.style_preferences.german_formal}")
+            logger.info(f"   RAW german_colloquial: {prompt.style_preferences.german_colloquial}")
+            logger.info(f"   RAW english_native: {prompt.style_preferences.english_native}")
+            logger.info(f"   RAW english_formal: {prompt.style_preferences.english_formal}")
+            logger.info(f"   RAW english_colloquial: {prompt.style_preferences.english_colloquial}")
+        
         # Set up default style preferences if none provided
         if prompt.style_preferences is None:
             prompt.style_preferences = TranslationStylePreferences(
@@ -471,7 +505,9 @@ async def start_conversation(prompt: PromptRequest):
         prompt.style_preferences.mother_tongue = mother_tongue
         
         # Apply intelligent defaults if no styles selected
+        logger.info("🔍 ABOUT TO CALL _apply_intelligent_defaults")
         prompt.style_preferences = _apply_intelligent_defaults(prompt.style_preferences)
+        logger.info("🔍 FINISHED CALLING _apply_intelligent_defaults")
         
         # Log the perfect sync translation setup
         _log_perfect_sync_setup(prompt.text, prompt.style_preferences)

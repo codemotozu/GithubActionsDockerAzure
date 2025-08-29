@@ -1,0 +1,10 @@
+{
+  "text": "Ananassaft für das Mädchen",
+  "source_lang": "german", 
+  "target_lang": "spanish",
+  "style_preferences": {
+    "mother_tongue": "spanish",
+    "german_formal": true,
+    "german_word_by_word": false
+  }
+}

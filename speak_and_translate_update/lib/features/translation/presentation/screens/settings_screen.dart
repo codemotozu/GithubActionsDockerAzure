@@ -42,16 +42,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _englishWordByWord = false;
   
   // EXACT per requirements: German styles - User has complete freedom
-  bool _germanNative = false;
+  // Default to Native and Formal for good user experience
+  bool _germanNative = true;
   bool _germanColloquial = false;
   bool _germanInformal = false;
-  bool _germanFormal = false;
+  bool _germanFormal = true;
   
   // EXACT per requirements: English styles - User has complete freedom
-  bool _englishNative = false;
+  // Default to Native and Formal for good user experience
+  bool _englishNative = true;
   bool _englishColloquial = false;
   bool _englishInformal = false;
-  bool _englishFormal = false;
+  bool _englishFormal = true;
 
   // Expansion states
   bool _germanExpanded = false;

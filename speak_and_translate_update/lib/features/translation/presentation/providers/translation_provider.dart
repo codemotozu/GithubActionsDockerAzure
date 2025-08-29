@@ -333,11 +333,40 @@ class TranslationNotifier extends StateNotifier<TranslationState> {
         error: null,
       );
 
-      // Handle hands-free audio playback
+      // Handle audio playback - CORRECTED BEHAVIOR
       final isHandsFree = _ref.read(speechProvider);
-      if (isHandsFree && translation.audioPath != null) {
-        print('🔊 Playing audio in hands-free mode');
-        await _repository.playAudio(translation.audioPath!);
+      final germanWordByWord = stylePreferences['germanWordByWord'] ?? false;
+      final englishWordByWord = stylePreferences['englishWordByWord'] ?? false;
+      
+      if (translation.audioPath != null) {
+        if (isHandsFree) {
+          // In hands-free mode: Always play sentence audio first
+          print('🔊 HANDS-FREE: Playing sentence audio automatically');
+          await _repository.playAudio(translation.audioPath!);
+          
+          // Then determine if additional word-by-word audio should play
+          if (germanWordByWord || englishWordByWord) {
+            print('🎵 HANDS-FREE: Word-by-word audio enabled - will also play individual words');
+          } else {
+            print('🔇 HANDS-FREE: Word-by-word audio disabled - sentence audio only');
+          }
+        } else {
+          print('🎵 MANUAL MODE: Sentence audio will play when user clicks words');
+          print('   Audio behavior per word click:');
+          print('   1. ALWAYS play sentence audio (complete translation)');
+          if (germanWordByWord) {
+            print('   2. German word-by-word ENABLED → play individual German word audio');
+          } else {
+            print('   2. German word-by-word DISABLED → no individual German word audio');
+          }
+          if (englishWordByWord) {
+            print('   3. English word-by-word ENABLED → play individual English word audio');
+          } else {
+            print('   3. English word-by-word DISABLED → no individual English word audio');
+          }
+        }
+        
+        print('👁️ VISUAL: Word-by-word translations ALWAYS shown (regardless of audio settings)');
       }
       
     } catch (e) {
